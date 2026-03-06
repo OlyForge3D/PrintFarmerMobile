@@ -32,4 +32,12 @@
 
 ## Learnings
 
-_Ash ready to implement performance optimization and refactoring tasks against project structure._
+## Learnings
+
+### Cross-Agent Context (2026-03-06)
+- **Ripley's Login Screen:** LoginView + LoginViewModel (form state), AuthViewModel (auth state gating). Server URL flows: LoginView → LoginViewModel → AuthViewModel → AuthService.login(serverURL:) → APIClient.updateBaseURL(). Dark Mode + animated error banner working.
+- **Lambert's Networking:** APIClient actor (thread-safe), AuthService with single JWT (no refresh tokens). Base URL mutable, stored in UserDefaults. Session restore via GET /api/auth/me.
+- **Dallas's Pattern:** ServiceContainer at init, .task configures ViewModels. This is the canonical dependency injection pattern for the project.
+
+_Ash ready to implement feature screens and navigation flows._
+- **Session Directive (2026-03-06):** Use claude-opus-4.6 for code-writing tasks (Ripley, Lambert, Ash)

@@ -8,7 +8,12 @@
 
 ## Learnings
 
-### Project Structure (2025-07-16)
+### Cross-Agent Context (2026-03-06)
+- **Ripley's Login Screen:** LoginViewModel form state (separate from AuthViewModel). Server URL flows through AuthService → APIClient.updateBaseURL(). Dark Mode + error animation working.
+- **Lambert's Auth:** Single JWT token (no refresh). AuthService validates via GET /api/auth/me. Keychain storage, UserDefaults for base URL. Actor-isolated APIClient.
+- **Ash Ready:** Both auth scaffolding and navigation system in place. Can build printer/job screens with confidence.
+
+### Project Structure (2025-07-16 → 2026-03-06)
 - **Architecture:** MVVM with repository-pattern services, `@Observable` view models, SwiftUI views
 - **Navigation:** `AppRouter` (Observable) with `NavigationPath` per tab + `AppTab` enum for TabView
 - **Dependency injection:** `ServiceContainer` holds all services; passed via `.environment()`. `APIClient` is an `actor` for thread safety.
@@ -24,3 +29,4 @@
   - Models: `PrintFarmer/Models/Models.swift` (Printer, PrintJob, Location, Auth DTOs + enums)
   - Networking: `PrintFarmer/Services/APIClient.swift`
   - Config: `PrintFarmer/Utilities/AppConfig.swift` (base URL via env var or default localhost:5000)
+- **Session Directive (2026-03-06):** Use claude-opus-4.6 for code-writing tasks (Ripley, Lambert, Ash)
