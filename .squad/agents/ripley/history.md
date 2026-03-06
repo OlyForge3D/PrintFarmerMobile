@@ -82,3 +82,24 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 **Action Required:** Update PrinterDetailViewModel method calls to match PrinterServiceProtocol signatures. This is blocking the test suite integration.
 
 **Context:** Lambert built the actual PrinterServiceProtocol with these exact method names. The ViewModel was built against an earlier protocol spec. Ripley needs to reconcile the implementation.
+
+### Jobs Tab Redesign: Printer-Centric → Job-Centric (2025-07-17)
+- **Problem:** Jeff reported the Jobs tab showed "available printers" instead of print jobs. The old design used `GET /api/job-queue` which returns `[QueueOverview]` (one row per printer), making the tab feel like a printer list.
+- **Fix:** Switched to `GET /api/job-queue-analytics` which returns `[QueuedPrintJobWithFileMetaDto]` — actual individual jobs with full metadata.
+- **New models added:** `QueuedPrintJobResponse`, `QueuedJobInfo`, `QueuePrinterMeta`, `QueueGcodeFileMeta`, `QueueStats` in Models.swift
+- **Protocol change:** Added `listAllJobs() -> [QueuedPrintJobResponse]` to `JobServiceProtocol`. Kept old `list() -> [QueueOverview]` for backward compat.
+- **View redesign:** Jobs tab now shows three sections: "Printing" (active jobs with progress bars), "In Queue" (queued jobs with position/priority), "Recent" (completed/failed, collapsible). No more "Available printers" section.
+- **Backend insight:** The `/api/job-queue-analytics` controller has rich endpoints: stats, history, timeline, per-printer jobs, duration analytics. Only using the main listing for now.
+- **Key detail:** Analytics DTOs use `String` IDs (not UUID). Added `jobUUID` computed property for navigation to `JobDetailView` which expects UUID.
+
+### Theme Support: Light + PrintFarmer Dark (2025-07-17)
+- **3 new files in `PrintFarmer/Theme/`:** `Color+Hex.swift` (hex initializer for Color & UIColor), `ThemeColors.swift` (all PrintFarmer branded colors as adaptive `Color` statics), `ThemeManager.swift` (@Observable class managing system/light/dark preference via UserDefaults).
+- **Adaptive color pattern:** `Color.adaptive(light:dark:)` uses `UIColor { traitCollection in ... }` on iOS for dynamic trait-based colors; falls back to light hex on macOS/SPM.
+- **All theme colors prefixed `pf`:** `pfBackground`, `pfCard`, `pfBorder`, `pfAccent`, `pfSuccess`, `pfError`, `pfWarning`, `pfTextPrimary/Secondary/Tertiary`, `pfSecondaryAccent`, `pfButtonPrimary`, `pfHomed`, `pfNotHomed`.
+- **ShapeStyle gotcha:** Custom `Color` static properties can't be used with dot syntax (`.pfCard`) in `.background()`, `.foregroundStyle()`, `.strokeBorder()` — must use `Color.pfCard` explicitly because those APIs accept `ShapeStyle` and Swift's implicit member lookup doesn't resolve `Color` statics on `ShapeStyle`.
+- **ThemeManager injected via `.environment()`** in PFarmApp; theme picker added to SettingsView Appearance section; `.preferredColorScheme()` applied at root.
+- **Global tint set to `.pfAccent` (green #10b981)** — makes all buttons, links, pickers brand-green.
+- **Views updated:** Dashboard, PrinterDetail, JobDetail, LoginView, NotificationsView, PrinterListView, StatusBadge, PrinterCardView, PrintProgressBar all use `pf*` colors for cards, borders, status indicators, progress bars.
+- **PrintProgressBar default color changed** from `.blue` to `.pfAccent` (green) — brand-consistent progress bars.
+- **Status colors unified:** Printing→pfSecondaryAccent (blue), Ready→pfSuccess (green), Paused→pfWarning (amber), Error→pfError (red), Offline→pfTextTertiary.
+- **Pre-existing build errors:** APIClient.swift has Swift 6 concurrency warnings for ISO8601DateFormatter statics; not related to theme work.

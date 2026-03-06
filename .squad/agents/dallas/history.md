@@ -50,3 +50,14 @@
 - **Ash Results:** ✅ 145 test cases (8 suites: APIClient, Auth, Printer, Job, Notification, ModelDecoding, LoginViewModel, DashboardViewModel) + full mock infrastructure for 6 services
 - **Critical Finding:** Ash discovered 3 PrinterDetailViewModel method mismatches (snapshotURL/getSnapshot, cancelPrint/cancel, setMaintenance/setMaintenanceMode) — blocking test integration, Ripley to fix
 - **Next Phase:** Scribe consolidates decisions, updates agent history.md files, commits .squad/ changes; Ripley fixes mismatches; run test suite for integration validation
+
+### Xcode Project Fix (2026-03-06)
+- **Problem:** Xcode reported PrintFarmer.xcodeproj as "damaged" — could not open
+- **Root causes found (3):**
+  1. `project.pbxproj` missing closing `}` brace — fatal plist parse error
+  2. `contents.xcworkspacedata` had empty `<Workspace>` element (missing `<FileRef location="self:">`)
+  3. 21 source files added by Lambert/Ripley/Ash during MVP batch were never registered in the project (Protocols/, Components/, NotificationsView, PrinterDetailView, JobDetailView, etc.)
+- **Fix:** Regenerated all three files (`project.pbxproj`, `contents.xcworkspacedata`, `PrintFarmer.xcscheme`) from scratch using a Python generator that walks the file tree
+- **Validation:** Balanced braces/parens confirmed, all 14 required pbxproj sections present, all 66 Swift files (47 source + 19 test) cross-checked against disk
+- **Key insight:** Hand-crafted pbxproj files are fragile. When agents add files via SPM (`swift build` validates), the xcodeproj falls out of sync. Future file additions need a regeneration step or the team should consider workspace+SPM-only approach.
+- **Generator script pattern:** Deterministic IDs via `hashlib.md5(name)[:24]` — regeneration produces identical output if file tree hasn't changed

@@ -113,3 +113,25 @@
 ### Cross-Agent Impact from Networking Work (2026-03-06)
 - **Ripley:** Protocol signatures finalized; 3 PrinterDetailViewModel method mismatches found by Ash (getSnapshot vs snapshotURL, cancel vs cancelPrint, setMaintenanceMode vs setMaintenance)
 - **Ash:** All 6 service protocols ready for mock implementation; 145 test cases written validating full MVP endpoint coverage
+
+### JSON Decode Fix (2026-07-16)
+- **Root cause of "Failed to decode response" after login:** Three compounding issues:
+  1. Backend uses `JsonStringEnumConverter()` globally — ALL enums serialize as strings ("Moonraker", "Printing", etc.) but Swift enums had `Int` raw values
+  2. ASP.NET Core `.NET 10` emits ISO 8601 dates with fractional seconds; Swift's built-in `.iso8601` decoder rejects them
+  3. Swift `PrintJob` model had drifted significantly from backend's `JobQueuePrintJobDto` (fields added/removed/renamed)
+- **Backend serialization config** (in `ControllerStartup.cs` and `SignalRStartup.cs`): `CamelCase` naming, `WhenWritingNull` (null fields omitted), `JsonStringEnumConverter`, custom converters for `PrinterBackend` and `PrintJobStatus`
+- **Fix applied:** All enums → String raw values with Int-fallback decoders; custom date strategy with fractional-seconds support; PrintJob realigned to backend DTO
+- **MotionType correction:** Backend has `Unknown = 99`, not `Polar = 3` — Swift enum updated
+- **TimeSpan handling:** Backend serializes `TimeSpan` as strings (e.g., "01:30:00"); Swift stores as `String?` with `.timeSpanFormatted` / `.timeSpanSeconds` helpers
+- **Key insight:** Backend uses `.NET 10` — `TimeSpan` has first-class JSON support as strings; custom `PrinterBackendJsonConverter` and `PrintJobStatusJsonConverter` are permissive (accept both string and int) but WRITE as strings
+
+### Resilient Decoder Pass (2026-07-16)
+- **Problem:** Dashboard and Printers tabs showed no data. Root cause: Swift models used auto-synthesized Codable with non-optional fields that could be absent depending on which backend DTO was returned.
+- **CompletePrinterDto vs PrinterDto:** The list endpoint (`GET /api/printers`) returns `CompletePrinterDto` (has `InMaintenance`, `IsEnabled`, `ManufacturerId`, `ModelId`, `MotionType`, `HomedAxes`). The detail endpoint (`GET /api/printers/{id}`) returns `PrinterDto` (missing those fields, but has `CameraSnapshotUrl`, `Username`, `Password`). Swift `Printer` struct must decode BOTH.
+- **Fix applied:** Custom `init(from decoder:)` on `Printer`, `PrinterSpoolInfo`, `StatisticsSummary`, `MmuStatus`, `MmuGate` using `decodeIfPresent` with sensible defaults for all previously-non-optional fields.
+- **New field:** Added `cameraSnapshotUrl: String?` to `Printer` (present in PrinterDto and PrinterStatusDto).
+- **PrinterListView bug:** View never showed error messages — only "No Printers" empty state. Fixed to display error with retry button.
+- **APIClient debug logging:** Added `#if DEBUG` block in `execute()` that prints raw response body on decode failure — enables diagnosis of future mismatches.
+- **Swift 6 concurrency:** Static `ISO8601DateFormatter` properties marked `nonisolated(unsafe)`.
+- **Test fixtures:** Updated from integer enum values to string values matching backend `JsonStringEnumConverter` output. Fixed stale PrintJob fixture fields (`name`, `queuedAt`, `startedAt`, `autoAssign` removed; `remainingCopies` added). Fixed enum raw value assertions from Int to String.
+- **PrinterFastDto:** Backend has a SEPARATE `PrinterFastDto` (returned by `GetAllFastDtosAsync`) which includes `CameraSnapshotUrl` but fewer live-status fields. Not currently used by iOS but good to know.
