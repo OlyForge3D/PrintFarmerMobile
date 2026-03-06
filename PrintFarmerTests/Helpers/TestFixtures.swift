@@ -17,8 +17,8 @@ enum TestJSON {
         "manufacturerName": "Prusa Research",
         "modelId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
         "modelName": "MK4",
-        "motionType": 0,
-        "backend": 1,
+        "motionType": "Cartesian",
+        "backend": "Moonraker",
         "apiKey": "test-api-key",
         "originalServerUrl": "http://192.168.1.100",
         "backendPort": 7125,
@@ -64,7 +64,7 @@ enum TestJSON {
     {
         "id": "660e8400-e29b-41d4-a716-446655440001",
         "name": "Ender 3",
-        "backend": 1,
+        "backend": "Moonraker",
         "backendPort": 7125,
         "inMaintenance": false,
         "isEnabled": true,
@@ -79,8 +79,7 @@ enum TestJSON {
     static let printJob = """
     {
         "id": "770e8400-e29b-41d4-a716-446655440002",
-        "name": "Benchy",
-        "status": 3,
+        "status": "Printing",
         "priority": 1,
         "queuePosition": 1,
         "gcodeFileId": "880e8400-e29b-41d4-a716-446655440003",
@@ -89,18 +88,13 @@ enum TestJSON {
         "assignedPrinterName": "Prusa MK4",
         "createdAt": "2025-07-17T10:00:00Z",
         "updatedAt": "2025-07-17T10:30:00Z",
-        "queuedAt": "2025-07-17T10:00:00Z",
-        "startedAt": "2025-07-17T10:15:00Z",
-        "estimatedPrintTime": 3600.0,
+        "actualStartTime": "2025-07-17T10:15:00Z",
+        "estimatedPrintTime": "01:00:00",
         "estimatedFilamentUsage": 15.5,
         "estimatedCost": 2.50,
-        "hotendTemperature": 215.0,
-        "bedTemperature": 60.0,
-        "progressPercentage": 45.0,
-        "currentState": "printing",
-        "autoAssign": true,
         "copies": 3,
         "completedCopies": 1,
+        "remainingCopies": 2,
         "filamentName": "Prusament PLA",
         "filamentVendor": "Prusa Research",
         "filamentColor": "#000000"
@@ -110,17 +104,16 @@ enum TestJSON {
     static let printJobQueued = """
     {
         "id": "990e8400-e29b-41d4-a716-446655440004",
-        "name": "Phone Case",
-        "status": 0,
+        "status": "Queued",
         "priority": 2,
         "queuePosition": 2,
         "gcodeFileName": "phone_case.gcode",
+        "assignedPrinterName": "",
         "createdAt": "2025-07-17T09:00:00Z",
         "updatedAt": "2025-07-17T09:00:00Z",
-        "queuedAt": "2025-07-17T09:00:00Z",
-        "autoAssign": true,
         "copies": 1,
-        "completedCopies": 0
+        "completedCopies": 0,
+        "remainingCopies": 1
     }
     """
 

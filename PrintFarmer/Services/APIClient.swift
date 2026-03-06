@@ -13,14 +13,14 @@ actor APIClient {
     static let serverURLKey = "pf_server_url"
 
     /// ISO 8601 formatter with fractional seconds (matches ASP.NET Core output).
-    private static let iso8601WithFractional: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let iso8601WithFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
     /// ISO 8601 formatter without fractional seconds (fallback).
-    private static let iso8601Plain: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let iso8601Plain: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
@@ -150,6 +150,11 @@ actor APIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
+            #if DEBUG
+            let preview = String(data: data.prefix(2000), encoding: .utf8) ?? "<binary>"
+            print("⚠️ [APIClient] Decode failed for \(T.self) at \(request.url?.path ?? "?"): \(error)")
+            print("⚠️ [APIClient] Response body preview: \(preview)")
+            #endif
             throw NetworkError.decodingFailed(error)
         }
     }

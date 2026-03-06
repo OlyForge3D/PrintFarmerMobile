@@ -13,19 +13,11 @@ final class ModelsTests: XCTestCase {
         {
             "id": "550e8400-e29b-41d4-a716-446655440000",
             "name": "Prusa MK4",
-            "serverUrl": "http://192.168.1.100",
+            "backend": "Moonraker",
             "backendPort": 7125,
-            "backend": 1,
             "isOnline": true,
-            "isAvailable": true,
             "inMaintenance": false,
-            "isEnabled": true,
-            "hasHeatedBed": true,
-            "hasEnclosure": false,
-            "multiMaterial": false,
-            "supportsAutoLeveling": true,
-            "autoPrintEnabled": false,
-            "autoPrintState": 0
+            "isEnabled": true
         }
         """.data(using: .utf8)!
 
@@ -35,8 +27,26 @@ final class ModelsTests: XCTestCase {
         XCTAssertTrue(printer.isOnline)
     }
 
+    func testPrinterDecodesWithMissingOptionalFields() throws {
+        // Minimal JSON — only id and name required, everything else has defaults
+        let json = """
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "name": "Bare Printer"
+        }
+        """.data(using: .utf8)!
+
+        let printer = try decoder.decode(Printer.self, from: json)
+        XCTAssertEqual(printer.name, "Bare Printer")
+        XCTAssertEqual(printer.backend, .unknown)
+        XCTAssertEqual(printer.backendPort, 80)
+        XCTAssertFalse(printer.inMaintenance)
+        XCTAssertTrue(printer.isEnabled)
+        XCTAssertFalse(printer.isOnline)
+    }
+
     func testPrintJobStatusEnum() {
-        XCTAssertEqual(PrintJobStatus.printing.rawValue, 3)
-        XCTAssertEqual(PrintJobStatus.completed.rawValue, 5)
+        XCTAssertEqual(PrintJobStatus.printing.rawValue, "Printing")
+        XCTAssertEqual(PrintJobStatus.completed.rawValue, "Completed")
     }
 }

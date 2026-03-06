@@ -165,7 +165,7 @@ enum NotificationFrequency: String, Codable, Sendable {
     case never = "Never"
 }
 
-// MARK: - Printer (matches CompletePrinterDto from backend)
+// MARK: - Printer (decodes both CompletePrinterDto and PrinterDto from backend)
 
 struct Printer: Codable, Identifiable, Sendable {
     let id: UUID
@@ -179,7 +179,7 @@ struct Printer: Codable, Identifiable, Sendable {
     let modelName: String?
     let motionType: MotionType?
 
-    // Config
+    // Config (defaults provided for PrinterDto which omits some fields)
     let backend: PrinterBackend
     let apiKey: String?
     let originalServerUrl: String?
@@ -195,6 +195,7 @@ struct Printer: Codable, Identifiable, Sendable {
     let jobName: String?
     let thumbnailUrl: String?
     let cameraStreamUrl: String?
+    let cameraSnapshotUrl: String?
 
     // Telemetry
     let x: Double?
@@ -211,6 +212,61 @@ struct Printer: Codable, Identifiable, Sendable {
     let backendUrl: String?
     let frontendUrl: String?
     let location: LocationSummary?
+
+    // CodingKeys — all property names match backend camelCase keys
+    private enum CodingKeys: String, CodingKey {
+        case id, name, notes
+        case manufacturerId, manufacturerName, modelId, modelName, motionType
+        case backend, apiKey, originalServerUrl, backendPort, frontendPort
+        case inMaintenance, isEnabled
+        case isOnline, state, progress, jobName, thumbnailUrl
+        case cameraStreamUrl, cameraSnapshotUrl
+        case x, y, z, hotendTemp, bedTemp, hotendTarget, bedTarget, homedAxes
+        case spoolInfo, backendUrl, frontendUrl, location
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        notes = try c.decodeIfPresent(String.self, forKey: .notes)
+
+        manufacturerId = try c.decodeIfPresent(UUID.self, forKey: .manufacturerId)
+        manufacturerName = try c.decodeIfPresent(String.self, forKey: .manufacturerName)
+        modelId = try c.decodeIfPresent(UUID.self, forKey: .modelId)
+        modelName = try c.decodeIfPresent(String.self, forKey: .modelName)
+        motionType = try c.decodeIfPresent(MotionType.self, forKey: .motionType)
+
+        backend = try c.decodeIfPresent(PrinterBackend.self, forKey: .backend) ?? .unknown
+        apiKey = try c.decodeIfPresent(String.self, forKey: .apiKey)
+        originalServerUrl = try c.decodeIfPresent(String.self, forKey: .originalServerUrl)
+        backendPort = try c.decodeIfPresent(Int.self, forKey: .backendPort) ?? 80
+        frontendPort = try c.decodeIfPresent(Int.self, forKey: .frontendPort)
+        inMaintenance = try c.decodeIfPresent(Bool.self, forKey: .inMaintenance) ?? false
+        isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+
+        isOnline = try c.decodeIfPresent(Bool.self, forKey: .isOnline) ?? false
+        state = try c.decodeIfPresent(String.self, forKey: .state)
+        progress = try c.decodeIfPresent(Double.self, forKey: .progress)
+        jobName = try c.decodeIfPresent(String.self, forKey: .jobName)
+        thumbnailUrl = try c.decodeIfPresent(String.self, forKey: .thumbnailUrl)
+        cameraStreamUrl = try c.decodeIfPresent(String.self, forKey: .cameraStreamUrl)
+        cameraSnapshotUrl = try c.decodeIfPresent(String.self, forKey: .cameraSnapshotUrl)
+
+        x = try c.decodeIfPresent(Double.self, forKey: .x)
+        y = try c.decodeIfPresent(Double.self, forKey: .y)
+        z = try c.decodeIfPresent(Double.self, forKey: .z)
+        hotendTemp = try c.decodeIfPresent(Double.self, forKey: .hotendTemp)
+        bedTemp = try c.decodeIfPresent(Double.self, forKey: .bedTemp)
+        hotendTarget = try c.decodeIfPresent(Double.self, forKey: .hotendTarget)
+        bedTarget = try c.decodeIfPresent(Double.self, forKey: .bedTarget)
+        homedAxes = try c.decodeIfPresent(String.self, forKey: .homedAxes)
+
+        spoolInfo = try c.decodeIfPresent(PrinterSpoolInfo.self, forKey: .spoolInfo)
+        backendUrl = try c.decodeIfPresent(String.self, forKey: .backendUrl)
+        frontendUrl = try c.decodeIfPresent(String.self, forKey: .frontendUrl)
+        location = try c.decodeIfPresent(LocationSummary.self, forKey: .location)
+    }
 }
 
 struct PrinterSpoolInfo: Codable, Sendable {
@@ -223,6 +279,24 @@ struct PrinterSpoolInfo: Codable, Sendable {
     let vendor: String?
     let remainingWeightG: Double?
     let spoolInUse: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case hasActiveSpool, activeSpoolId, spoolName, material
+        case colorHex, filamentName, vendor, remainingWeightG, spoolInUse
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hasActiveSpool = try c.decodeIfPresent(Bool.self, forKey: .hasActiveSpool) ?? false
+        activeSpoolId = try c.decodeIfPresent(Int.self, forKey: .activeSpoolId)
+        spoolName = try c.decodeIfPresent(String.self, forKey: .spoolName)
+        material = try c.decodeIfPresent(String.self, forKey: .material)
+        colorHex = try c.decodeIfPresent(String.self, forKey: .colorHex)
+        filamentName = try c.decodeIfPresent(String.self, forKey: .filamentName)
+        vendor = try c.decodeIfPresent(String.self, forKey: .vendor)
+        remainingWeightG = try c.decodeIfPresent(Double.self, forKey: .remainingWeightG)
+        spoolInUse = try c.decodeIfPresent(Bool.self, forKey: .spoolInUse)
+    }
 }
 
 // MARK: - Printer Status Detail (matches PrinterStatusDto)
@@ -262,6 +336,27 @@ struct MmuStatus: Codable, Sendable {
     let clogDetection: Bool
     let gates: [MmuGate]
     let mmuType: String
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled, isHomed, activeTool, activeGate, filamentState, action
+        case numGates, hasBypass, endlessSpool, clogDetection, gates, mmuType
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        isHomed = try c.decodeIfPresent(Bool.self, forKey: .isHomed) ?? false
+        activeTool = try c.decodeIfPresent(Int.self, forKey: .activeTool) ?? -1
+        activeGate = try c.decodeIfPresent(Int.self, forKey: .activeGate) ?? -1
+        filamentState = try c.decodeIfPresent(String.self, forKey: .filamentState)
+        action = try c.decodeIfPresent(String.self, forKey: .action)
+        numGates = try c.decodeIfPresent(Int.self, forKey: .numGates) ?? 0
+        hasBypass = try c.decodeIfPresent(Bool.self, forKey: .hasBypass) ?? false
+        endlessSpool = try c.decodeIfPresent(Bool.self, forKey: .endlessSpool) ?? false
+        clogDetection = try c.decodeIfPresent(Bool.self, forKey: .clogDetection) ?? false
+        gates = try c.decodeIfPresent([MmuGate].self, forKey: .gates) ?? []
+        mmuType = try c.decodeIfPresent(String.self, forKey: .mmuType) ?? "Unknown"
+    }
 }
 
 struct MmuGate: Codable, Sendable {
@@ -272,6 +367,21 @@ struct MmuGate: Codable, Sendable {
     let filamentName: String?
     let spoolId: Int
     let name: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case index, status, material, color, filamentName, spoolId, name
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        index = try c.decodeIfPresent(Int.self, forKey: .index) ?? 0
+        status = try c.decodeIfPresent(Int.self, forKey: .status) ?? 0
+        material = try c.decodeIfPresent(String.self, forKey: .material)
+        color = try c.decodeIfPresent(String.self, forKey: .color)
+        filamentName = try c.decodeIfPresent(String.self, forKey: .filamentName)
+        spoolId = try c.decodeIfPresent(Int.self, forKey: .spoolId) ?? -1
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+    }
 }
 
 // MARK: - Print Job Status Info (matches PrintJobStatusDto)
@@ -349,6 +459,87 @@ struct QueueOverview: Codable, Identifiable, Sendable {
     var id: UUID { printerId }
 }
 
+// MARK: - Queued Print Job Response (matches QueuedPrintJobWithFileMetaDto from analytics)
+
+struct QueuedPrintJobResponse: Codable, Identifiable, Sendable {
+    let job: QueuedJobInfo
+    let gcodeFile: QueueGcodeFileMeta?
+    let assignedPrinter: QueuePrinterMeta?
+    let estimatedStartTime: Date?
+    let estimatedCompletionTime: Date?
+
+    var id: String { job.id }
+}
+
+struct QueuedJobInfo: Codable, Identifiable, Sendable {
+    let id: String
+    let name: String
+    let fileName: String?
+    let assignedPrinterId: String?
+    let printerName: String?
+    let printerModel: String?
+    let status: String
+    let priority: Int
+    let queuePosition: Int
+    let estimatedPrintTimeSeconds: Int?
+    let actualStartTimeUtc: Date?
+    let actualEndTimeUtc: Date?
+    let actualPrintTimeSeconds: Int?
+    let failureReason: String?
+    let createdAtUtc: Date
+    let updatedAtUtc: Date?
+    let thumbnailUrl: String?
+    let filamentName: String?
+    let filamentColor: String?
+    let copies: Int
+    let completedCopies: Int
+    let remainingCopies: Int
+
+    var jobStatus: PrintJobStatus? {
+        PrintJobStatus(rawValue: status)
+    }
+
+    var jobUUID: UUID? {
+        UUID(uuidString: id)
+    }
+
+    var isMultiCopy: Bool {
+        copies > 1
+    }
+
+    var estimatedDuration: TimeInterval? {
+        guard let seconds = estimatedPrintTimeSeconds else { return nil }
+        return TimeInterval(seconds)
+    }
+}
+
+struct QueuePrinterMeta: Codable, Sendable {
+    let id: String
+    let name: String
+    let modelName: String
+    let status: String
+    let isOnline: Bool
+}
+
+struct QueueGcodeFileMeta: Codable, Sendable {
+    let id: String
+    let name: String
+    let fileName: String
+    let fileSizeBytes: Int?
+    let materialType: String?
+    let nozzleDiameter: Decimal?
+    let estimatedPrintTimeSeconds: Int?
+    let estimatedFilamentUsageGrams: Int?
+    let thumbnailUrl: String?
+}
+
+struct QueueStats: Codable, Sendable {
+    let totalQueued: Int
+    let totalPrinting: Int
+    let totalPaused: Int
+    let averageWaitTimeMinutes: Int
+}
+
 // MARK: - Statistics Summary (matches StatisticsSummaryDto)
 
 struct StatisticsSummary: Codable, Sendable {
@@ -360,6 +551,23 @@ struct StatisticsSummary: Codable, Sendable {
     let totalCost: Decimal
     let totalFilamentGrams: Double
     let totalPrintHours: Double
+
+    private enum CodingKeys: String, CodingKey {
+        case totalJobs, completedJobs, failedJobs, cancelledJobs
+        case successRate, totalCost, totalFilamentGrams, totalPrintHours
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        totalJobs = try c.decodeIfPresent(Int.self, forKey: .totalJobs) ?? 0
+        completedJobs = try c.decodeIfPresent(Int.self, forKey: .completedJobs) ?? 0
+        failedJobs = try c.decodeIfPresent(Int.self, forKey: .failedJobs) ?? 0
+        cancelledJobs = try c.decodeIfPresent(Int.self, forKey: .cancelledJobs) ?? 0
+        successRate = try c.decodeIfPresent(Double.self, forKey: .successRate) ?? 0
+        totalCost = try c.decodeIfPresent(Decimal.self, forKey: .totalCost) ?? 0
+        totalFilamentGrams = try c.decodeIfPresent(Double.self, forKey: .totalFilamentGrams) ?? 0
+        totalPrintHours = try c.decodeIfPresent(Double.self, forKey: .totalPrintHours) ?? 0
+    }
 }
 
 // MARK: - App Notification (matches NotificationDto from backend)

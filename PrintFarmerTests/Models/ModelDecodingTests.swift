@@ -136,13 +136,12 @@ final class ModelDecodingTests: XCTestCase {
         )
 
         XCTAssertEqual(job.id, UUID(uuidString: "770e8400-e29b-41d4-a716-446655440002"))
-        XCTAssertEqual(job.name, "Benchy")
+        XCTAssertEqual(job.gcodeFileName, "benchy.gcode")
+        XCTAssertEqual(job.name, "benchy.gcode")
         XCTAssertEqual(job.status, .printing)
         XCTAssertEqual(job.priority, 1)
         XCTAssertEqual(job.queuePosition, 1)
-        XCTAssertEqual(job.gcodeFileName, "benchy.gcode")
         XCTAssertEqual(job.assignedPrinterName, "Prusa MK4")
-        XCTAssertTrue(job.autoAssign)
     }
 
     func testPrintJobDecodesTimestamps() throws {
@@ -153,9 +152,8 @@ final class ModelDecodingTests: XCTestCase {
 
         XCTAssertNotNil(job.createdAt)
         XCTAssertNotNil(job.updatedAt)
-        XCTAssertNotNil(job.queuedAt)
-        XCTAssertNotNil(job.startedAt)
-        XCTAssertNil(job.completedAt)
+        XCTAssertNotNil(job.actualStartTime)
+        XCTAssertNil(job.actualEndTime)
     }
 
     func testPrintJobDecodesEstimates() throws {
@@ -164,7 +162,7 @@ final class ModelDecodingTests: XCTestCase {
             from: TestJSON.printJob.data(using: .utf8)!
         )
 
-        XCTAssertEqual(job.estimatedPrintTime, 3600.0)
+        XCTAssertEqual(job.estimatedPrintTime, "01:00:00")
         XCTAssertEqual(job.estimatedFilamentUsage, 15.5)
         XCTAssertEqual(job.estimatedCost, 2.50)
     }
@@ -198,12 +196,11 @@ final class ModelDecodingTests: XCTestCase {
             from: TestJSON.printJobQueued.data(using: .utf8)!
         )
 
-        XCTAssertEqual(job.name, "Phone Case")
+        XCTAssertEqual(job.gcodeFileName, "phone_case.gcode")
         XCTAssertEqual(job.status, .queued)
         XCTAssertEqual(job.priority, 2)
         XCTAssertNil(job.assignedPrinterId)
-        XCTAssertNil(job.assignedPrinterName)
-        XCTAssertNil(job.startedAt)
+        XCTAssertNil(job.actualStartTime)
         XCTAssertNil(job.estimatedPrintTime)
         XCTAssertFalse(job.isMultiCopy)
         XCTAssertEqual(job.remainingCopies, 1)
@@ -296,37 +293,37 @@ final class ModelDecodingTests: XCTestCase {
     // MARK: - Enums
 
     func testPrinterBackendRawValues() {
-        XCTAssertEqual(PrinterBackend.unknown.rawValue, 0)
-        XCTAssertEqual(PrinterBackend.moonraker.rawValue, 1)
-        XCTAssertEqual(PrinterBackend.prusaLink.rawValue, 2)
-        XCTAssertEqual(PrinterBackend.sdcp.rawValue, 3)
-        XCTAssertEqual(PrinterBackend.octoPrint.rawValue, 4)
-        XCTAssertEqual(PrinterBackend.flashForge.rawValue, 5)
+        XCTAssertEqual(PrinterBackend.unknown.rawValue, "Unknown")
+        XCTAssertEqual(PrinterBackend.moonraker.rawValue, "Moonraker")
+        XCTAssertEqual(PrinterBackend.prusaLink.rawValue, "PrusaLink")
+        XCTAssertEqual(PrinterBackend.sdcp.rawValue, "SDCP")
+        XCTAssertEqual(PrinterBackend.octoPrint.rawValue, "OctoPrint")
+        XCTAssertEqual(PrinterBackend.flashForge.rawValue, "FlashForge")
     }
 
     func testPrintJobStatusRawValues() {
-        XCTAssertEqual(PrintJobStatus.queued.rawValue, 0)
-        XCTAssertEqual(PrintJobStatus.assigned.rawValue, 1)
-        XCTAssertEqual(PrintJobStatus.starting.rawValue, 2)
-        XCTAssertEqual(PrintJobStatus.printing.rawValue, 3)
-        XCTAssertEqual(PrintJobStatus.paused.rawValue, 4)
-        XCTAssertEqual(PrintJobStatus.completed.rawValue, 5)
-        XCTAssertEqual(PrintJobStatus.failed.rawValue, 6)
-        XCTAssertEqual(PrintJobStatus.cancelled.rawValue, 7)
+        XCTAssertEqual(PrintJobStatus.queued.rawValue, "Queued")
+        XCTAssertEqual(PrintJobStatus.assigned.rawValue, "Assigned")
+        XCTAssertEqual(PrintJobStatus.starting.rawValue, "Starting")
+        XCTAssertEqual(PrintJobStatus.printing.rawValue, "Printing")
+        XCTAssertEqual(PrintJobStatus.paused.rawValue, "Paused")
+        XCTAssertEqual(PrintJobStatus.completed.rawValue, "Completed")
+        XCTAssertEqual(PrintJobStatus.failed.rawValue, "Failed")
+        XCTAssertEqual(PrintJobStatus.cancelled.rawValue, "Cancelled")
     }
 
     func testPrintJobPriorityRawValues() {
-        XCTAssertEqual(PrintJobPriority.low.rawValue, 0)
-        XCTAssertEqual(PrintJobPriority.normal.rawValue, 1)
-        XCTAssertEqual(PrintJobPriority.high.rawValue, 2)
-        XCTAssertEqual(PrintJobPriority.urgent.rawValue, 3)
+        XCTAssertEqual(PrintJobPriority.low.rawValue, "Low")
+        XCTAssertEqual(PrintJobPriority.normal.rawValue, "Normal")
+        XCTAssertEqual(PrintJobPriority.high.rawValue, "High")
+        XCTAssertEqual(PrintJobPriority.urgent.rawValue, "Urgent")
     }
 
     func testMotionTypeRawValues() {
-        XCTAssertEqual(MotionType.cartesian.rawValue, 0)
-        XCTAssertEqual(MotionType.coreXY.rawValue, 1)
-        XCTAssertEqual(MotionType.delta.rawValue, 2)
-        XCTAssertEqual(MotionType.polar.rawValue, 3)
+        XCTAssertEqual(MotionType.cartesian.rawValue, "Cartesian")
+        XCTAssertEqual(MotionType.coreXY.rawValue, "CoreXY")
+        XCTAssertEqual(MotionType.delta.rawValue, "Delta")
+        XCTAssertEqual(MotionType.unknown.rawValue, "Unknown")
     }
 
     // MARK: - Edge Cases
@@ -463,26 +460,24 @@ final class ModelDecodingTests: XCTestCase {
     }
 
     func testPrintJobRemainingCopiesNeverNegative() throws {
-        // Edge case: completedCopies > copies (shouldn't happen but be safe)
         let json = """
         {
             "id": "990e8400-e29b-41d4-a716-446655440004",
-            "name": "Overshoot",
-            "status": 5,
+            "status": "Completed",
             "priority": 1,
             "queuePosition": 1,
             "gcodeFileName": "test.gcode",
+            "assignedPrinterName": "",
             "createdAt": "2025-07-17T09:00:00Z",
             "updatedAt": "2025-07-17T09:00:00Z",
-            "queuedAt": "2025-07-17T09:00:00Z",
-            "autoAssign": true,
             "copies": 2,
-            "completedCopies": 5
+            "completedCopies": 5,
+            "remainingCopies": 0
         }
         """
 
         let job = try decoder.decode(PrintJob.self, from: json.data(using: .utf8)!)
-        XCTAssertEqual(job.remainingCopies, 0, "remainingCopies should never be negative")
+        XCTAssertEqual(job.remainingCopies, 0, "remainingCopies should be 0 when backend reports 0")
     }
 
     func testPrintJobIsMultiCopyFalseForSingleCopy() throws {

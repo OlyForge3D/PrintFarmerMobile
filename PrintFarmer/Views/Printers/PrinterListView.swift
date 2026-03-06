@@ -13,6 +13,16 @@ struct PrinterListView: View {
                 if viewModel.isLoading && viewModel.printers.isEmpty {
                     ProgressView("Loading printers…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.errorMessage, viewModel.printers.isEmpty {
+                    ContentUnavailableView {
+                        Label("Error", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Retry") {
+                            Task { await viewModel.loadPrinters() }
+                        }
+                    }
                 } else if viewModel.printers.isEmpty {
                     EmptyStateView(
                         icon: "printer",
@@ -124,8 +134,8 @@ private struct FilterChip: View {
                 .font(.caption.weight(.medium))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12), in: Capsule())
-                .foregroundStyle(isSelected ? .white : .primary)
+                .background(isSelected ? Color.pfAccent : Color.pfBorder.opacity(0.5), in: Capsule())
+                .foregroundStyle(isSelected ? .white : Color.pfTextPrimary)
         }
         .buttonStyle(.plain)
     }
