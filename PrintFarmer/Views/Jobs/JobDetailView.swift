@@ -90,16 +90,17 @@ struct JobDetailView: View {
                 }
             }
 
-            if viewModel.isActive, let progress = job.progressPercentage {
+            if viewModel.isActive {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Progress")
                         .font(.headline)
 
-                    PrintProgressBar(progress: progress / 100.0, height: 12, color: progressColor(for: job))
-
-                    if let eta = job.estimatedPrintTime, let started = job.startedAt {
+                    if let eta = job.estimatedPrintTime?.timeSpanSeconds, let started = job.actualStartTime {
                         let elapsed = Date.now.timeIntervalSince(started)
                         let remaining = max(0, eta - elapsed)
+                        let progress = eta > 0 ? min(1.0, elapsed / eta) : 0
+                        PrintProgressBar(progress: progress, height: 12, color: progressColor(for: job))
+
                         if remaining > 0 {
                             HStack {
                                 Spacer()
@@ -142,7 +143,7 @@ struct JobDetailView: View {
                     }
                 }
 
-                if let priority = PrintJobPriority(rawValue: job.priority) {
+                if let priority = PrintJobPriority.from(intValue: job.priority) {
                     Divider()
                     infoRow(label: "Priority", value: priorityLabel(priority), icon: "flag")
                 }
@@ -154,13 +155,9 @@ struct JobDetailView: View {
 
                 if let eta = job.estimatedPrintTime {
                     Divider()
-                    infoRow(label: "Est. Time", value: eta.durationFormatted, icon: "clock")
+                    infoRow(label: "Est. Time", value: eta.timeSpanFormatted, icon: "clock")
                 }
 
-                if let project = job.projectName {
-                    Divider()
-                    infoRow(label: "Project", value: project, icon: "folder")
-                }
             }
             .padding()
             .background(.background, in: RoundedRectangle(cornerRadius: 12))
@@ -181,19 +178,19 @@ struct JobDetailView: View {
             VStack(spacing: 0) {
                 infoRow(label: "Created", value: job.createdAt.formatted(date: .abbreviated, time: .shortened), icon: "calendar")
 
-                if let started = job.startedAt {
+                if let started = job.actualStartTime {
                     Divider()
                     infoRow(label: "Started", value: started.formatted(date: .abbreviated, time: .shortened), icon: "play.circle")
                 }
 
-                if let completed = job.completedAt {
+                if let completed = job.actualEndTime {
                     Divider()
                     infoRow(label: "Completed", value: completed.formatted(date: .abbreviated, time: .shortened), icon: "checkmark.circle")
                 }
 
-                if let actual = job.actualPrintTime, actual > 0 {
+                if let actual = job.actualPrintTime {
                     Divider()
-                    infoRow(label: "Print Time", value: actual.durationFormatted, icon: "timer")
+                    infoRow(label: "Print Time", value: actual.timeSpanFormatted, icon: "timer")
                 }
             }
             .padding()

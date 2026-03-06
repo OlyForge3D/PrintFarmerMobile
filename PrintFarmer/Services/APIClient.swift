@@ -12,12 +12,37 @@ actor APIClient {
     /// Key used to persist the server URL across launches.
     static let serverURLKey = "pf_server_url"
 
+    /// ISO 8601 formatter with fractional seconds (matches ASP.NET Core output).
+    private static let iso8601WithFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    /// ISO 8601 formatter without fractional seconds (fallback).
+    private static let iso8601Plain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
     init(baseURL: URL, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.session = session
 
         self.decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        // ASP.NET Core can emit fractional seconds; the built-in .iso8601 strategy
+        // rejects them, so we use a custom strategy that tries both formats.
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let text = try container.decode(String.self)
+            if let date = Self.iso8601WithFractional.date(from: text) { return date }
+            if let date = Self.iso8601Plain.date(from: text) { return date }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Cannot decode date string: \(text)"
+            )
+        }
 
         self.encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -34,6 +59,10 @@ actor APIClient {
 
     func currentBaseURL() -> URL {
         baseURL
+    }
+
+    func currentAccessToken() -> String? {
+        accessToken
     }
 
     /// Restores a previously-saved server URL from UserDefaults.
@@ -57,8 +86,32 @@ actor APIClient {
         return try await execute(request)
     }
 
-    func post(_ path: String) async throws {
+    func getData(_ path: String) async throws -> Data {
+        let request = try buildRequest(path: path, method: "GET")
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    func post<T: Decodable & Sendable>(_ path: String) async throws -> T {
         let request = try buildRequest(path: path, method: "POST")
+        return try await execute(request)
+    }
+
+    func postVoid(_ path: String) async throws {
+        let request = try buildRequest(path: path, method: "POST")
+        try await executeVoid(request)
+    }
+
+    func putVoid(_ path: String) async throws {
+        let request = try buildRequest(path: path, method: "PUT")
+        try await executeVoid(request)
+    }
+
+    func putVoid<B: Encodable & Sendable>(_ path: String, body: B) async throws {
+        var request = try buildRequest(path: path, method: "PUT")
+        request.httpBody = try encoder.encode(body)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         try await executeVoid(request)
     }
 

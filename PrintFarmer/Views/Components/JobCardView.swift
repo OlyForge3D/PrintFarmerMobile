@@ -27,9 +27,12 @@ struct JobCardView: View {
             }
 
             // Progress (if active)
-            if job.status == .printing || job.status == .starting,
-               let progress = job.progressPercentage {
-                PrintProgressBar(progress: progress / 100.0, height: 6)
+            if job.status == .printing || job.status == .starting {
+                if let eta = job.estimatedPrintTime?.timeSpanSeconds,
+                   let started = job.actualStartTime, eta > 0 {
+                    let elapsed = Date.now.timeIntervalSince(started)
+                    PrintProgressBar(progress: min(1.0, elapsed / eta), height: 6)
+                }
             }
 
             // Metadata row
@@ -41,7 +44,7 @@ struct JobCardView: View {
                 }
 
                 if let eta = job.estimatedPrintTime {
-                    Label(eta.durationFormatted, systemImage: "clock")
+                    Label(eta.timeSpanFormatted, systemImage: "clock")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

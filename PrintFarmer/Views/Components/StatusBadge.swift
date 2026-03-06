@@ -46,7 +46,11 @@ extension StatusBadge {
     }
 
     /// Creates a badge from a job status enum.
-    init(jobStatus: PrintJobStatus) {
+    init(jobStatus: PrintJobStatus?) {
+        guard let jobStatus else {
+            self.init(text: "Unknown", color: .gray)
+            return
+        }
         switch jobStatus {
         case .queued:
             self.init(text: "Queued", color: .secondary)

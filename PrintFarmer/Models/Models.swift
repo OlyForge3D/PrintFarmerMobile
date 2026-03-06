@@ -2,44 +2,167 @@ import Foundation
 
 // MARK: - Enums
 
-enum PrinterBackend: Int, Codable, Sendable {
-    case unknown = 0
-    case moonraker = 1
-    case prusaLink = 2
-    case sdcp = 3
-    case octoPrint = 4
-    case flashForge = 5
+enum PrinterBackend: String, Codable, Sendable {
+    case unknown = "Unknown"
+    case moonraker = "Moonraker"
+    case prusaLink = "PrusaLink"
+    case sdcp = "SDCP"
+    case octoPrint = "OctoPrint"
+    case flashForge = "FlashForge"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self),
+           let value = Self(rawValue: str) {
+            self = value
+        } else if let num = try? container.decode(Int.self) {
+            switch num {
+            case 0: self = .unknown
+            case 1: self = .moonraker
+            case 2: self = .prusaLink
+            case 3: self = .sdcp
+            case 4: self = .octoPrint
+            case 5: self = .flashForge
+            default: self = .unknown
+            }
+        } else {
+            self = .unknown
+        }
+    }
 }
 
-enum MotionType: Int, Codable, Sendable {
-    case cartesian = 0
-    case coreXY = 1
-    case delta = 2
-    case polar = 3
+enum MotionType: String, Codable, Sendable {
+    case cartesian = "Cartesian"
+    case coreXY = "CoreXY"
+    case delta = "Delta"
+    case unknown = "Unknown"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self),
+           let value = Self(rawValue: str) {
+            self = value
+        } else if let num = try? container.decode(Int.self) {
+            switch num {
+            case 0: self = .cartesian
+            case 1: self = .coreXY
+            case 2: self = .delta
+            default: self = .unknown
+            }
+        } else {
+            self = .unknown
+        }
+    }
 }
 
-enum PrintJobStatus: Int, Codable, Sendable {
-    case queued = 0
-    case assigned = 1
-    case starting = 2
-    case printing = 3
-    case paused = 4
-    case completed = 5
-    case failed = 6
-    case cancelled = 7
+enum PrintJobStatus: String, Codable, Sendable {
+    case queued = "Queued"
+    case assigned = "Assigned"
+    case starting = "Starting"
+    case printing = "Printing"
+    case paused = "Paused"
+    case completed = "Completed"
+    case failed = "Failed"
+    case cancelled = "Cancelled"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self),
+           let value = Self(rawValue: str) {
+            self = value
+        } else if let num = try? container.decode(Int.self) {
+            switch num {
+            case 0: self = .queued
+            case 1: self = .assigned
+            case 2: self = .starting
+            case 3: self = .printing
+            case 4: self = .paused
+            case 5: self = .completed
+            case 6: self = .failed
+            case 7: self = .cancelled
+            default: self = .queued
+            }
+        } else {
+            self = .queued
+        }
+    }
 }
 
-enum PrintJobPriority: Int, Codable, Sendable {
-    case low = 0
-    case normal = 1
-    case high = 2
-    case urgent = 3
+enum PrintJobPriority: String, Codable, Sendable {
+    case low = "Low"
+    case normal = "Normal"
+    case high = "High"
+    case urgent = "Urgent"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self),
+           let value = Self(rawValue: str) {
+            self = value
+        } else if let num = try? container.decode(Int.self) {
+            switch num {
+            case 0: self = .low
+            case 1: self = .normal
+            case 2: self = .high
+            case 3: self = .urgent
+            default: self = .normal
+            }
+        } else {
+            self = .normal
+        }
+    }
+
+    /// Maps the backend integer priority value to the enum.
+    static func from(intValue: Int) -> PrintJobPriority? {
+        switch intValue {
+        case 0: .low
+        case 1: .normal
+        case 2: .high
+        case 3: .urgent
+        default: nil
+        }
+    }
 }
 
-enum AutoPrintState: Int, Codable, Sendable {
-    case none = 0
-    case pendingReady = 1
-    case ready = 2
+enum AutoPrintState: String, Codable, Sendable {
+    case none = "None"
+    case pendingReady = "PendingReady"
+    case ready = "Ready"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self),
+           let value = Self(rawValue: str) {
+            self = value
+        } else if let num = try? container.decode(Int.self) {
+            switch num {
+            case 0: self = .none
+            case 1: self = .pendingReady
+            case 2: self = .ready
+            default: self = .none
+            }
+        } else {
+            self = .none
+        }
+    }
+}
+
+enum NotificationType: String, Codable, Sendable {
+    case jobStarted = "JobStarted"
+    case jobCompleted = "JobCompleted"
+    case jobFailed = "JobFailed"
+    case jobPaused = "JobPaused"
+    case jobResumed = "JobResumed"
+    case queueAlert = "QueueAlert"
+    case systemAlert = "SystemAlert"
+}
+
+enum NotificationFrequency: String, Codable, Sendable {
+    case realTime = "RealTime"
+    case hourly = "Hourly"
+    case daily = "Daily"
+    case weekly = "Weekly"
+    case never = "Never"
 }
 
 // MARK: - Printer (matches CompletePrinterDto from backend)
@@ -102,12 +225,77 @@ struct PrinterSpoolInfo: Codable, Sendable {
     let spoolInUse: Bool?
 }
 
-// MARK: - Print Job
+// MARK: - Printer Status Detail (matches PrinterStatusDto)
+
+struct PrinterStatusDetail: Codable, Sendable {
+    let id: UUID
+    let isOnline: Bool
+    let state: String?
+    let progress: Double?
+    let jobName: String?
+    let thumbnailUrl: String?
+    let cameraStreamUrl: String?
+    let cameraSnapshotUrl: String?
+    let x: Double?
+    let y: Double?
+    let z: Double?
+    let hotendTemp: Double?
+    let bedTemp: Double?
+    let hotendTarget: Double?
+    let bedTarget: Double?
+    let spoolInfo: PrinterSpoolInfo?
+    let mmuStatus: MmuStatus?
+}
+
+// MARK: - MMU Status (matches MmuStatusDto)
+
+struct MmuStatus: Codable, Sendable {
+    let enabled: Bool
+    let isHomed: Bool
+    let activeTool: Int
+    let activeGate: Int
+    let filamentState: String?
+    let action: String?
+    let numGates: Int
+    let hasBypass: Bool
+    let endlessSpool: Bool
+    let clogDetection: Bool
+    let gates: [MmuGate]
+    let mmuType: String
+}
+
+struct MmuGate: Codable, Sendable {
+    let index: Int
+    let status: Int
+    let material: String?
+    let color: String?
+    let filamentName: String?
+    let spoolId: Int
+    let name: String?
+}
+
+// MARK: - Print Job Status Info (matches PrintJobStatusDto)
+
+struct PrintJobStatusInfo: Codable, Sendable {
+    let state: String?
+    let progress: Double?
+    let jobName: String?
+    let thumbnailUrl: String?
+    let error: String?
+}
+
+// MARK: - Command Result (matches backend CommandResult)
+
+struct CommandResult: Codable, Sendable {
+    let success: Bool
+    let message: String?
+}
+
+// MARK: - Print Job (matches JobQueuePrintJobDto)
 
 struct PrintJob: Codable, Identifiable, Sendable {
     let id: UUID
-    let name: String
-    let status: PrintJobStatus
+    let status: PrintJobStatus?
     let priority: Int
     let queuePosition: Int
     let gcodeFileId: UUID?
@@ -116,39 +304,81 @@ struct PrintJob: Codable, Identifiable, Sendable {
     let assignedPrinterName: String?
     let createdAt: Date
     let updatedAt: Date
-    let queuedAt: Date
-    let startedAt: Date?
-    let completedAt: Date?
-    let estimatedPrintTime: TimeInterval?
-    let actualPrintTime: TimeInterval?
+    let actualStartTime: Date?
+    let actualEndTime: Date?
+    let estimatedPrintTime: String?
+    let actualPrintTime: String?
     let estimatedFilamentUsage: Double?
     let actualFilamentUsage: Double?
     let estimatedCost: Decimal?
     let actualCost: Decimal?
     let failureReason: String?
-    let hotendTemperature: Double?
-    let bedTemperature: Double?
-    let progressPercentage: Double?
-    let currentState: String?
-    let requiredCapabilities: [String]?
-    let autoAssign: Bool
-    let preferredPrinterIds: [UUID]?
-    let excludedPrinterIds: [UUID]?
-    let copies: Int
-    let completedCopies: Int
-    let projectId: UUID?
-    let projectName: String?
+    let requiredNozzleDiameter: Double?
+    let requiredMaterialType: String?
+    let spoolmanFilamentId: Int?
     let filamentName: String?
     let filamentVendor: String?
     let filamentColor: String?
+    let copies: Int
+    let completedCopies: Int
+    let remainingCopies: Int
+    let projectFileId: UUID?
 
-    var remainingCopies: Int {
-        max(0, copies - completedCopies)
-    }
+    var name: String { gcodeFileName }
 
     var isMultiCopy: Bool {
         copies > 1
     }
+}
+
+// MARK: - Queue Overview (matches QueueOverviewDto)
+
+struct QueueOverview: Codable, Identifiable, Sendable {
+    let printerId: UUID
+    let printerName: String
+    let printerModel: String
+    let modelAliases: [String]?
+    let isAvailable: Bool
+    let queuedJobsCount: Int
+    let currentJobId: UUID?
+    let currentJobName: String?
+    let estimatedCompletionTime: Date?
+    let nozzleDiameter: Double?
+    let supportedMaterials: [String]?
+
+    var id: UUID { printerId }
+}
+
+// MARK: - Statistics Summary (matches StatisticsSummaryDto)
+
+struct StatisticsSummary: Codable, Sendable {
+    let totalJobs: Int
+    let completedJobs: Int
+    let failedJobs: Int
+    let cancelledJobs: Int
+    let successRate: Double
+    let totalCost: Decimal
+    let totalFilamentGrams: Double
+    let totalPrintHours: Double
+}
+
+// MARK: - App Notification (matches NotificationDto from backend)
+
+struct AppNotification: Codable, Identifiable, Sendable {
+    let id: String
+    let userId: UUID
+    let jobId: UUID?
+    let type: NotificationType
+    let subject: String
+    let body: String
+    let isRead: Bool
+    let createdAt: Date
+    let readAt: Date?
+    let expiresAt: Date?
+}
+
+struct UnreadCountResponse: Codable, Sendable {
+    let unreadCount: Int
 }
 
 // MARK: - Location
