@@ -4,14 +4,13 @@ import SwiftUI
 struct PFarmApp: App {
     @State private var router = AppRouter()
     @State private var authViewModel: AuthViewModel
-
-    private let apiClient: APIClient
+    @State private var services: ServiceContainer
 
     init() {
         let defaultURL = APIClient.savedBaseURL() ?? AppConfig.baseURL
-        let client = APIClient(baseURL: defaultURL)
-        self.apiClient = client
-        let authService = AuthService(apiClient: client)
+        let container = ServiceContainer(baseURL: defaultURL)
+        _services = State(initialValue: container)
+        let authService = AuthService(apiClient: container.apiClient)
         _authViewModel = State(initialValue: AuthViewModel(authService: authService))
     }
 
@@ -22,6 +21,7 @@ struct PFarmApp: App {
                     ContentView()
                         .environment(router)
                         .environment(authViewModel)
+                        .environment(services)
                 } else {
                     LoginView()
                         .environment(authViewModel)

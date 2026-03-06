@@ -1,23 +1,24 @@
 import Foundation
 
-@Observable
-final class JobListViewModel: @unchecked Sendable {
-    var jobs: [PrintJob] = []
+@MainActor @Observable
+final class JobListViewModel {
+    var queueOverview: [QueueOverview] = []
     var isLoading = false
     var errorMessage: String?
 
-    private let jobService: JobService
+    private var jobService: (any JobServiceProtocol)?
 
-    init(jobService: JobService) {
+    func configure(jobService: any JobServiceProtocol) {
         self.jobService = jobService
     }
 
     func loadJobs() async {
+        guard let jobService else { return }
         isLoading = true
         errorMessage = nil
 
         do {
-            jobs = try await jobService.list()
+            queueOverview = try await jobService.list()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -26,11 +27,34 @@ final class JobListViewModel: @unchecked Sendable {
     }
 
     func cancelJob(id: UUID) async {
+        guard let jobService else { return }
         do {
             try await jobService.cancel(id: id)
             await loadJobs()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func abortJob(id: UUID) async {
+        guard let jobService else { return }
+        do {
+            try await jobService.abort(id: id)
+            await loadJobs()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    var printersWithActiveJobs: [QueueOverview] {
+        queueOverview.filter { $0.currentJobId != nil }
+    }
+
+    var printersWithQueuedJobs: [QueueOverview] {
+        queueOverview.filter { $0.queuedJobsCount > 0 }
+    }
+
+    var availablePrinters: [QueueOverview] {
+        queueOverview.filter { $0.isAvailable && $0.currentJobId == nil }
     }
 }

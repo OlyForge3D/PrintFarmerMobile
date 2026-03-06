@@ -19,9 +19,10 @@ struct ContentView: View {
                 .tabItem { Label("Jobs", systemImage: "list.bullet.rectangle") }
                 .tag(AppTab.jobs)
 
-            LocationListView()
-                .tabItem { Label("Locations", systemImage: "building.2") }
-                .tag(AppTab.locations)
+            NotificationsView()
+                .tabItem { Label("Alerts", systemImage: "bell") }
+                .tag(AppTab.notifications)
+                .badge(router.notificationBadgeCount)
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gear") }
