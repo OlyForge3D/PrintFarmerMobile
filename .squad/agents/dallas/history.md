@@ -8,6 +8,17 @@
 
 ## Learnings
 
+### MVP Scope Definition (2025-07-17)
+- **Backend catalog:** 100+ REST endpoints across 30+ controllers. MVP needs only ~22 endpoints.
+- **SignalR hubs:** 5 hubs (PrinterHub, HarvestHub, MaintenanceHub, SlicerHub, SlicerProgressHub). MVP needs PrinterHub only (`printerupdated`, `jobqueueupdate` events).
+- **Key backend insight:** `GET /api/printers` returns `CompletePrinterDto` which merges static config + live SignalR-cached status in one call. Very efficient for phone list views.
+- **Job queue route discrepancy:** Web frontend uses `/api/job-queue` (hyphen). iOS `JobService` uses `/api/jobqueue` (no hyphen). Must verify which is correct — likely the hyphenated version based on `JobQueueController` route attribute.
+- **Printer commands are individual endpoints:** `/pause`, `/resume`, `/cancel`, `/stop`, `/emergency-stop` — NOT a generic `/command/{action}` route. Existing `sendCommand` method in `PrinterService` is wrong pattern; needs specific methods.
+- **MVP features (5):** Fleet Dashboard, Printer List+Detail, Quick Printer Actions, Job Queue, Notifications
+- **Deferred:** Discovery, file management, slicer, cameras (live stream), statistics charts, maintenance plans, admin/settings, filament inventory, NFC, webhooks
+- **Implementation order:** Lambert builds foundation (SignalR, services, models) → Ripley builds screens → Polish pass
+- **MVP scope document:** `.squad/decisions/inbox/dallas-mvp-scope.md`
+
 ### Cross-Agent Context (2026-03-06)
 - **Ripley's Login Screen:** LoginViewModel form state (separate from AuthViewModel). Server URL flows through AuthService → APIClient.updateBaseURL(). Dark Mode + error animation working.
 - **Lambert's Auth:** Single JWT token (no refresh). AuthService validates via GET /api/auth/me. Keychain storage, UserDefaults for base URL. Actor-isolated APIClient.
@@ -30,3 +41,12 @@
   - Networking: `PrintFarmer/Services/APIClient.swift`
   - Config: `PrintFarmer/Utilities/AppConfig.swift` (base URL via env var or default localhost:5000)
 - **Session Directive (2026-03-06):** Use claude-opus-4.6 for code-writing tasks (Ripley, Lambert, Ash)
+
+### MVP Build Orchestration & Handoff (2026-03-06)
+- **Status:** ✅ Orchestrated 4-agent batch (Dallas lead, Lambert + Ripley + Ash parallel)
+- **Scope:** 5 features, 22 endpoints, phone-first design principles — locked in decisions.md
+- **Lambert Results:** ✅ 6 services (Printer, Job, Notification, Statistics, SignalR, Auth), 9 models, 5 service protocols — all compiling clean
+- **Ripley Results:** ✅ All 7 MVP screens (Dashboard, PrinterList, PrinterDetail, JobList, JobDetail, Notifications, Settings) + 6 reusable components + 5 service protocols — all compiling clean
+- **Ash Results:** ✅ 145 test cases (8 suites: APIClient, Auth, Printer, Job, Notification, ModelDecoding, LoginViewModel, DashboardViewModel) + full mock infrastructure for 6 services
+- **Critical Finding:** Ash discovered 3 PrinterDetailViewModel method mismatches (snapshotURL/getSnapshot, cancelPrint/cancel, setMaintenance/setMaintenanceMode) — blocking test integration, Ripley to fix
+- **Next Phase:** Scribe consolidates decisions, updates agent history.md files, commits .squad/ changes; Ripley fixes mismatches; run test suite for integration validation

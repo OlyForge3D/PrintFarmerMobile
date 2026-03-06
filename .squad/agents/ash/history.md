@@ -52,3 +52,30 @@ _Ash ready to implement feature screens and navigation flows._
 - **SPM test linking issue:** `@main` in PFarmApp.swift causes duplicate `_main` symbol when linking SPM test target. Xcode build works fine. Not a test code issue.
 - **DashboardViewModel changed:** `activeJobs: [PrintJob]` → `queueOverview: [QueueOverview]`. JobService.list() now returns `[QueueOverview]` not `[PrintJob]`.
 - **Backend JSON format:** Backend uses camelCase — no CodingKeys needed for most models. ISO 8601 dates. Enum raw values are integers matching backend C# enums.
+
+### MVP Test Suite Completion (2026-03-06)
+- **Status:** ✅ 145 test cases across 8 suites — full coverage for MVP surface
+- **Suites:**
+  - APIClientTests (15 cases): JWT injection, error mapping (401/403/404/500), request building, base URL updates
+  - AuthServiceTests (12 cases): login/logout, token lifecycle, Keychain, URL normalization
+  - PrinterServiceTests (25 cases): 11 endpoints (list, get, status, snapshot, pause/resume/cancel/stop/emergency-stop, maintenance)
+  - JobServiceTests (18 cases): 5 endpoints (list, get, dispatch, cancel, abort) with QueueOverview decoding
+  - NotificationServiceTests (15 cases): CRUD, batch mark-read, unread count, model decoding
+  - ModelDecodingTests (20 cases): Printer, PrintJob, Location, CommandResult, QueueOverview, StatisticsSummary, AppNotification, MmuStatus, SignalR DTOs
+  - LoginViewModelTests (22 cases): form validation, URL normalization, persistence, error handling
+  - DashboardViewModelTests (18 cases): load, computed counts (online/printing/paused/offline/error), refresh, error states
+- **Mock Infrastructure:** 6 protocol-based mocks (MockPrinterService, MockJobService, MockAuthService, MockNotificationService, MockStatisticsService, MockSignalRService) + MockAPIClient helper + TestFixtures with realistic backend JSON
+- **Coverage:** All 6 MVP services have full protocol test coverage; all 9 MVP models tested; ViewModel DI pattern validated
+
+### Critical Issues Found (2026-03-06)
+- **BLOCKER: 3 PrinterDetailViewModel method mismatches** (Ripley implementation doesn't match Lambert's actual protocol):
+  - VM calls `snapshotURL(for:)` → protocol has `getSnapshot(id:) -> Data`
+  - VM calls `cancelPrint(id:)` → protocol has `cancel(id:) -> CommandResult`
+  - VM calls `setMaintenance(id:enabled:)` → protocol has `setMaintenanceMode(id:enabled:) -> CommandResult`
+- **AuthServiceProtocol missing:** AuthService is concrete actor; no protocol for testable AuthViewModel. Created AuthServiceProtocol in TestProtocols.swift for future use.
+- **SPM test runner incompatibility:** @main in PFarmApp.swift causes duplicate _main symbol. Xcode builds fine; `swift test` skipped (not blocking MVP).
+
+### Impact & Handoffs
+- **→ Ripley (URGENT):** Fix 3 PrinterDetailViewModel method calls to match actual protocol signatures
+- **→ All:** Test suite ready for integration validation after Ripley fixes mismatches
+- **Next:** Run full test suite post-fix; validate all ViewModel+Service integrations

@@ -50,3 +50,35 @@
 - Auth models: `AuthResponse` (success/token/user/error), `LoginRequest` (usernameOrEmail/password/rememberMe), `UserDTO`
 - NetworkError has friendly variants: `.noConnection`, `.serverUnreachable`, `.timeout`, `.authFailed(String)`
 - **Session Directive (2026-03-06):** Use claude-opus-4.6 for code-writing tasks (Ripley, Lambert, Ash)
+
+### MVP Screens Build (2026-03-06)
+- **All 7 MVP screens built:** Dashboard, PrinterList, PrinterDetail, JobList, JobDetail, Notifications, Settings
+- **6 reusable components:** StatusBadge, TemperatureView, PrintProgressBar, PrinterCardView, JobCardView, EmptyStateView
+- **5 service protocols defined:** PrinterServiceProtocol, JobServiceProtocol, NotificationServiceProtocol, StatisticsServiceProtocol, SignalRServiceProtocol — in `Protocols/` directory
+- **ViewModel pattern:** `@MainActor @Observable` with `configure()` for protocol-typed service injection. Services are optionals set via `.task` modifier in views.
+- **Navigation wiring:** Each tab wraps a `NavigationStack(path:)` bound to AppRouter. Detail views pushed via `AppDestination` enum with `.navigationDestination(for:)`.
+- **Tab change:** Replaced Locations tab (not MVP) with Notifications tab. Locations tab still exists but unused.
+- **PFarmApp now creates ServiceContainer** and injects it as `@Environment` alongside router and authViewModel.
+- **Platform guards:** iOS-only APIs (`navigationBarTitleDisplayMode`, `topBarTrailing`, `UIImage`, `UINotificationFeedbackGenerator`) wrapped in `#if os(iOS)` / `#if canImport(UIKit)` for SPM macOS build compatibility.
+- **Lambert parallel work:** Lambert already built real NotificationService, StatisticsService, expanded PrinterService/JobService, full SignalR WebSocket implementation, and new models (PrinterStatusDetail, PrintJobStatusInfo, QueueOverview, MmuStatus, CommandResult, AppNotification). Had to reconcile my protocols and views with his actual types.
+- **Key model differences from spec:** `AppNotification.id` is `String` not `UUID`; fields are `subject`/`body` not `title`/`message`; `NotificationType` uses job-specific cases (JobStarted, JobCompleted, etc.); `StatisticsSummary` has no printer counts (only job stats); `JobService.list()` returns `[QueueOverview]` (printer-centric) not `[PrintJob]` (job-centric).
+- **JobListView redesign:** Shows QueueOverview (per-printer queue status) with Active/Queued/Available sections instead of individual job list, since the API returns printer-centric queue data.
+- **DashboardView active jobs:** Shows printers currently running jobs (from Printer model's jobName/progress fields) rather than individual PrintJob items.
+- **Global `destinationView(for:)` helper:** Marked `@MainActor` to avoid Swift 6 actor isolation warnings when constructing views with `@State` init parameters.
+- **Snapshot handling:** PrinterDetailView loads snapshot as `Data` from `getSnapshot(id:)` and converts to `UIImage` on iOS. No URL-based `AsyncImage`.
+
+### Critical Findings from Ash (2026-03-06 Post-Build)
+
+**3 PrinterDetailViewModel Method Mismatches Found by Test Coverage:**
+
+Ash's test suite discovered that PrinterDetailViewModel calls methods that don't exist on PrinterServiceProtocol:
+
+| Issue | ViewModel Calls | Protocol Has | Status |
+|-------|-----------------|--------------|--------|
+| 1 | `snapshotURL(for:)` | `getSnapshot(id:) -> Data` | ⚠️ Method name mismatch; return type (URL vs Data) requires ViewModel conversion logic |
+| 2 | `cancelPrint(id:)` | `cancel(id:) -> CommandResult` | ⚠️ Method name mismatch (cancelPrint vs cancel) |
+| 3 | `setMaintenance(id:enabled:)` | `setMaintenanceMode(id:enabled:) -> CommandResult` | ⚠️ Method name mismatch (setMaintenance vs setMaintenanceMode) |
+
+**Action Required:** Update PrinterDetailViewModel method calls to match PrinterServiceProtocol signatures. This is blocking the test suite integration.
+
+**Context:** Lambert built the actual PrinterServiceProtocol with these exact method names. The ViewModel was built against an earlier protocol spec. Ripley needs to reconcile the implementation.
