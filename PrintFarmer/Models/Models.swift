@@ -11,6 +11,13 @@ enum PrinterBackend: Int, Codable, Sendable {
     case flashForge = 5
 }
 
+enum MotionType: Int, Codable, Sendable {
+    case cartesian = 0
+    case coreXY = 1
+    case delta = 2
+    case polar = 3
+}
+
 enum PrintJobStatus: Int, Codable, Sendable {
     case queued = 0
     case assigned = 1
@@ -35,64 +42,49 @@ enum AutoPrintState: Int, Codable, Sendable {
     case ready = 2
 }
 
-// MARK: - Printer
+// MARK: - Printer (matches CompletePrinterDto from backend)
 
 struct Printer: Codable, Identifiable, Sendable {
     let id: UUID
     let name: String
     let notes: String?
-    let serverUrl: String
-    let originalServerUrl: String?
-    let backendPort: Int
-    let frontendPort: Int?
-    let backend: PrinterBackend
-    let apiKey: String?
-    let username: String?
-    let password: String?
-    let cameraStreamUrl: String?
-    let cameraSnapshotUrl: String?
+
+    // Catalog
     let manufacturerId: UUID?
     let manufacturerName: String?
     let modelId: UUID?
     let modelName: String?
-    let locationId: UUID?
+    let motionType: MotionType?
 
-    // Status
+    // Config
+    let backend: PrinterBackend
+    let apiKey: String?
+    let originalServerUrl: String?
+    let backendPort: Int
+    let frontendPort: Int?
+    let inMaintenance: Bool
+    let isEnabled: Bool
+
+    // Live status (from SignalR cache)
     let isOnline: Bool
     let state: String?
     let progress: Double?
     let jobName: String?
-    let isAvailable: Bool
-    let inMaintenance: Bool
-    let isEnabled: Bool
+    let thumbnailUrl: String?
+    let cameraStreamUrl: String?
 
-    // Hardware
-    let maxBuildVolumeX: Double?
-    let maxBuildVolumeY: Double?
-    let maxBuildVolumeZ: Double?
-    let hasHeatedBed: Bool
-    let hasEnclosure: Bool
-    let multiMaterial: Bool
-    let supportsAutoLeveling: Bool
-    let maxPrintSpeed: Int?
-    let maxBedTemp: Int?
-
-    // Live telemetry
+    // Telemetry
+    let x: Double?
+    let y: Double?
+    let z: Double?
     let hotendTemp: Double?
     let bedTemp: Double?
     let hotendTarget: Double?
     let bedTarget: Double?
-    let x: Double?
-    let y: Double?
-    let z: Double?
+    let homedAxes: String?
 
     // Metadata
-    let thumbnailUrl: String?
     let spoolInfo: PrinterSpoolInfo?
-    let currentMaterial: String?
-    let currentSpoolId: Int?
-    let autoPrintEnabled: Bool
-    let autoPrintState: AutoPrintState
     let backendUrl: String?
     let frontendUrl: String?
     let location: LocationSummary?
@@ -177,7 +169,7 @@ struct LocationSummary: Codable, Sendable {
     let description: String?
 }
 
-// MARK: - Auth
+// MARK: - Auth (matches AuthenticationResult from backend)
 
 struct LoginRequest: Codable, Sendable {
     let usernameOrEmail: String
@@ -185,12 +177,12 @@ struct LoginRequest: Codable, Sendable {
     let rememberMe: Bool
 }
 
-struct LoginResponse: Codable, Sendable {
-    let accessToken: String
-    let refreshToken: String
-    let accessTokenExpires: Date
-    let refreshTokenExpires: Date
-    let user: UserDTO
+struct AuthResponse: Codable, Sendable {
+    let success: Bool
+    let token: String?
+    let expiresAt: Date?
+    let user: UserDTO?
+    let error: String?
 }
 
 struct UserDTO: Codable, Identifiable, Sendable {

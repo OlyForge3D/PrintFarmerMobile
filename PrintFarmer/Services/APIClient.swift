@@ -6,8 +6,11 @@ actor APIClient {
     private let session: URLSession
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
-    private let baseURL: URL
+    private var baseURL: URL
     private var accessToken: String?
+
+    /// Key used to persist the server URL across launches.
+    static let serverURLKey = "pf_server_url"
 
     init(baseURL: URL, session: URLSession = .shared) {
         self.baseURL = baseURL
@@ -22,6 +25,22 @@ actor APIClient {
 
     func setAccessToken(_ token: String?) {
         self.accessToken = token
+    }
+
+    func updateBaseURL(_ url: URL) {
+        self.baseURL = url
+        UserDefaults.standard.set(url.absoluteString, forKey: Self.serverURLKey)
+    }
+
+    func currentBaseURL() -> URL {
+        baseURL
+    }
+
+    /// Restores a previously-saved server URL from UserDefaults.
+    static func savedBaseURL() -> URL? {
+        guard let saved = UserDefaults.standard.string(forKey: serverURLKey),
+              let url = URL(string: saved) else { return nil }
+        return url
     }
 
     // MARK: - HTTP Methods
@@ -40,8 +59,7 @@ actor APIClient {
 
     func post(_ path: String) async throws {
         let request = try buildRequest(path: path, method: "POST")
-        let (_, response) = try await session.data(for: request)
-        try validateResponse(response)
+        try await executeVoid(request)
     }
 
     func put<T: Decodable & Sendable, B: Encodable & Sendable>(_ path: String, body: B) async throws -> T {
@@ -53,8 +71,7 @@ actor APIClient {
 
     func delete(_ path: String) async throws {
         let request = try buildRequest(path: path, method: "DELETE")
-        let (_, response) = try await session.data(for: request)
-        try validateResponse(response)
+        try await executeVoid(request)
     }
 
     // MARK: - Internal
@@ -75,8 +92,8 @@ actor APIClient {
     }
 
     private func execute<T: Decodable>(_ request: URLRequest) async throws -> T {
-        let (data, response) = try await session.data(for: request)
-        try validateResponse(response)
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
@@ -84,7 +101,29 @@ actor APIClient {
         }
     }
 
-    private func validateResponse(_ response: URLResponse) throws {
+    private func executeVoid(_ request: URLRequest) async throws {
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
+    }
+
+    private func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        do {
+            return try await session.data(for: request)
+        } catch let error as URLError {
+            switch error.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                throw NetworkError.noConnection
+            case .timedOut:
+                throw NetworkError.timeout
+            case .cannotFindHost, .cannotConnectToHost:
+                throw NetworkError.serverUnreachable
+            default:
+                throw NetworkError.transportError(error)
+            }
+        }
+    }
+
+    private func validateResponse(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
         }
@@ -100,7 +139,8 @@ actor APIClient {
         case 409:
             throw NetworkError.conflict
         case 400...499:
-            throw NetworkError.clientError(http.statusCode)
+            let apiError = try? decoder.decode(APIError.self, from: data)
+            throw NetworkError.clientError(http.statusCode, apiError)
         case 500...599:
             throw NetworkError.serverError(http.statusCode)
         default:
@@ -118,10 +158,15 @@ enum NetworkError: LocalizedError, Sendable {
     case forbidden
     case notFound
     case conflict
-    case clientError(Int)
+    case noConnection
+    case timeout
+    case serverUnreachable
+    case clientError(Int, APIError?)
     case serverError(Int)
     case unexpectedStatus(Int)
     case decodingFailed(Error)
+    case transportError(URLError)
+    case authFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -131,10 +176,16 @@ enum NetworkError: LocalizedError, Sendable {
         case .forbidden: "Access denied"
         case .notFound: "Resource not found"
         case .conflict: "Conflict — resource was modified"
-        case .clientError(let code): "Client error (\(code))"
+        case .noConnection: "No internet connection"
+        case .timeout: "Request timed out"
+        case .serverUnreachable: "Server is unreachable"
+        case .clientError(let code, let apiError):
+            apiError?.detail ?? apiError?.title ?? "Client error (\(code))"
         case .serverError(let code): "Server error (\(code))"
         case .unexpectedStatus(let code): "Unexpected status (\(code))"
         case .decodingFailed(let error): "Failed to decode response: \(error.localizedDescription)"
+        case .transportError(let error): "Network error: \(error.localizedDescription)"
+        case .authFailed(let message): message
         }
     }
 }

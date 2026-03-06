@@ -1,5 +1,7 @@
 import Foundation
 
+/// App-level authentication state that controls whether the user sees
+/// LoginView or the main TabView. Injected via @Environment.
 @Observable
 final class AuthViewModel: @unchecked Sendable {
     var isAuthenticated = false
@@ -7,28 +9,39 @@ final class AuthViewModel: @unchecked Sendable {
     var isLoading = false
     var errorMessage: String?
 
-    private var authService: AuthService?
+    private let authService: AuthService
 
-    func configure(with service: AuthService) {
-        self.authService = service
+    init(authService: AuthService) {
+        self.authService = authService
     }
+
+    // MARK: - Session Restoration
 
     func restoreSession() async {
-        // Session restoration will be wired when ServiceContainer is integrated
+        isLoading = true
+        if let user = await authService.restoreSession() {
+            currentUser = user
+            isAuthenticated = true
+        }
+        isLoading = false
     }
 
-    func login(usernameOrEmail: String, password: String) async {
-        guard let authService else { return }
+    // MARK: - Login / Logout
+
+    func login(serverURL: String, username: String, password: String) async {
         isLoading = true
         errorMessage = nil
 
         do {
             let response = try await authService.login(
-                usernameOrEmail: usernameOrEmail,
+                serverURL: serverURL,
+                username: username,
                 password: password
             )
             currentUser = response.user
             isAuthenticated = true
+        } catch let error as NetworkError {
+            errorMessage = friendlyMessage(for: error)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -37,9 +50,31 @@ final class AuthViewModel: @unchecked Sendable {
     }
 
     func logout() async {
-        guard let authService else { return }
         await authService.logout()
         isAuthenticated = false
         currentUser = nil
+    }
+
+    // MARK: - Helpers
+
+    private func friendlyMessage(for error: NetworkError) -> String {
+        switch error {
+        case .unauthorized:
+            "Invalid username or password."
+        case .forbidden:
+            "Your account does not have access."
+        case .serverError:
+            "The server encountered an error. Please try again."
+        case .invalidURL:
+            "Could not reach the server. Check the URL."
+        case .noConnection:
+            "No internet connection. Check your network."
+        case .serverUnreachable:
+            "Could not reach the server. Check the URL and try again."
+        case .authFailed(let message):
+            message
+        default:
+            error.errorDescription ?? "An unexpected error occurred."
+        }
     }
 }

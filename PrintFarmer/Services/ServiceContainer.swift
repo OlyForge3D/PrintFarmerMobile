@@ -11,14 +11,16 @@ final class ServiceContainer: @unchecked Sendable {
     let locationService: LocationService
     let signalRService: SignalRService
 
-    init(baseURL: URL) {
-        self.apiClient = APIClient(baseURL: baseURL)
+    init(baseURL: URL? = nil) {
+        let resolvedURL = baseURL
+            ?? APIClient.savedBaseURL()
+            ?? AppConfig.baseURL
+        self.apiClient = APIClient(baseURL: resolvedURL)
         self.authService = AuthService(apiClient: apiClient)
         self.printerService = PrinterService(apiClient: apiClient)
         self.jobService = JobService(apiClient: apiClient)
         self.locationService = LocationService(apiClient: apiClient)
-        self.signalRService = SignalRService(serverURL: baseURL) {
-            // Token provider — will be wired once auth flow is complete
+        self.signalRService = SignalRService(serverURL: resolvedURL) {
             nil
         }
     }

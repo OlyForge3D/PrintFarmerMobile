@@ -1,6 +1,25 @@
 import Foundation
 
-// MARK: - API Request DTOs
+// MARK: - Printer Request DTOs
+
+struct UpdatePrinterRequest: Codable, Sendable {
+    var name: String?
+    var serverUrl: String?
+    var notes: String?
+    var manufacturerId: UUID?
+    var modelId: UUID?
+    var backend: PrinterBackend?
+    var apiKey: String?
+    var username: String?
+    var password: String?
+    var cameraStreamUrl: String?
+    var cameraSnapshotUrl: String?
+    var backendPort: Int?
+    var frontendPort: Int?
+    var isEnabled: Bool?
+}
+
+// MARK: - Job Request DTOs
 
 struct CreatePrintJobRequest: Codable, Sendable {
     let name: String

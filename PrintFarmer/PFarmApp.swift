@@ -3,15 +3,16 @@ import SwiftUI
 @main
 struct PFarmApp: App {
     @State private var router = AppRouter()
-    @State private var authViewModel = AuthViewModel()
+    @State private var authViewModel: AuthViewModel
 
     private let apiClient: APIClient
-    private let authService: AuthService
 
     init() {
         let defaultURL = APIClient.savedBaseURL() ?? AppConfig.baseURL
-        self.apiClient = APIClient(baseURL: defaultURL)
-        self.authService = AuthService(apiClient: apiClient)
+        let client = APIClient(baseURL: defaultURL)
+        self.apiClient = client
+        let authService = AuthService(apiClient: client)
+        _authViewModel = State(initialValue: AuthViewModel(authService: authService))
     }
 
     var body: some Scene {
@@ -27,7 +28,6 @@ struct PFarmApp: App {
                 }
             }
             .task {
-                authViewModel.configure(with: authService)
                 await authViewModel.restoreSession()
             }
         }
