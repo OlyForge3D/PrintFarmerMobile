@@ -9,12 +9,14 @@ import AVFoundation
 final class QRSpoolScannerService: SpoolScannerProtocol, @unchecked Sendable {
 
     var isAvailable: Bool {
-        DataScannerViewController.isSupported && DataScannerViewController.isAvailable
+        // DataScannerViewController.isSupported is a compile-time check, safe to call
+        true // Actual availability checked in scan()
     }
 
     func scan() async -> SpoolScanResult {
-        // Check device support
-        guard DataScannerViewController.isSupported else {
+        // Check device support on MainActor where DataScannerViewController properties are isolated
+        let supported = await MainActor.run { DataScannerViewController.isSupported }
+        guard supported else {
             return .error(.notSupported)
         }
 
@@ -62,6 +64,7 @@ final class QRSpoolScannerService: SpoolScannerProtocol, @unchecked Sendable {
         }
     }
 
+    @MainActor
     private static func topViewController(from root: UIViewController) -> UIViewController {
         if let presented = root.presentedViewController {
             return topViewController(from: presented)

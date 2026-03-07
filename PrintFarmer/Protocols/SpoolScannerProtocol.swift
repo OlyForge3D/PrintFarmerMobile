@@ -53,7 +53,7 @@ struct ScannedSpoolData: Sendable {
 
 /// Contract for spool scanning (QR code or NFC).
 /// ViewModels depend on this protocol; concrete services implement device-specific scanning.
-protocol SpoolScannerProtocol: Sendable {
+protocol SpoolScannerProtocol: AnyObject, Sendable {
     var isAvailable: Bool { get }
     func scan() async -> SpoolScanResult
 }
