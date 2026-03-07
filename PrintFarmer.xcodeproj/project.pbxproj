@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		0165CA554584E940BBCF8A15 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 534568DC689B743CE69E44A4 /* EmptyStateView.swift */; };
 		05882F81ABFBD68C96376608 /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D49DAAAE1D5A8AC05429321 /* MockAuthService.swift */; };
+		9496A75515E3FA0FAF3DEB95 /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1706B0E2CB9F9ADFA2B914EB /* AuthViewModelTests.swift */; };
+		BD4B3C1A942D0E9675E2B73A /* JobListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264B18486158F15238D0788D /* JobListViewModelTests.swift */; };
+		C0BEC42C218A8055A23740FD /* JobDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB279A2CAF8BE1C1BD61D6B2 /* JobDetailViewModelTests.swift */; };
+		2C63FB5B0F84E05DBBED37FF /* NotificationsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C832D8E0EECDD622BBEB9A68 /* NotificationsViewModelTests.swift */; };
 		137CA002069C980DF3C582AF /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD48733BD08251D5B57CCA3 /* TestFixtures.swift */; };
 		14548BCF3A6E9E12FB4673B2 /* ModelDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC1B357CBA7677A4D4E3D61 /* ModelDecodingTests.swift */; };
 		174F8F2B2DBC083C8D2425E9 /* ServiceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D136C4B21A734AB1D5FDBFD /* ServiceError.swift */; };
@@ -96,6 +100,10 @@
 		007F057316513D6585B3D53A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		E2F3A4B5C6D7E8F9A0B1C2D3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		016588B049630508F9B77403 /* LoginViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModelTests.swift; sourceTree = "<group>"; };
+		1706B0E2CB9F9ADFA2B914EB /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
+		264B18486158F15238D0788D /* JobListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobListViewModelTests.swift; sourceTree = "<group>"; };
+		CB279A2CAF8BE1C1BD61D6B2 /* JobDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailViewModelTests.swift; sourceTree = "<group>"; };
+		C832D8E0EECDD622BBEB9A68 /* NotificationsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewModelTests.swift; sourceTree = "<group>"; };
 		07BDD1556443A5859F5EE43F /* StatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C1D2E3F4A5B6C7D8E9F0A1B2 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
@@ -286,8 +294,12 @@
 		4D7DEC203F06522448F70C97 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				1706B0E2CB9F9ADFA2B914EB /* AuthViewModelTests.swift */,
 				8A79AB745B0C9E1AF64A943D /* DashboardViewModelTests.swift */,
+				CB279A2CAF8BE1C1BD61D6B2 /* JobDetailViewModelTests.swift */,
+				264B18486158F15238D0788D /* JobListViewModelTests.swift */,
 				016588B049630508F9B77403 /* LoginViewModelTests.swift */,
+				C832D8E0EECDD622BBEB9A68 /* NotificationsViewModelTests.swift */,
 				281DF848F7722BE9E0E28A2A /* PrinterDetailViewModelTests.swift */,
 				A59E2A16E7C0B2D793C038A6 /* PrinterListViewModelTests.swift */,
 			);
@@ -583,6 +595,10 @@
 				814473DF28A49641B79766BA /* LoginViewModelTests.swift in Sources */,
 				E0411324A6C10BFCD5EAB595 /* PrinterDetailViewModelTests.swift in Sources */,
 				709F2758FA2B8BF406D1813C /* PrinterListViewModelTests.swift in Sources */,
+				9496A75515E3FA0FAF3DEB95 /* AuthViewModelTests.swift in Sources */,
+				BD4B3C1A942D0E9675E2B73A /* JobListViewModelTests.swift in Sources */,
+				C0BEC42C218A8055A23740FD /* JobDetailViewModelTests.swift in Sources */,
+				2C63FB5B0F84E05DBBED37FF /* NotificationsViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

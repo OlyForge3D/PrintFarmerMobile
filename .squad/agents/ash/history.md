@@ -93,3 +93,15 @@ _Ash ready to implement feature screens and navigation flows._
 - **→ Lambert:** Implement 401 auto-logout, token expiry pre-check, SignalR handler cleanup
 - **→ Ash:** Write AuthViewModel, JobListViewModel, JobDetailViewModel, NotificationsViewModel tests
 - **→ Dallas:** Fix redundant AuthService in PFarmApp.init()
+
+### Test Coverage Extension (2025-07-18)
+- **80 new test cases** across 4 new test suites, bringing total from 146 → 226
+- **New suites:**
+  - JobListViewModelTests (23 cases): load, grouped jobs (active/queued/recent), cancel/abort, error paths, empty state, unconfigured guard
+  - JobDetailViewModelTests (24 cases): load, dispatch/cancel/abort actions, computed properties (canDispatch/canCancel/canAbort/isActive) for each status, action errors, unconfigured guards
+  - NotificationsViewModelTests (22 cases): load, mark read, mark all read (with unread filtering), delete (with local list removal + unread count decrement), error paths, edge cases (no negative unread count, skip markAll when all read)
+  - AuthViewModelTests (11 cases): login success, 401/403/500/network errors, error clearing, logout, session restore, session expired notification auto-logout
+- **TestFixtures extended:** Added QueuedPrintJobResponse fixtures (Printing, Queued, Completed, Failed, Paused, Assigned), AppNotification fixtures (unread, read, failed), StatisticsSummary fixtures. Added factory methods: decodeQueuedPrintJobResponse, decodeAppNotification, decodeStatisticsSummary, decodeAuthResponse, decodeUser.
+- **AuthViewModel testing pattern:** Uses MockURLProtocol integration testing (AuthVM → AuthService → APIClient) since AuthService is a concrete actor without protocol. Different from other VMs which use protocol-based mocks.
+- **No SettingsViewModel or StatisticsViewModel exist** — Settings is view-only, statistics are embedded in DashboardViewModel.
+- **Coverage gaps remaining:** JobService, StatisticsService, NotificationService lack dedicated service-level tests (they're covered indirectly via MockURLProtocol in auth tests and ViewModel tests use protocol mocks). PushNotificationManager untestable without UIKit runtime (singleton + UNUserNotificationCenter).

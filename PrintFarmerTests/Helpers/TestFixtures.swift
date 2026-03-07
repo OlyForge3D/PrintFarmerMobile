@@ -216,6 +216,215 @@ enum TestJSON {
     {"success": false, "message": "Printer not ready"}
     """
 
+    // MARK: QueuedPrintJobResponse
+
+    static let queuedPrintJobResponsePrinting = """
+    {
+        "job": {
+            "id": "770e8400-e29b-41d4-a716-446655440002",
+            "name": "benchy.gcode",
+            "fileName": "benchy.gcode",
+            "assignedPrinterId": "550e8400-e29b-41d4-a716-446655440000",
+            "printerName": "Prusa MK4",
+            "printerModel": "MK4",
+            "status": "Printing",
+            "priority": 1,
+            "queuePosition": 1,
+            "estimatedPrintTimeSeconds": 3600,
+            "actualStartTimeUtc": "2025-07-17T10:15:00Z",
+            "createdAtUtc": "2025-07-17T10:00:00Z",
+            "updatedAtUtc": "2025-07-17T10:30:00Z",
+            "copies": 1,
+            "completedCopies": 0,
+            "remainingCopies": 1
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    static let queuedPrintJobResponseQueued = """
+    {
+        "job": {
+            "id": "880e8400-e29b-41d4-a716-446655440003",
+            "name": "phone_case.gcode",
+            "fileName": "phone_case.gcode",
+            "status": "Queued",
+            "priority": 2,
+            "queuePosition": 2,
+            "createdAtUtc": "2025-07-17T09:00:00Z",
+            "copies": 1,
+            "completedCopies": 0,
+            "remainingCopies": 1
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    static let queuedPrintJobResponseCompleted = """
+    {
+        "job": {
+            "id": "990e8400-e29b-41d4-a716-446655440004",
+            "name": "vase.gcode",
+            "fileName": "vase.gcode",
+            "status": "Completed",
+            "priority": 1,
+            "queuePosition": 0,
+            "actualStartTimeUtc": "2025-07-17T08:00:00Z",
+            "actualEndTimeUtc": "2025-07-17T09:00:00Z",
+            "createdAtUtc": "2025-07-17T07:00:00Z",
+            "copies": 1,
+            "completedCopies": 1,
+            "remainingCopies": 0
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    static let queuedPrintJobResponseFailed = """
+    {
+        "job": {
+            "id": "aa0e8400-e29b-41d4-a716-446655440005",
+            "name": "failed_part.gcode",
+            "fileName": "failed_part.gcode",
+            "status": "Failed",
+            "priority": 1,
+            "queuePosition": 0,
+            "failureReason": "Filament runout",
+            "createdAtUtc": "2025-07-17T06:00:00Z",
+            "copies": 1,
+            "completedCopies": 0,
+            "remainingCopies": 1
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    static let queuedPrintJobResponsePaused = """
+    {
+        "job": {
+            "id": "bb0e8400-e29b-41d4-a716-446655440006",
+            "name": "paused_model.gcode",
+            "fileName": "paused_model.gcode",
+            "status": "Paused",
+            "priority": 1,
+            "queuePosition": 1,
+            "actualStartTimeUtc": "2025-07-17T11:00:00Z",
+            "createdAtUtc": "2025-07-17T10:00:00Z",
+            "copies": 1,
+            "completedCopies": 0,
+            "remainingCopies": 1
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    static let queuedPrintJobResponseAssigned = """
+    {
+        "job": {
+            "id": "cc0e8400-e29b-41d4-a716-446655440007",
+            "name": "assigned_job.gcode",
+            "fileName": "assigned_job.gcode",
+            "assignedPrinterId": "550e8400-e29b-41d4-a716-446655440000",
+            "printerName": "Prusa MK4",
+            "status": "Assigned",
+            "priority": 1,
+            "queuePosition": 1,
+            "createdAtUtc": "2025-07-17T12:00:00Z",
+            "copies": 1,
+            "completedCopies": 0,
+            "remainingCopies": 1
+        },
+        "gcodeFile": null,
+        "assignedPrinter": null,
+        "estimatedStartTime": null,
+        "estimatedCompletionTime": null
+    }
+    """
+
+    // MARK: AppNotification
+
+    static let appNotificationUnread = """
+    {
+        "id": "notif-001",
+        "userId": "aab2c3d4-e5f6-7890-abcd-ef1234567890",
+        "jobId": "770e8400-e29b-41d4-a716-446655440002",
+        "type": "JobCompleted",
+        "subject": "Print Complete",
+        "body": "benchy.gcode finished printing on Prusa MK4",
+        "isRead": false,
+        "createdAt": "2025-07-17T11:00:00Z"
+    }
+    """
+
+    static let appNotificationRead = """
+    {
+        "id": "notif-002",
+        "userId": "aab2c3d4-e5f6-7890-abcd-ef1234567890",
+        "type": "SystemAlert",
+        "subject": "System Update",
+        "body": "Printfarmer has been updated to v2.5",
+        "isRead": true,
+        "createdAt": "2025-07-17T09:00:00Z",
+        "readAt": "2025-07-17T09:30:00Z"
+    }
+    """
+
+    static let appNotificationFailed = """
+    {
+        "id": "notif-003",
+        "userId": "aab2c3d4-e5f6-7890-abcd-ef1234567890",
+        "jobId": "aa0e8400-e29b-41d4-a716-446655440005",
+        "type": "JobFailed",
+        "subject": "Print Failed",
+        "body": "failed_part.gcode failed on Prusa MK4: Filament runout",
+        "isRead": false,
+        "createdAt": "2025-07-17T10:30:00Z"
+    }
+    """
+
+    // MARK: StatisticsSummary
+
+    static let statisticsSummary = """
+    {
+        "totalJobs": 150,
+        "completedJobs": 120,
+        "failedJobs": 15,
+        "cancelledJobs": 15,
+        "successRate": 80.0,
+        "totalCost": 450.50,
+        "totalFilamentGrams": 5000.0,
+        "totalPrintHours": 320.5
+    }
+    """
+
+    static let statisticsSummaryEmpty = """
+    {
+        "totalJobs": 0,
+        "completedJobs": 0,
+        "failedJobs": 0,
+        "cancelledJobs": 0,
+        "successRate": 0.0,
+        "totalCost": 0,
+        "totalFilamentGrams": 0.0,
+        "totalPrintHours": 0.0
+    }
+    """
+
     // MARK: Errors
 
     static let apiError = """
@@ -254,6 +463,26 @@ enum TestData {
 
     static func decodeLocation(from json: String = TestJSON.location) throws -> Location {
         try decoder.decode(Location.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeQueuedPrintJobResponse(from json: String) throws -> QueuedPrintJobResponse {
+        try decoder.decode(QueuedPrintJobResponse.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeAppNotification(from json: String) throws -> AppNotification {
+        try decoder.decode(AppNotification.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeStatisticsSummary(from json: String = TestJSON.statisticsSummary) throws -> StatisticsSummary {
+        try decoder.decode(StatisticsSummary.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeAuthResponse(from json: String = TestJSON.authResponseSuccess) throws -> AuthResponse {
+        try decoder.decode(AuthResponse.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeUser(from json: String = TestJSON.userDTO) throws -> UserDTO {
+        try decoder.decode(UserDTO.self, from: json.data(using: .utf8)!)
     }
 
     static func httpResponse(url: URL? = nil, statusCode: Int = 200) -> HTTPURLResponse {
