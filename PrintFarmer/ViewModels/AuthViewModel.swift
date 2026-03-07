@@ -9,6 +9,8 @@ final class AuthViewModel {
     var currentUser: UserDTO?
     var isLoading = false
     var errorMessage: String?
+    /// True once the initial session restore check has completed.
+    private(set) var hasCheckedAuth = false
 
     private let authService: AuthService
     @ObservationIgnored private var sessionExpiredObserver: NSObjectProtocol?
@@ -37,6 +39,7 @@ final class AuthViewModel {
             isAuthenticated = true
         }
         isLoading = false
+        hasCheckedAuth = true
     }
 
     // MARK: - Login / Logout

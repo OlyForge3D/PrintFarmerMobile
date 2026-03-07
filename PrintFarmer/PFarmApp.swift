@@ -20,30 +20,23 @@ struct PFarmApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if authViewModel.isAuthenticated {
-                    ContentView()
-                        .environment(router)
-                        .environment(authViewModel)
-                        .environment(services)
-                } else {
-                    LoginView()
-                        .environment(authViewModel)
+            RootView()
+                .environment(router)
+                .environment(authViewModel)
+                .environment(services)
+                .environment(themeManager)
+                .tint(Color.pfAccent)
+                .preferredColorScheme(themeManager.preferredColorScheme)
+                .task {
+                    await authViewModel.restoreSession()
+                    #if canImport(UIKit)
+                    PushNotificationManager.shared.configure(notificationService: services.notificationService)
+                    await PushNotificationManager.shared.refreshPermissionStatus()
+                    if PushNotificationManager.shared.pushEnabled {
+                        await PushNotificationManager.shared.requestPermissionAndRegister()
+                    }
+                    #endif
                 }
-            }
-            .environment(themeManager)
-            .tint(Color.pfAccent)
-            .preferredColorScheme(themeManager.preferredColorScheme)
-            .task {
-                await authViewModel.restoreSession()
-                #if canImport(UIKit)
-                PushNotificationManager.shared.configure(notificationService: services.notificationService)
-                await PushNotificationManager.shared.refreshPermissionStatus()
-                if PushNotificationManager.shared.pushEnabled {
-                    await PushNotificationManager.shared.requestPermissionAndRegister()
-                }
-                #endif
-            }
         }
     }
 }
