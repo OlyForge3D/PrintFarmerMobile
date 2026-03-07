@@ -11,6 +11,7 @@ final class MockSpoolService: SpoolServiceProtocol, @unchecked Sendable {
 
     // Call tracking
     var listSpoolsCalled = false
+    // swiftlint:disable:next large_tuple
     var listSpoolsArgs: (limit: Int, offset: Int, search: String?, material: String?, vendor: String?)?
     var createSpoolCalledWith: SpoolmanSpoolRequest?
     var updateSpoolCalledWith: (id: Int, request: SpoolmanSpoolRequest)?
