@@ -135,3 +135,10 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **Pattern alignment:** AppRouter & AuthViewModel both now @MainActor; all ViewModels follow same pattern
 - **Decision record:** All QA audit fixes merged into decisions.md (decision #7 theme system, #8 color extensions, #9 printer detail fix, #10 jobs tab fix)
 - **Outcome:** All critical + important issues resolved; build clean; commit 7fb1419
+
+### Camera Snapshot UI Enhancement (2025-07-18)
+- **PrinterDetailView camera section redesigned:** Now always visible — shows snapshot from `snapshotData` (service-fetched Data), falls back to `AsyncImage` from `printer.cameraSnapshotUrl` (direct URL), or shows "No camera available" placeholder when neither exists.
+- **Refresh button added:** Camera section header has a refresh button that calls `viewModel.refreshSnapshot()` — only shown when snapshot data or URL is available.
+- **`isLoadingSnapshot` property** added to PrinterDetailViewModel to disable refresh button during load.
+- **Pull-to-refresh was already implemented** on all four list views (PrinterListView, JobListView, NotificationsView, DashboardView) and PrinterDetailView from the MVP build.
+- **`AsyncImage` fallback pattern:** When the authenticated `getSnapshot(id:)` service call fails or hasn't loaded, we try the direct `cameraSnapshotUrl` from the Printer model via AsyncImage. This URL is a direct public URL from the backend's CompletePrinterDto.

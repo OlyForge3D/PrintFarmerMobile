@@ -8,6 +8,7 @@ final class PrinterDetailViewModel {
     var statusDetail: PrinterStatusDetail?
     var currentJob: PrintJobStatusInfo?
     var snapshotData: Data?
+    var isLoadingSnapshot = false
     var isLoading = false
     var errorMessage: String?
     var isPerformingAction = false
@@ -146,6 +147,17 @@ final class PrinterDetailViewModel {
         } catch {
             actionError = error.localizedDescription
         }
+    }
+
+    func refreshSnapshot() async {
+        guard let printerService else { return }
+        isLoadingSnapshot = true
+        do {
+            snapshotData = try await printerService.getSnapshot(id: printerId)
+        } catch {
+            logger.warning("Failed to refresh snapshot: \(error.localizedDescription)")
+        }
+        isLoadingSnapshot = false
     }
 
     // MARK: - Computed State

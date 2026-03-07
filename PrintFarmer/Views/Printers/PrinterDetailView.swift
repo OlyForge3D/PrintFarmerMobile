@@ -78,9 +78,7 @@ struct PrinterDetailView: View {
                 }
 
                 // Camera Snapshot
-                if let imageData = viewModel.snapshotData {
-                    snapshotSection(data: imageData)
-                }
+                cameraSection(printer)
 
                 // Actions
                 if printer.isOnline {
@@ -193,30 +191,108 @@ struct PrinterDetailView: View {
 
     // MARK: - Camera Snapshot
 
-    private func snapshotSection(data: Data) -> some View {
+    private func cameraSection(_ printer: Printer) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Camera")
-                .font(.headline)
+            HStack {
+                Text("Camera")
+                    .font(.headline)
 
-            #if canImport(UIKit)
+                Spacer()
+
+                if viewModel.snapshotData != nil || printer.cameraSnapshotUrl != nil {
+                    Button {
+                        Task { await viewModel.refreshSnapshot() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.subheadline)
+                    }
+                    .disabled(viewModel.isLoadingSnapshot)
+                    .accessibilityLabel("Refresh camera snapshot")
+                }
+            }
+
+            Group {
+                if let data = viewModel.snapshotData {
+                    snapshotImage(from: data)
+                } else if let urlString = printer.cameraSnapshotUrl,
+                          let url = URL(string: urlString) {
+                    asyncSnapshotImage(url: url)
+                } else {
+                    noCameraPlaceholder()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    #if canImport(UIKit)
+    private func snapshotImage(from data: Data) -> some View {
+        Group {
             if let uiImage = UIImage(data: data) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
-                ContentUnavailableView {
-                    Label("Snapshot Unavailable", systemImage: "camera.fill")
-                }
-                .frame(height: 200)
+                snapshotUnavailable()
             }
-            #else
-            ContentUnavailableView {
-                Label("Snapshot Unavailable", systemImage: "camera.fill")
-            }
-            .frame(height: 200)
-            #endif
         }
+    }
+    #else
+    private func snapshotImage(from data: Data) -> some View {
+        snapshotUnavailable()
+    }
+    #endif
+
+    private func asyncSnapshotImage(url: URL) -> some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            case .failure:
+                snapshotUnavailable()
+            case .empty:
+                ProgressView()
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+            @unknown default:
+                EmptyView()
+            }
+        }
+    }
+
+    private func noCameraPlaceholder() -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "camera.fill")
+                .font(.title)
+                .foregroundStyle(Color.pfTextTertiary)
+            Text("No camera available")
+                .font(.subheadline)
+                .foregroundStyle(Color.pfTextSecondary)
+        }
+        .frame(height: 120)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func snapshotUnavailable() -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "photo.badge.exclamationmark")
+                .font(.title)
+                .foregroundStyle(Color.pfTextTertiary)
+            Text("Snapshot unavailable")
+                .font(.subheadline)
+                .foregroundStyle(Color.pfTextSecondary)
+        }
+        .frame(height: 200)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Action Buttons

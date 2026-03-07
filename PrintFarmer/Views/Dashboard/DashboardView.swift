@@ -82,7 +82,11 @@ struct DashboardView: View {
     // MARK: - Active Jobs (printers currently printing)
 
     private var activeJobsSection: some View {
-        let printingPrinters = viewModel.printers.filter { $0.jobName != nil && $0.isOnline }
+        let activeStates: Set<String> = ["printing", "paused"]
+        let printingPrinters = viewModel.printers.filter { printer in
+            guard let state = printer.state?.lowercased() else { return false }
+            return activeStates.contains(state)
+        }
         let topPrinters = Array(printingPrinters.prefix(5))
 
         return VStack(alignment: .leading, spacing: 12) {

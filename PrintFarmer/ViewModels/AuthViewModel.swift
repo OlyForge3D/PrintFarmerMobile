@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// App-level authentication state that controls whether the user sees
 /// LoginView or the main TabView. Injected via @Environment.
@@ -10,7 +11,7 @@ final class AuthViewModel {
     var errorMessage: String?
 
     private let authService: AuthService
-    private nonisolated(unsafe) var sessionExpiredObserver: NSObjectProtocol?
+    @ObservationIgnored private var sessionExpiredObserver: NSObjectProtocol?
 
     init(authService: AuthService) {
         self.authService = authService
@@ -26,11 +27,6 @@ final class AuthViewModel {
         }
     }
 
-    nonisolated deinit {
-        if let observer = sessionExpiredObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-    }
 
     // MARK: - Session Restoration
 

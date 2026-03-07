@@ -247,7 +247,8 @@ struct Printer: Codable, Identifiable, Sendable {
 
         isOnline = try c.decodeIfPresent(Bool.self, forKey: .isOnline) ?? false
         state = try c.decodeIfPresent(String.self, forKey: .state)
-        progress = try c.decodeIfPresent(Double.self, forKey: .progress)
+        // Backend sends progress as 0-100; normalize to 0-1.0 for SwiftUI
+        progress = try c.decodeIfPresent(Double.self, forKey: .progress).map { $0 / 100.0 }
         jobName = try c.decodeIfPresent(String.self, forKey: .jobName)
         thumbnailUrl = try c.decodeIfPresent(String.self, forKey: .thumbnailUrl)
         cameraStreamUrl = try c.decodeIfPresent(String.self, forKey: .cameraStreamUrl)
