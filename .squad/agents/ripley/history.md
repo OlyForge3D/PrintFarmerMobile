@@ -212,3 +212,21 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - Add Info.plist keys via Xcode target
 - Device QA testing
 - Wire NFCWriteView to Lambert's service
+
+## 2026-03-07T08:43Z — Xcode Build Fix: UUID Collision in project.pbxproj (SUCCESS)
+
+**Issue:** Xcode build failed with warnings: "SpoolScannerProtocol.swift is a member of multiple groups (App and Protocols)" and "Skipping duplicate build file in Compile Sources."
+
+**Root Cause:** UUID collision — `SpoolScannerProtocol.swift` was assigned the same PBXFileReference UUID (`A1B2C3D4E5F6A7B8C9D0E1F2`) as `AppDelegate.swift`. This caused Xcode to see SpoolScannerProtocol in AppDelegate's "App" group and also in "Protocols" group, creating a phantom double-reference.
+
+**Fix:** Generated a new unique UUID (`EOXFREPV2L15HYWN1T3VOVNC`) for SpoolScannerProtocol.swift and updated all three references:
+1. PBXBuildFile (fileRef pointer)
+2. PBXFileReference (definition)
+3. PBXGroup children (Protocols group entry)
+
+**Verification:** plutil lint passes, swift build passes, xcodebuild only fails on expected code-signing (no dev team configured).
+
+### Learnings
+- When agents generate pbxproj entries with hand-crafted UUIDs (common in non-Xcode tooling), UUID collisions can occur silently. SPM won't catch these since it uses Package.swift, not pbxproj.
+- Always validate new pbxproj UUIDs against ALL existing UUIDs in the file, not just within the same section.
+- The "member of multiple groups" Xcode warning is a strong signal of UUID collision, not just a grouping mistake.

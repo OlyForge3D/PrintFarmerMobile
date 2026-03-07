@@ -93,7 +93,7 @@
 		264690BE3784294A9AADB33B /* SpoolPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */; };
 		3F2B3B9AEAE8DF4B91541072 /* SpoolInventoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */; };
 		26F5D2EC28D2FD075AF12C08 /* AddSpoolViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D860B7B852D3B6814A7CAF /* AddSpoolViewModel.swift */; };
-		F2E1D0C9B8A7F6E5D4C3B2A1 /* SpoolScannerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* SpoolScannerProtocol.swift */; };
+		F2E1D0C9B8A7F6E5D4C3B2A1 /* SpoolScannerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EOXFREPV2L15HYWN1T3VOVNC /* SpoolScannerProtocol.swift */; };
 		E1D0C9B8A7F6E5D4C3B2A1F2 /* QRCodeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* QRCodeParser.swift */; };
 		D0C9B8A7F6E5D4C3B2A1F2E1 /* NFCTagParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* NFCTagParser.swift */; };
 		C9B8A7F6E5D4C3B2A1F2E1D0 /* QRSpoolScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* QRSpoolScannerService.swift */; };
@@ -209,7 +209,7 @@
 		03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolPickerViewModel.swift; sourceTree = "<group>"; };
 		C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolInventoryViewModel.swift; sourceTree = "<group>"; };
 		34D860B7B852D3B6814A7CAF /* AddSpoolViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSpoolViewModel.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* SpoolScannerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolScannerProtocol.swift; sourceTree = "<group>"; };
+		EOXFREPV2L15HYWN1T3VOVNC /* SpoolScannerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolScannerProtocol.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* QRCodeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeParser.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* NFCTagParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCTagParser.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* QRSpoolScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRSpoolScannerService.swift; sourceTree = "<group>"; };
@@ -337,7 +337,7 @@
 				2D136C4B21A734AB1D5FDBFD /* ServiceError.swift */,
 				809149B9D7E0B339296A7E1E /* SignalRServiceProtocol.swift */,
 				D21023EEB533787E494E2B82 /* SpoolServiceProtocol.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1F2 /* SpoolScannerProtocol.swift */,
+				EOXFREPV2L15HYWN1T3VOVNC /* SpoolScannerProtocol.swift */,
 				10120F9FBE4ED41F47B5FDBB /* StatisticsServiceProtocol.swift */,
 			);
 			path = Protocols;
