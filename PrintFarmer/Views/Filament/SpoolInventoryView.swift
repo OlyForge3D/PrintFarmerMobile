@@ -42,12 +42,21 @@ struct SpoolInventoryView: View {
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddSpool = true
-                    } label: {
-                        Image(systemName: "plus")
+                    HStack(spacing: 12) {
+                        Button {
+                            viewModel.handleNFCScan()
+                        } label: {
+                            Image(systemName: "wave.3.right")
+                        }
+                        .accessibilityLabel("Scan NFC tag")
+
+                        Button {
+                            showAddSpool = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Add spool")
                     }
-                    .accessibilityLabel("Add spool")
                 }
                 #endif
             }
@@ -59,12 +68,32 @@ struct SpoolInventoryView: View {
                 if viewModel.isLoading && viewModel.spools.isEmpty {
                     ProgressView("Loading inventory…")
                 }
+                if viewModel.isScanning {
+                    ProgressView("Scanning…")
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .alert("Scan Error", isPresented: .constant(viewModel.scanError != nil)) {
+                Button("OK") { viewModel.scanError = nil }
+            } message: {
+                if let error = viewModel.scanError {
+                    Text(error)
+                }
             }
             .sheet(isPresented: $showAddSpool) {
                 AddSpoolView()
                     .onDisappear {
                         Task { await viewModel.loadSpools() }
                     }
+            }
+            .sheet(isPresented: $viewModel.showScannedDataSheet) {
+                if let data = viewModel.scannedSpoolData {
+                    AddSpoolView(scannedData: data)
+                        .onDisappear {
+                            Task { await viewModel.loadSpools() }
+                        }
+                }
             }
             .sheet(item: $nfcWriteSpool) { spool in
                 NFCWriteView(spool: spool) {
@@ -75,16 +104,26 @@ struct SpoolInventoryView: View {
             }
             .task {
                 viewModel.configure(spoolService: services.spoolService)
+                #if canImport(UIKit)
+                viewModel.configureNFC(scanner: services.nfcService)
+                #endif
                 await viewModel.loadSpools()
             }
         }
     }
 
     private var spoolList: some View {
-        List {
-            ForEach(viewModel.filteredSpools) { spool in
-                SpoolInventoryRowView(spool: spool)
-                    .contextMenu {
+        ScrollViewReader { proxy in
+            List {
+                ForEach(viewModel.filteredSpools) { spool in
+                    SpoolInventoryRowView(spool: spool)
+                        .listRowBackground(
+                            viewModel.highlightedSpoolId == spool.id
+                                ? Color.pfAccent.opacity(0.15)
+                                : nil
+                        )
+                        .id(spool.id)
+                        .contextMenu {
                         Button {
                             nfcWriteSpool = spool
                         } label: {
@@ -96,6 +135,18 @@ struct SpoolInventoryView: View {
                 let spoolsToDelete = indexSet.map { viewModel.filteredSpools[$0] }
                 for spool in spoolsToDelete {
                     Task { await viewModel.deleteSpool(spool) }
+                }
+            }
+            }
+            .onChange(of: viewModel.highlightedSpoolId) { _, newId in
+                if let newId {
+                    withAnimation {
+                        proxy.scrollTo(newId, anchor: .center)
+                    }
+                    Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        withAnimation { viewModel.clearHighlight() }
+                    }
                 }
             }
         }

@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>NSCameraUsageDescription</key>
-	<string>PrintFarmer uses the camera to scan QR codes on filament spools for quick identification and tracking.</string>
-	<key>NFCReaderUsageDescription</key>
-	<string>PrintFarmer uses NFC to read and write tags on filament spools for inventory management.</string>
-</dict>
+<dict/>
 </plist>

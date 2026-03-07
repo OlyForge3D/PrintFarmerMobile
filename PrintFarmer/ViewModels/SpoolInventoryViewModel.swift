@@ -8,11 +8,23 @@ final class SpoolInventoryViewModel {
     var isLoading = false
     var errorMessage: String?
 
+    // NFC scanning state
+    var isScanning = false
+    var scanError: String?
+    var scannedSpoolData: ScannedSpoolData?
+    var showScannedDataSheet = false
+    var highlightedSpoolId: Int?
+
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "SpoolInventory")
     private var spoolService: (any SpoolServiceProtocol)?
+    private var nfcScanner: (any SpoolScannerProtocol)?
 
     func configure(spoolService: any SpoolServiceProtocol) {
         self.spoolService = spoolService
+    }
+
+    func configureNFC(scanner: any SpoolScannerProtocol) {
+        self.nfcScanner = scanner
     }
 
     var filteredSpools: [SpoolmanSpool] {
@@ -44,6 +56,59 @@ final class SpoolInventoryViewModel {
         }
 
         isLoading = false
+    }
+
+    // MARK: - NFC Scanning
+
+    func handleNFCScan() {
+        guard let nfcScanner, nfcScanner.isAvailable else {
+            scanError = "NFC scanning is not available on this device."
+            return
+        }
+
+        isScanning = true
+        scanError = nil
+
+        Task {
+            let result = await nfcScanner.scan()
+            await handleScanResult(result)
+            isScanning = false
+        }
+    }
+
+    func findSpool(byId id: Int) -> SpoolmanSpool? {
+        spools.first { $0.id == id }
+    }
+
+    func clearHighlight() {
+        highlightedSpoolId = nil
+    }
+
+    private func handleScanResult(_ result: SpoolScanResult) async {
+        switch result {
+        case .spoolId(let id):
+            if let existing = findSpool(byId: id) {
+                highlightedSpoolId = existing.id
+            } else {
+                // Reload and try again
+                await loadSpools()
+                if let existing = findSpool(byId: id) {
+                    highlightedSpoolId = existing.id
+                } else {
+                    scanError = "Spool #\(id) not found in inventory."
+                }
+            }
+
+        case .newSpoolData(let data):
+            scannedSpoolData = data
+            showScannedDataSheet = true
+
+        case .cancelled:
+            break
+
+        case .error(let error):
+            scanError = error.localizedDescription
+        }
     }
 
     func deleteSpool(_ spool: SpoolmanSpool) async {
