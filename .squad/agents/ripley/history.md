@@ -230,3 +230,25 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - When agents generate pbxproj entries with hand-crafted UUIDs (common in non-Xcode tooling), UUID collisions can occur silently. SPM won't catch these since it uses Package.swift, not pbxproj.
 - Always validate new pbxproj UUIDs against ALL existing UUIDs in the file, not just within the same section.
 - The "member of multiple groups" Xcode warning is a strong signal of UUID collision, not just a grouping mistake.
+
+## 2025-07-25 — Job Queue UX Fixes (SUCCESS)
+
+**Task:** Fix blank job detail page + add missing job actions
+**Outcome:** ✅ 7 files modified, build clean, 0 lint errors
+
+**Investigation Findings:**
+- JobDetailView was NOT blank — it had full status/info/timestamps/action sections already implemented
+- The real issues: (1) "Dispatch to Printer" label was confusing — users couldn't find "Start Print", (2) pause/resume actions were missing, (3) no quick-start from queue list
+
+**What Was Changed:**
+- `JobServiceProtocol` + `JobService`: Added `pause(id:)` and `resume(id:)` (backend: `/api/job-queue-analytics/jobs/{id}/pause|resume`)
+- `JobDetailViewModel`: Added `pauseJob()`, `resumeJob()`, `canPause`, `canResume` computed properties
+- `JobDetailView`: Renamed "Dispatch to Printer" → "Start Print", added Pause/Resume buttons with appropriate tint colors
+- `JobListView`: Added swipe-to-start (leading) and swipe-to-cancel (trailing) on queued job rows
+- `JobListViewModel`: Added `dispatchJob(id:)` for swipe-to-start
+- `MockJobService`: Added pause/resume tracking for tests
+
+### Learnings
+- Jeff's "blank page" report was actually about missing affordances, not a literally empty view — always verify before assuming the worst
+- Backend pause/resume lives on `JobQueueAnalyticsController` (`/api/job-queue-analytics/jobs/`), not on `JobQueueController` — different base paths for different job operations
+- Swipe actions on List rows with Button-styled items work fine in SwiftUI — no conflict with the tap navigation

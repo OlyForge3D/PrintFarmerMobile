@@ -210,7 +210,30 @@ struct JobDetailView: View {
                 Button {
                     Task { await viewModel.dispatchJob() }
                 } label: {
-                    Label("Dispatch to Printer", systemImage: "arrow.right.circle.fill")
+                    Label("Start Print", systemImage: "play.circle.fill")
+                        .frame(maxWidth: .infinity)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            if viewModel.canPause {
+                Button {
+                    Task { await viewModel.pauseJob() }
+                } label: {
+                    Label("Pause Print", systemImage: "pause.circle.fill")
+                        .frame(maxWidth: .infinity)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.pfWarning)
+            }
+
+            if viewModel.canResume {
+                Button {
+                    Task { await viewModel.resumeJob() }
+                } label: {
+                    Label("Resume Print", systemImage: "play.circle.fill")
                         .frame(maxWidth: .infinity)
                         .fontWeight(.semibold)
                 }

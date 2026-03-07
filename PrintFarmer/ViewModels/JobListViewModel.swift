@@ -47,6 +47,16 @@ final class JobListViewModel {
         }
     }
 
+    func dispatchJob(id: UUID) async {
+        guard let jobService else { return }
+        do {
+            try await jobService.dispatch(id: id)
+            await loadJobs()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Grouped Jobs
 
     /// Jobs actively printing, starting, or paused on a printer

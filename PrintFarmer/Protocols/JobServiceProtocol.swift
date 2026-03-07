@@ -12,4 +12,6 @@ protocol JobServiceProtocol: Sendable {
     func dispatch(id: UUID) async throws
     func cancel(id: UUID) async throws
     func abort(id: UUID) async throws
+    func pause(id: UUID) async throws
+    func resume(id: UUID) async throws
 }

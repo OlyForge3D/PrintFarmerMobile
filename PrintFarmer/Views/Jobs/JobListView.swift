@@ -187,6 +187,26 @@ struct JobListView: View {
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
+        .swipeActions(edge: .trailing) {
+            if let uuid = item.job.jobUUID {
+                Button {
+                    Task { await viewModel.cancelJob(id: uuid) }
+                } label: {
+                    Label("Cancel", systemImage: "xmark.circle")
+                }
+                .tint(Color.pfError)
+            }
+        }
+        .swipeActions(edge: .leading) {
+            if let uuid = item.job.jobUUID {
+                Button {
+                    Task { await viewModel.dispatchJob(id: uuid) }
+                } label: {
+                    Label("Start", systemImage: "play.circle.fill")
+                }
+                .tint(Color.pfAccent)
+            }
+        }
     }
 
     // MARK: - Recent Job Row

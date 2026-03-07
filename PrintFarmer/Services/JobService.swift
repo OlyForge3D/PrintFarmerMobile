@@ -44,4 +44,12 @@ actor JobService: JobServiceProtocol {
     func abort(id: UUID) async throws {
         try await apiClient.postVoid("/api/job-queue/\(id)/abort-print")
     }
+
+    func pause(id: UUID) async throws {
+        try await apiClient.postVoid("/api/job-queue-analytics/jobs/\(id)/pause")
+    }
+
+    func resume(id: UUID) async throws {
+        try await apiClient.postVoid("/api/job-queue-analytics/jobs/\(id)/resume")
+    }
 }

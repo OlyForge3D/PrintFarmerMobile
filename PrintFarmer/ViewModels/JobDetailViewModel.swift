@@ -55,6 +55,14 @@ final class JobDetailViewModel {
         #endif
     }
 
+    func pauseJob() async {
+        await performAction { try await $0.pause(id: self.jobId) }
+    }
+
+    func resumeJob() async {
+        await performAction { try await $0.resume(id: self.jobId) }
+    }
+
     // MARK: - Computed
 
     var canDispatch: Bool {
@@ -69,6 +77,14 @@ final class JobDetailViewModel {
     var canAbort: Bool {
         guard let status = job?.status else { return false }
         return [.printing, .starting, .paused].contains(status)
+    }
+
+    var canPause: Bool {
+        job?.status == .printing
+    }
+
+    var canResume: Bool {
+        job?.status == .paused
     }
 
     var isActive: Bool {

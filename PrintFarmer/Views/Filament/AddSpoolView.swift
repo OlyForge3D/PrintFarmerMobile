@@ -78,7 +78,7 @@ struct AddSpoolView: View {
             } else {
                 Picker("Material", selection: $viewModel.selectedMaterial) {
                     Text("Select…").tag("")
-                    ForEach(viewModel.materials) { mat in
+                    ForEach(viewModel.materials, id: \.name) { mat in
                         Text(mat.name).tag(mat.name)
                     }
                 }
@@ -95,7 +95,7 @@ struct AddSpoolView: View {
             } else {
                 Picker("Vendor", selection: $viewModel.selectedVendor) {
                     Text("None").tag("")
-                    ForEach(viewModel.vendors) { vendor in
+                    ForEach(viewModel.vendors, id: \.name) { vendor in
                         Text(vendor.name).tag(vendor.name)
                     }
                 }
