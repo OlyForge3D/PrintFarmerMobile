@@ -183,3 +183,32 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - MockSpoolService — full mock with call tracking
 - 3 new ViewModel tests — SpoolPickerViewModel, SpoolInventoryViewModel, AddSpoolViewModel
 - Integration with existing mock infrastructure
+
+## 2026-03-07T16:34Z — Phase 2 Scanning UI (SUCCESS)
+
+**Batch:** Scanning UI (QR + NFC)  
+**Outcome:** ✅ Delivered 3 new + 6 modified files, builds clean
+
+**What Was Built:**
+- QRScannerView (VisionKit UIViewControllerRepresentable)
+- NFCScanButton (reusable, checks device support)
+- NFCWriteView (tag write UI with status indicators)
+- SpoolPickerView: "Scan QR" button, QR integration
+- AddSpoolView: pre-fill from scanned data
+- SpoolInventoryView: NFC write action
+- PrinterDetailView: NFC scan button
+- ViewModels: parseSpoolId(), prefill(), scanner config
+
+**Cross-Team Impact:**
+- Lambert: Services (QRSpoolScannerService, NFCService) ready to integrate
+- Ash: ViewModel test methods ready, MockScannerService available
+- Dallas: Navigation impact minimal, AppRouter verified
+
+**Known Limitations:**
+- NSCameraUsageDescription, NFCReaderUsageDescription not in Info.plist (Xcode target required)
+- NFCWriteView.onWrite not yet wired to Lambert's NFCService.writeTag()
+
+**Next Steps:**
+- Add Info.plist keys via Xcode target
+- Device QA testing
+- Wire NFCWriteView to Lambert's service

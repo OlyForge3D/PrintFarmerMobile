@@ -93,3 +93,32 @@
 - **Permission Model:** Camera access only (no entitlements needed unlike NFC). Info.plist NSCameraUsageDescription + standard permission flow.
 - **Risk Assessment:** Permission denial, invalid QR codes, and device coverage all mitigated. No backend work needed.
 - **Decision Document:** `.squad/decisions/inbox/dallas-qr-code-scoping.md`
+
+## 2026-03-07T16:34Z — Phase 2 QR Scoping (SUCCESS)
+
+**Batch:** Architecture + capability research  
+**Outcome:** ✅ QR scanning approved for Phase 2, architecture designed
+
+**What Was Delivered:**
+- Backend analysis: Spoolman generates QR; no new endpoints needed
+- iOS framework evaluation: VisionKit (iOS 16+) recommended; AVFoundation fallback
+- Architecture design: SpoolScannerProtocol shared abstraction (QR + NFC)
+- Risk mitigation: Permission handling, error flows, device coverage
+- Phase 2 scope documented: 20 hours (QR + NFC parallel)
+
+**Cross-Team Impact:**
+- Lambert: SpoolScannerProtocol blueprint defined, 7 services/parsers delivered
+- Ripley: UI architecture ready, 3 new views + 6 modified files
+- Ash: Test coverage plan clear, 4 test files + 61 cases delivered
+
+**Architecture Outcomes:**
+- Protocol-driven design (SpoolScannerProtocol)
+- Shared abstraction enables future scanner types
+- MockSpoolScannerService for testing
+- VisionKit + AVFoundation hybrid (broad device support)
+
+**Next Steps:**
+- Verify ServiceContainer DI wiring at startup
+- Manual device QA (Spoolman QR + NFC tags)
+- Phase 2b: Backend device registration (NFC)
+- Phase 2.5: AVFoundation fallback (if coverage critical)

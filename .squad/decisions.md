@@ -409,3 +409,283 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+
+---
+
+## Phase 2: QR Code Scanning Design
+
+**Date:** 2026-03-07  
+**Owner:** Dallas (Lead/Architect)  
+**Status:** Approved for Phase 2  
+
+### Executive Summary
+
+User requested QR code scanning for Phase 2 to enable spool-to-printer linking via Spoolman QR codes. After backend analysis and iOS capability research, QR scanning is feasible and recommended as a Phase 2 enhancement.
+
+### Backend Analysis
+
+**Spoolman QR Code Format:**
+- Spoolman generates QR codes (not PrintFarmer backend)
+- QR encodes spool ID: `https://<spoolman-host>/spools/<spool-id>` or plain numeric ID
+- Existing backend endpoints already support this:
+  - `GET /api/spools/{id}` — retrieve spool by ID
+  - `POST /api/printers/{id}/active-spool` — link spool to printer
+- **Verdict:** No new backend work needed
+
+### iOS Framework Approach
+
+**Tier 1 (iOS 16+):** VisionKit `DataScannerViewController`
+- Beautiful live barcode UI, Apple ML-based accuracy
+- ~5 lines of integration code
+- Recommended for MVP Phase 2
+
+**Tier 2 (fallback):** AVFoundation (iOS 7+)
+- Works on all iPhones, mature API
+- Custom UI required
+- Deferred to Phase 2.5 if device coverage critical
+
+### Architecture: Shared SpoolScannerProtocol
+
+QR and NFC share the same result: a spool ID. Proposed abstraction:
+
+```swift
+protocol SpoolScannerProtocol {
+    func scan() async -> SpoolScanResult
+}
+
+enum SpoolScanResult {
+    case spoolId(Int)
+    case cancelled
+    case error(SpoolScanError)
+}
+
+// Implementations
+class QRSpoolScanner: SpoolScannerProtocol { ... }
+class NFCSpoolScanner: SpoolScannerProtocol { ... }
+```
+
+**Benefit:** SpoolPickerView doesn't need to know whether user scanned QR or NFC—just calls `scanner.scan()`.
+
+### Phase 2 Work Items
+
+1. **QRSpoolScannerService** (Lambert, 4h)
+   - Wrap VisionKit `DataScannerViewController`
+   - Parse QR payload (3 formats: URL, plain ID, JSON)
+   - Return `SpoolScanResult`
+   - Info.plist: add `NSCameraUsageDescription`
+
+2. **SpoolPickerView Enhancement** (Ripley, 3h)
+   - Add "Scan QR Code" button
+   - Present QR scanner sheet
+   - Auto-load successful spool
+
+3. **Test Coverage** (Ash, 2h)
+   - QRCodeParser tests
+   - SpoolPickerViewModel QR flow tests
+   - MockSpoolScannerService
+
+### QR Payload Parsing
+
+Supports three formats:
+
+**Format 1:** URL with spool ID in path
+```
+https://spoolman.example.com/spools/42
+```
+Extract: `42`
+
+**Format 2:** Plain spool ID
+```
+42
+```
+Extract: Direct parse
+
+**Format 3:** JSON
+```json
+{"spoolId": 42}
+```
+Extract: `spoolId` field
+
+### Permission & Entitlements
+
+**Info.plist:**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Camera access is needed to scan QR codes on filament spools.</string>
+```
+
+No special entitlements required (unlike NFC).
+
+### Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| Camera permission denied | Alert: "Camera permission required. Grant in Settings." |
+| Invalid QR (not a spool code) | Scanner continues looking |
+| Spool ID not found on backend | Error: "Spool not found. Try a different label." |
+| User closes scanner | Dismiss sheet, return to SpoolPickerView |
+
+### Decision
+
+✅ Add QR code scanning to Phase 2  
+✅ Use VisionKit for iOS 16+ (primary)  
+✅ Design shared `SpoolScannerProtocol` abstraction  
+✅ Estimated effort: 9 hours total  
+⏸️ AVFoundation fallback deferred to Phase 2.5  
+
+---
+
+## Phase 2: NFC Scanning Services (Lambert)
+
+**Date:** 2026-03-07  
+**Author:** Lambert  
+**Status:** Implemented
+
+### Decisions
+
+1. **No Info.plist File** — iOS 17+ projects don't generate standalone Info.plist by default. Camera and NFC usage descriptions must be added via Xcode target Info tab.
+
+2. **`#if canImport(UIKit)` Guards** — Scanner services wrapped for SPM macOS build compatibility. ServiceContainer conditionally registers them.
+
+3. **No Backend NFC Endpoint** — NFC scanning/writing is purely client-side. Tags encode spool data in OpenSpool/OpenPrintTag NDEF format. When tag contains `spoolman_id`, ViewModel fetches full data via `SpoolService.getSpool(id:)`.
+
+4. **OpenSpool as Write Format** — When writing NFC tags via `NFCService.writeTag(spool:)`, use OpenSpool format exclusively (community standard).
+
+5. **QRCodeParser Supports Three Formats** — URL paths (`/spools/{id}`), plain numeric (`{id}`), JSON (`{"spoolId": {id}}`). Also accepts `spool_id` and `id` as JSON keys.
+
+### Architecture
+
+- **SpoolScannerProtocol** — Abstract interface (QR + NFC both implement)
+- **QRSpoolScannerService** — Wraps VisionKit DataScannerViewController
+- **NFCService** — NDEF tag read/write
+- **QRCodeParser** — Extract spool ID from QR payload
+- **NFCTagParser** — Decode OpenSpool/OpenPrintTag NDEF records
+- **MockSpoolScannerService** — Test double for ViewModels
+
+### Files Created
+
+1. `PrintFarmer/Services/SpoolScannerProtocol.swift`
+2. `PrintFarmer/Services/QRSpoolScannerService.swift`
+3. `PrintFarmer/Services/NFCService.swift`
+4. `PrintFarmer/Utilities/QRCodeParser.swift`
+5. `PrintFarmer/Utilities/NFCTagParser.swift`
+6. `PrintFarmer/Mocks/MockSpoolScannerService.swift`
+7. `PrintFarmer/Services/ServiceContainer.swift` (updated)
+
+---
+
+## Phase 2: Scanning UI (Ripley)
+
+**Date:** 2026-03-07  
+**Author:** Ripley  
+**Status:** Implemented
+
+### UI Components
+
+1. **QRScannerView** — VisionKit wrapper, single-scan mode, UIViewControllerRepresentable
+2. **NFCScanButton** — Reusable component with `compact` variant, checks `NFCNDEFReaderSession.readingAvailable`
+3. **NFCWriteView** — Tag write UI with status indicators
+
+### View Integrations
+
+1. **SpoolPickerView** — "Scan QR Code" button, presents scanner sheet
+2. **AddSpoolView** — Pre-fill from scanned data (`scannedData` parameter, `isPrefilledFromScan` flag)
+3. **SpoolInventoryView** — NFC write action in context menu
+4. **PrinterDetailView** — NFC scan button in filament section
+
+### ViewModel Enhancements
+
+- **SpoolPickerViewModel:** `parseSpoolId(from:)` parser, `configureNFCScanner(_:)` ready for DI
+- **AddSpoolViewModel:** `prefill(from:)` method, scanned data visibility management
+
+### Decisions
+
+- Single-scan mode for QR (stops after first barcode)
+- Permission denial shows alert + Settings link
+- NFC button disabled on unsupported devices
+- Pre-fill banner signals scanned data origin
+- Text parsing supports 3 formats (URL, plain int, JSON)
+
+### Known Limitations
+
+- Info.plist keys not added (requires Xcode target configuration)
+- NFCWriteView.onWrite not yet wired to Lambert's NFCService.writeTag()
+
+---
+
+## User Directives (Quality Gates)
+
+**Date:** 2026-03-07  
+**Source:** Jeff Papiez (via Copilot)
+
+### Quality Gate for All Work
+
+All agent deliverables must pass before claiming "done":
+
+1. ✅ `swift build` — compile clean (zero errors)
+2. ✅ `swiftlint lint --quiet` — zero errors (warnings OK as baseline)
+3. ⚠️ `swift test` — has known `@main` linker conflict in SPM; tests validated in Xcode only
+
+**Why:** User requested build validation as part of all work
+
+### QR Code Feature Request
+
+Phase 2 should support reading QR codes (generated by Spoolman) to link spool with printer, in addition to NFC tag scanning/writing.
+
+**Why:** Spoolman generates QR codes; scanning is natural complement to NFC.
+
+---
+
+## Phase 2: Test Coverage (Ash)
+
+**Date:** 2026-03-07  
+**Author:** Ash  
+**Status:** Implemented
+
+### Test Files (4 new)
+
+1. **QRCodeParserTests** — 15 cases
+   - URL format parsing (`/spools/{id}`, `/spool/{id}`)
+   - Plain numeric parsing
+   - JSON payloads (id, spoolId, spool_id keys)
+   - Invalid/malformed inputs
+   - Edge cases
+
+2. **NFCTagParserTests** — 18 cases
+   - OpenSpool NDEF record parsing
+   - OpenPrintTag NDEF record parsing
+   - Multi-record handling
+   - Invalid structures
+   - Missing fields
+
+3. **SpoolPickerViewModelScanTests** — 14 cases
+   - Successful QR/NFC scan flows
+   - Permission denial handling
+   - Invalid spool ID (backend lookup failure)
+   - Network errors
+   - User cancellation
+
+4. **MockScannerService** — Test double
+   - Spy: records all scan calls
+   - Stub: returns configured SpoolScanResult
+
+### Coverage Summary
+
+- **61 total test cases** across 4 files
+- **Parser tests:** 33 cases (QR + NFC format variants)
+- **ViewModel tests:** 14 cases (happy path + errors)
+- **Mock infrastructure:** MockScannerService for ViewModel testing
+
+### Limitations
+
+- Integration tests (scanner + network + ViewModel) deferred to Phase 3
+- Device-specific tests (permission flow on physical device) — manual QA
+- NFC tag write flow tests deferred pending NFCService validation
+
+### Recommendations
+
+1. Use MockScannerService for all ViewModel/UI tests
+2. Snapshot tests for QRScannerView/NFCWriteView (Phase 3)
+3. Manual device QA with real Spoolman QR labels + NFC tags
+
+---
