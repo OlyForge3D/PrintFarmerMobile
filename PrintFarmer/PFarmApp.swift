@@ -2,6 +2,9 @@ import SwiftUI
 
 @main
 struct PFarmApp: App {
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
     @State private var router = AppRouter()
     @State private var authViewModel: AuthViewModel
     @State private var services: ServiceContainer
@@ -33,6 +36,13 @@ struct PFarmApp: App {
             .preferredColorScheme(themeManager.preferredColorScheme)
             .task {
                 await authViewModel.restoreSession()
+                #if canImport(UIKit)
+                PushNotificationManager.shared.configure(notificationService: services.notificationService)
+                await PushNotificationManager.shared.refreshPermissionStatus()
+                if PushNotificationManager.shared.pushEnabled {
+                    await PushNotificationManager.shared.requestPermissionAndRegister()
+                }
+                #endif
             }
         }
     }

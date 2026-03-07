@@ -111,6 +111,13 @@ actor APIClient {
         try await executeVoid(request)
     }
 
+    func postVoid<B: Encodable & Sendable>(_ path: String, body: B) async throws {
+        var request = try buildRequest(path: path, method: "POST")
+        request.httpBody = try encoder.encode(body)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        try await executeVoid(request)
+    }
+
     func putVoid(_ path: String) async throws {
         let request = try buildRequest(path: path, method: "PUT")
         try await executeVoid(request)

@@ -31,4 +31,19 @@ actor NotificationService: NotificationServiceProtocol {
     func delete(id: String) async throws {
         try await apiClient.delete("/api/notifications/\(id)")
     }
+
+    // MARK: - Device Token Registration
+
+    /// Register an APNs device token with the backend for push notifications.
+    /// NOTE: Backend endpoint TBD — uses placeholder path `/api/notifications/device-token`.
+    /// Wire to actual endpoint once backend adds device registration support.
+    func registerDeviceToken(_ token: String, platform: String = "ios") async throws {
+        let request = DeviceTokenRegistration(token: token, platform: platform)
+        try await apiClient.postVoid("/api/notifications/device-token", body: request)
+    }
+
+    /// Unregister a device token from the backend (e.g., on logout).
+    func unregisterDeviceToken(_ token: String) async throws {
+        try await apiClient.delete("/api/notifications/device-token/\(token)")
+    }
 }

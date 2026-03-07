@@ -149,3 +149,15 @@
 - **Ripley's theme system:** 22 color tokens in ThemeColors.swift with adaptive light/dark support, ThemeManager for persistence, global pfAccent (green) tint. All future views must use Color.pf* tokens.
 - **Decision record:** All QA audit fixes merged into decisions.md (decision #5 auto-logout, #6 enum serialization, #13 audit status)
 - **Outcome:** All critical + important issues resolved; build clean; commit 7fb1419
+
+### Push Notification Infrastructure (2026-07-17)
+- **PushNotificationManager** (`PrintFarmer/Services/PushNotificationManager.swift`): `@MainActor @Observable` singleton handling APNs registration, permission requests, foreground notification display via `UNUserNotificationCenterDelegate`, device token capture, and server-side token registration.
+- **AppDelegate** (`PrintFarmer/App/AppDelegate.swift`): UIApplicationDelegate adapter wired via `@UIApplicationDelegateAdaptor` in PFarmApp for push callback forwarding.
+- **NotificationService extended:** Added `registerDeviceToken(_:platform:)` and `unregisterDeviceToken(_:)` methods. Backend does NOT have a device token endpoint yet — uses placeholder path `/api/notifications/device-token`. Wire to real endpoint when Dallas adds it.
+- **APIClient extended:** Added `postVoid(_:body:)` overload (POST with Encodable body, void response) — was missing, needed for token registration.
+- **NotificationServiceProtocol updated:** Two new methods added; MockNotificationService updated in tests.
+- **SettingsView:** Push notification toggle added in new "Notifications" section (iOS only, `#if canImport(UIKit)` guarded).
+- **PFarmApp.swift:** Wires `@UIApplicationDelegateAdaptor(AppDelegate.self)`, configures PushNotificationManager with NotificationService on launch, auto-registers if user previously enabled push.
+- **All code is `#if canImport(UIKit)` guarded** so SPM macOS build (`swift build`) succeeds.
+- **Backend finding:** `NotificationsController.cs` has `EnablePushNotifications` preference flag but NO device token registration endpoint. Placeholder path used.
+- **Deep-link ready:** Tapped notification posts `Notification.Name.pushNotificationTapped` with userInfo — Ripley can observe this in AppRouter for navigation.

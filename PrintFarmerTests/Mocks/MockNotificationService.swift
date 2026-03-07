@@ -39,4 +39,18 @@ final class MockNotificationService: NotificationServiceProtocol, @unchecked Sen
         deleteCalledWith = id
         if let error = errorToThrow { throw error }
     }
+
+    // Push notification device token
+    var registerDeviceTokenCalledWith: (token: String, platform: String)?
+    var unregisterDeviceTokenCalledWith: String?
+
+    func registerDeviceToken(_ token: String, platform: String) async throws {
+        registerDeviceTokenCalledWith = (token, platform)
+        if let error = errorToThrow { throw error }
+    }
+
+    func unregisterDeviceToken(_ token: String) async throws {
+        unregisterDeviceTokenCalledWith = token
+        if let error = errorToThrow { throw error }
+    }
 }
