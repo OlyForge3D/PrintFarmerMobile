@@ -9,6 +9,7 @@ final class MockPrinterService: PrinterServiceProtocol, @unchecked Sendable {
     var commandResultToReturn = CommandResult(success: true, message: nil)
     var snapshotDataToReturn = Data()
     var queueOverviewToReturn: [QueueOverview] = []
+    var spoolsToReturn: [SpoolmanSpool] = []
     var errorToThrow: Error?
 
     // Call tracking
@@ -25,6 +26,11 @@ final class MockPrinterService: PrinterServiceProtocol, @unchecked Sendable {
     var emergencyStopCalledWith: UUID?
     var maintenanceCalledWith: (id: UUID, inMaintenance: Bool)?
     var queueOverviewCalled = false
+    var setActiveSpoolCalledWith: (printerId: UUID, spoolId: Int?)?
+    var listAvailableSpoolsCalledWith: UUID?
+    var loadFilamentCalledWith: UUID?
+    var unloadFilamentCalledWith: UUID?
+    var changeFilamentCalledWith: UUID?
 
     func list(includeDisabled: Bool = false) async throws -> [Printer] {
         listPrintersCalled = true
@@ -102,6 +108,36 @@ final class MockPrinterService: PrinterServiceProtocol, @unchecked Sendable {
         return queueOverviewToReturn
     }
 
+    func setActiveSpool(printerId: UUID, spoolId: Int?) async throws -> CommandResult {
+        setActiveSpoolCalledWith = (printerId, spoolId)
+        if let error = errorToThrow { throw error }
+        return commandResultToReturn
+    }
+
+    func listAvailableSpools(printerId: UUID) async throws -> [SpoolmanSpool] {
+        listAvailableSpoolsCalledWith = printerId
+        if let error = errorToThrow { throw error }
+        return spoolsToReturn
+    }
+
+    func loadFilament(printerId: UUID) async throws -> CommandResult {
+        loadFilamentCalledWith = printerId
+        if let error = errorToThrow { throw error }
+        return commandResultToReturn
+    }
+
+    func unloadFilament(printerId: UUID) async throws -> CommandResult {
+        unloadFilamentCalledWith = printerId
+        if let error = errorToThrow { throw error }
+        return commandResultToReturn
+    }
+
+    func changeFilament(printerId: UUID) async throws -> CommandResult {
+        changeFilamentCalledWith = printerId
+        if let error = errorToThrow { throw error }
+        return commandResultToReturn
+    }
+
     func reset() {
         printersToReturn = []
         printerToReturn = nil
@@ -122,5 +158,11 @@ final class MockPrinterService: PrinterServiceProtocol, @unchecked Sendable {
         emergencyStopCalledWith = nil
         maintenanceCalledWith = nil
         queueOverviewCalled = false
+        setActiveSpoolCalledWith = nil
+        listAvailableSpoolsCalledWith = nil
+        loadFilamentCalledWith = nil
+        unloadFilamentCalledWith = nil
+        changeFilamentCalledWith = nil
+        spoolsToReturn = []
     }
 }

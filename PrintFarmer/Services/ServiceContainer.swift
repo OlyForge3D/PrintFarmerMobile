@@ -12,6 +12,7 @@ final class ServiceContainer: @unchecked Sendable {
     let statisticsService: StatisticsService
     let notificationService: NotificationService
     let signalRService: SignalRService
+    let spoolService: SpoolService
 
     init(baseURL: URL? = nil) {
         let resolvedURL = baseURL
@@ -24,6 +25,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.locationService = LocationService(apiClient: apiClient)
         self.statisticsService = StatisticsService(apiClient: apiClient)
         self.notificationService = NotificationService(apiClient: apiClient)
+        self.spoolService = SpoolService(apiClient: apiClient)
 
         let client = apiClient
         self.signalRService = SignalRService(serverURL: resolvedURL) {

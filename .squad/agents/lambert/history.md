@@ -161,3 +161,15 @@
 - **All code is `#if canImport(UIKit)` guarded** so SPM macOS build (`swift build`) succeeds.
 - **Backend finding:** `NotificationsController.cs` has `EnablePushNotifications` preference flag but NO device token registration endpoint. Placeholder path used.
 - **Deep-link ready:** Tapped notification posts `Notification.Name.pushNotificationTapped` with userInfo — Ripley can observe this in AppRouter for navigation.
+
+### Phase 1 Filament/Spool Models & Services (2026-07-17)
+- **FilamentModels.swift:** Created `SpoolmanSpool`, `SpoolmanFilament`, `SpoolmanVendor`, `SpoolmanMaterial`, `SpoolmanPagedResult<T>`, `SpoolmanSpoolRequest`, `SetActiveSpoolRequest` — all verified against backend DTOs in `~/s/PFarm1/src/infra/Dtos/`.
+- **SpoolService.swift:** Actor-based service with CRUD for spools, plus list filaments/vendors/materials. Routes: `/api/spoolman/spools`, `/api/spoolman/filaments`, `/api/spoolman/vendors`, `/api/spoolman/materials`.
+- **SpoolServiceProtocol.swift:** Protocol with convenience overload for `listSpools()`.
+- **PrinterService extensions:** Added `setActiveSpool`, `listAvailableSpools`, `loadFilament`, `unloadFilament`, `changeFilament`. Routes: `/active-spool`, `/spoolman/spools`, `/filament-load`, `/filament-unload`, `/filament-change`.
+- **APIClient.patch():** Added PATCH method — backend uses `[HttpPatch]` for spool/filament updates.
+- **ServiceContainer:** Registered `SpoolService`.
+- **MockSpoolService.swift:** Full mock with call tracking and `reset()`.
+- **MockPrinterService.swift:** Extended with filament method stubs and call tracking.
+- **Key backend finding:** `PrinterSpoolInfo` already existed in Models.swift — removed duplicate from FilamentModels.swift. Backend spool list returns `SpoolmanPagedResult<SpoolmanSpoolDto>` (paginated with `items`/`totalCount`), NOT a flat array. Used `limit`/`offset` pagination (matching Spoolman's native API) rather than `page`/`pageSize`.
+- **JSON naming:** Backend uses `JsonNamingPolicy.CamelCase` — Swift property names match JSON keys directly (no key strategy needed).

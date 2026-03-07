@@ -76,4 +76,27 @@ actor PrinterService: PrinterServiceProtocol {
         let query = params.isEmpty ? "" : "?\(params.joined(separator: "&"))"
         return try await apiClient.get("/api/job-queue\(query)")
     }
+
+    // MARK: - Filament / Spool
+
+    func setActiveSpool(printerId: UUID, spoolId: Int?) async throws -> CommandResult {
+        let body = SetActiveSpoolRequest(spoolId: spoolId)
+        return try await apiClient.post("/api/printers/\(printerId)/active-spool", body: body)
+    }
+
+    func listAvailableSpools(printerId: UUID) async throws -> [SpoolmanSpool] {
+        try await apiClient.get("/api/printers/\(printerId)/spoolman/spools")
+    }
+
+    func loadFilament(printerId: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(printerId)/filament-load")
+    }
+
+    func unloadFilament(printerId: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(printerId)/filament-unload")
+    }
+
+    func changeFilament(printerId: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(printerId)/filament-change")
+    }
 }
