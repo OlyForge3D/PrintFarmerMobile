@@ -109,3 +109,12 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **Fix:** Manually edited project.pbxproj to add: 3 PBXFileReference entries, 3 PBXBuildFile entries (linked to Sources build phase), a new "Theme" PBXGroup under the PrintFarmer group, and 3 entries in PBXSourcesBuildPhase for the PrintFarmer target.
 - **Pattern for future files:** When adding files outside Xcode (e.g., via squad agents), 4 pbxproj touches are needed per file: PBXFileReference, PBXBuildFile, PBXGroup child, and PBXSourcesBuildPhase entry. UUIDs are 24-char uppercase hex and must not collide.
 - **Validation:** Always run `plutil -lint PrintFarmer.xcodeproj/project.pbxproj` after edits — pbxproj is plist-format and fragile.
+
+### PrinterDetailView Blank Page Fix (2025-07-18)
+- **Root cause:** Two bugs combined to produce a blank page:
+  1. `PrinterDetailView.body` had three conditional branches (loading+nil, error+nil, printer) but **no else fallback**. The initial state (isLoading=false, printer=nil, errorMessage=nil) matched none of them → blank Group.
+  2. `PrinterDetailViewModel.loadPrinter()` set `isLoading = true` AFTER a `guard let printerService` check. If the guard failed (service not yet configured), the method returned silently with no state change, leaving the view permanently blank.
+- **Fix applied:**
+  - Reordered view conditionals: content first (printer non-nil), error second, else shows ProgressView. This guarantees something always renders.
+  - Moved `isLoading = true` before the guard in `loadPrinter()`. If the guard fails, an error message is now set instead of silent return.
+- **Backend note:** `GET /api/printers/{id}` returns `PrinterDto` which lacks `InMaintenance`/`IsEnabled` fields present in `CompletePrinterDto` (list endpoint). Our Printer model handles this via `decodeIfPresent` defaults, so decoding works but maintenance status may show incorrect after detail fetch. Separate issue to address later.

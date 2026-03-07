@@ -52,9 +52,14 @@ final class PrinterDetailViewModel {
     }
 
     func loadPrinter() async {
-        guard let printerService else { return }
         isLoading = true
         errorMessage = nil
+
+        guard let printerService else {
+            errorMessage = "Printer service not available"
+            isLoading = false
+            return
+        }
 
         do {
             printer = try await printerService.get(id: printerId)

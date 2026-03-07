@@ -79,3 +79,17 @@ _Ash ready to implement feature screens and navigation flows._
 - **→ Ripley (URGENT):** Fix 3 PrinterDetailViewModel method calls to match actual protocol signatures
 - **→ All:** Test suite ready for integration validation after Ripley fixes mismatches
 - **Next:** Run full test suite post-fix; validate all ViewModel+Service integrations
+
+### MVP QA Review (2025-07-18)
+- **Test coverage: 41%** (7/17 testable units). 4 ViewModels and 5 Services lack test files. All existing 145 tests are structurally valid — no broken references.
+- **Mock alignment: 100%** — all 6 protocol mocks perfectly match current protocol signatures.
+- **Memory safety: Excellent** — no retain cycles found. SignalR uses `[weak self]` correctly. SwiftUI task lifecycle is safe. One future risk: SignalR handler arrays have no unregister mechanism.
+- **Critical error handling gaps:** JobListView and NotificationsView set `errorMessage` but never display it to users. Silent failures on job cancel/abort and notification operations.
+- **Token expiry not validated:** AuthService stores expiry in Keychain but never checks it before API calls. No auto-logout on 401 — users see generic errors on every screen.
+- **DashboardView missing empty state** for zero-printer scenario (new accounts).
+- **Redundant AuthService** created in PFarmApp.init() instead of using ServiceContainer's instance.
+- **Report written to:** `.squad/decisions/inbox/ash-qa-review.md` with 12 prioritized action items and owner assignments.
+- **→ Ripley:** Fix error UI in JobListView + NotificationsView (critical), add DashboardView empty state
+- **→ Lambert:** Implement 401 auto-logout, token expiry pre-check, SignalR handler cleanup
+- **→ Ash:** Write AuthViewModel, JobListViewModel, JobDetailViewModel, NotificationsViewModel tests
+- **→ Dallas:** Fix redundant AuthService in PFarmApp.init()

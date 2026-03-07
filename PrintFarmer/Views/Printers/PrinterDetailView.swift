@@ -10,10 +10,9 @@ struct PrinterDetailView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.printer == nil {
-                ProgressView("Loading printer…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage, viewModel.printer == nil {
+            if let printer = viewModel.printer {
+                printerContent(printer)
+            } else if let error = viewModel.errorMessage {
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
                 } description: {
@@ -23,8 +22,9 @@ struct PrinterDetailView: View {
                         Task { await viewModel.loadPrinter() }
                     }
                 }
-            } else if let printer = viewModel.printer {
-                printerContent(printer)
+            } else {
+                ProgressView("Loading printer…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle(viewModel.printer?.name ?? "Printer")
