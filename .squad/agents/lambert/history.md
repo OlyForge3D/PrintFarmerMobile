@@ -216,3 +216,21 @@
 - Manual device QA (simulator lacks NFC)
 - Ripley wires services into views
 - Dallas validates ServiceContainer startup
+
+## Learnings
+
+### nonisolated(unsafe) placement for nested @Sendable closures
+When a delegate method parameter (like `NFCTagReaderSession`) is captured in multiple nested `@Sendable` closures, the `nonisolated(unsafe) let` rebinding must be placed at the TOP of the method — before the first closure — not inside an inner closure. Otherwise only the innermost closure gets the safe binding while outer closures still capture the raw non-Sendable parameter. Combined with `@preconcurrency import CoreNFC` (already in place), this fully suppresses Sendable warnings for CoreNFC types that predate Swift Concurrency.
+
+### NFCService Sendable Conformance (2026-03-07)
+- NFCService implements Sendable protocol for safe concurrent use in ViewModels
+- Fixed Sendable warning at line 201 in `tagReaderSession(_:didDetect:)` by using `nonisolated(unsafe)` rebinding pattern
+- Both @Sendable closures now safely capture binding references without concurrency violations
+- Pattern: Move `nonisolated(unsafe)` rebinding to method entry, then closures can reference safely
+- This ensures NFCService can be used in @Observable ViewModels without "sending risk" errors
+
+### Ripley's GcodeFile Filename Mapping (2026-03-07)
+- Backend JobQueueService.cs had incorrect mapping: GcodeFile.FileName (GUID-based disk name) instead of GcodeFile.Name (user-uploaded original filename)
+- Fixed in 6 locations across JobQueueService (change committed to ~/s/PFarm1)
+- iOS models/views require no changes — the DTO field contract remains unchanged, backend now sends correct value
+- Job detail view now displays original filenames to users instead of internal GUIDs

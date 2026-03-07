@@ -270,3 +270,20 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **Fix:** Changed all 5 DTO mapping sites in `JobQueueService.cs` to use `.Name` instead of `.FileName`. Also fixed job creation where `PrintJob.Name` was being set to the disk filename.
 - **iOS side:** No iOS changes needed — the `PrintJob.gcodeFileName` field and computed `name` property correctly display whatever the API sends. The bug was entirely server-side.
 - **Spool picker search:** Task 2 (add filtering to spool picker) was already implemented — `SpoolPickerView` already has `.searchable()` and `SpoolPickerViewModel` already has `filteredSpools` that filters by material, filamentName, vendor, and name.
+
+### GcodeFile Filename Mapping Fix (2026-03-07)
+- Fixed backend JobQueueService.cs mapping: GcodeFile.FileName → GcodeFile.Name (6 locations)
+- User-uploaded filenames now display in job detail views instead of internal GUID-based disk names
+- Change applied to ~/s/PFarm1 (backend repo) — iOS app requires no model or view changes
+- DTO contract unchanged; backend now sends correct original filename value
+- Impact: All API consumers (iOS, web, etc.) see user-friendly filenames
+
+### Spool Filtering (2026-03-07)
+- Verified spool filtering functionality already exists in codebase
+- No additional work needed — feature is complete and functional
+
+### NFCService Sendable Pattern (2026-03-07)
+- Lambert fixed NFCService Sendable warning using `nonisolated(unsafe)` rebinding at method entry
+- Both @Sendable closures in tagReaderSession now safely reference bindings
+- Pattern: When @Sendable closures need access to isolated state, use nonisolated(unsafe) rebinding at method start
+- Ensures NFCService works correctly in @Observable ViewModels without concurrency errors
