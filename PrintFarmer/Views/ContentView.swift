@@ -24,6 +24,10 @@ struct ContentView: View {
                 .tag(AppTab.notifications)
                 .badge(router.notificationBadgeCount)
 
+            SpoolInventoryView()
+                .tabItem { Label("Inventory", systemImage: "cylinder.fill") }
+                .tag(AppTab.inventory)
+
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(AppTab.settings)

@@ -142,3 +142,16 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **`isLoadingSnapshot` property** added to PrinterDetailViewModel to disable refresh button during load.
 - **Pull-to-refresh was already implemented** on all four list views (PrinterListView, JobListView, NotificationsView, DashboardView) and PrinterDetailView from the MVP build.
 - **`AsyncImage` fallback pattern:** When the authenticated `getSnapshot(id:)` service call fails or hasn't loaded, we try the direct `cameraSnapshotUrl` from the Printer model via AsyncImage. This URL is a direct public URL from the backend's CompletePrinterDto.
+
+### Phase 1 Filament Management UI (2025-07-18)
+- **6 new files created:** SpoolPickerView, SpoolInventoryView, AddSpoolView (in Views/Filament/), SpoolPickerViewModel, SpoolInventoryViewModel, AddSpoolViewModel (in ViewModels/)
+- **PrinterDetailView extended:** New "Filament" section showing active spool info (color swatch, material, vendor, remaining weight progress bar), "Load Filament" button → SpoolPickerView sheet, "Eject" button → unloads filament. Empty state when no spool loaded.
+- **PrinterDetailViewModel extended:** Added `showSpoolPicker`, `loadFilament()`, `ejectFilament()`, `setActiveSpool(_:)` using `PrinterServiceProtocol.setActiveSpool(printerId:spoolId:)`, `.loadFilament(printerId:)`, `.unloadFilament(printerId:)`.
+- **New Inventory tab:** Added `AppTab.inventory` to AppRouter + ContentView TabView. SF Symbol: `cylinder.fill`. SpoolInventoryView with search, swipe-to-delete, pull-to-refresh, "+" toolbar button → AddSpoolView sheet.
+- **AddSpoolView:** Form with material picker, vendor picker, color swatches + hex input, total/spool weight fields. References data from SpoolService.listMaterials/listVendors/listFilaments. Dismisses on save.
+- **Lambert's work consumed:** SpoolService (actor), SpoolServiceProtocol, FilamentModels (SpoolmanSpool, SpoolmanFilament, SpoolmanVendor, SpoolmanMaterial, SpoolmanPagedResult, SpoolmanSpoolRequest, SetActiveSpoolRequest) — all already built and working.
+- **Duplicate PrinterSpoolInfo removed** from FilamentModels.swift (kept canonical version in Models.swift with custom decoder).
+- **Platform guards:** `#if os(iOS)` for `.keyboardType()`, `.textInputAutocapitalization()`, `.topBarTrailing` toolbar placement.
+- **pbxproj registration:** 9 new files + 1 new group (Filament) registered in project.pbxproj. Also registered Lambert's 3 unregistered files (FilamentModels.swift, SpoolService.swift, SpoolServiceProtocol.swift).
+- **Phase 2 NFC note:** SpoolPickerView and AddSpoolView are ready for OpenSpool/OpenPrintTag NFC scan integration (Phase 2). Future "Scan NFC" button will auto-populate spool data from tag.
+- **SPM build clean:** `swift build` succeeds with zero errors.

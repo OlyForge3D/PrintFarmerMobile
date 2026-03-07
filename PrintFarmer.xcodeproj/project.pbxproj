@@ -84,6 +84,15 @@
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* AppDelegate.swift */; };
 		D1E2F3A4B5C6D7E8F9A0B1C2 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B6C7D8E9F0A1B2 /* PushNotificationManager.swift */; };
 		F7A8B2C3D4E5F6A7B8C9D0E1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2F3A4B5C6D7E8F9A0B1C2D3 /* Assets.xcassets */; };
+		2CB42A860B669F5B702F984D /* FilamentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4E2EE087E92C131271B37F /* FilamentModels.swift */; };
+		BADFC6669F70FAF0AF21DB37 /* SpoolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF23D467957EDEE89DB0A90A /* SpoolService.swift */; };
+		5B82756AC8306EB8A20E68EE /* SpoolServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21023EEB533787E494E2B82 /* SpoolServiceProtocol.swift */; };
+		A391E9CBE39F5EAF1A94264D /* SpoolPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D305E8384A01A3EBE5866CF /* SpoolPickerView.swift */; };
+		A5DAEF79F0E6036756BD6A96 /* SpoolInventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9A3AD3F5C5DD33CAF7C6CB /* SpoolInventoryView.swift */; };
+		4FFB267499981D7206071A85 /* AddSpoolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013F7A319FAE93072F4272D2 /* AddSpoolView.swift */; };
+		264690BE3784294A9AADB33B /* SpoolPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */; };
+		3F2B3B9AEAE8DF4B91541072 /* SpoolInventoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */; };
+		26F5D2EC28D2FD075AF12C08 /* AddSpoolViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D860B7B852D3B6814A7CAF /* AddSpoolViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -175,6 +184,15 @@
 		F9121CFE5C6DFAB79CD12B21 /* JobDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailViewModel.swift; sourceTree = "<group>"; };
 		F9C17AD264628260EACB8E5E /* JobServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobServiceProtocol.swift; sourceTree = "<group>"; };
 		FDDEAB7ED1DC689B3B4FB5FB /* PFarmApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFarmApp.swift; sourceTree = "<group>"; };
+		4B4E2EE087E92C131271B37F /* FilamentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilamentModels.swift; sourceTree = "<group>"; };
+		BF23D467957EDEE89DB0A90A /* SpoolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolService.swift; sourceTree = "<group>"; };
+		D21023EEB533787E494E2B82 /* SpoolServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolServiceProtocol.swift; sourceTree = "<group>"; };
+		0D305E8384A01A3EBE5866CF /* SpoolPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolPickerView.swift; sourceTree = "<group>"; };
+		CD9A3AD3F5C5DD33CAF7C6CB /* SpoolInventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolInventoryView.swift; sourceTree = "<group>"; };
+		013F7A319FAE93072F4272D2 /* AddSpoolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSpoolView.swift; sourceTree = "<group>"; };
+		03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolPickerViewModel.swift; sourceTree = "<group>"; };
+		C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolInventoryViewModel.swift; sourceTree = "<group>"; };
+		34D860B7B852D3B6814A7CAF /* AddSpoolViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSpoolViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,6 +260,7 @@
 				C1D2E3F4A5B6C7D8E9F0A1B2 /* PushNotificationManager.swift */,
 				967769D7BBE893354EE7158A /* ServiceContainer.swift */,
 				45FDB4137FE34914C387AE17 /* SignalRService.swift */,
+				BF23D467957EDEE89DB0A90A /* SpoolService.swift */,
 				07BDD1556443A5859F5EE43F /* StatisticsService.swift */,
 			);
 			path = Services;
@@ -263,6 +282,7 @@
 		2A991A21494BE0619C801F85 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				4B4E2EE087E92C131271B37F /* FilamentModels.swift */,
 				B8D7C5C4CE62E9F3684E5B1F /* Models.swift */,
 				62BAD7F52A9EFEE471AA461C /* RequestModels.swift */,
 				6208E685EEDD0498124C143A /* SignalRModels.swift */,
@@ -278,6 +298,7 @@
 				288048764D1B47272B433307 /* PrinterServiceProtocol.swift */,
 				2D136C4B21A734AB1D5FDBFD /* ServiceError.swift */,
 				809149B9D7E0B339296A7E1E /* SignalRServiceProtocol.swift */,
+				D21023EEB533787E494E2B82 /* SpoolServiceProtocol.swift */,
 				10120F9FBE4ED41F47B5FDBB /* StatisticsServiceProtocol.swift */,
 			);
 			path = Protocols;
@@ -364,6 +385,7 @@
 				707B7EA94C57005EC3C622EC /* Auth */,
 				CF12EED79C368B077ED14222 /* Components */,
 				CC3B7B4670D1DE3829893360 /* Dashboard */,
+				03C232B9AB7E551B91F9C575 /* Filament */,
 				B9E7EC3A58A49D8A4BCADCF3 /* Jobs */,
 				4CDE928BC4B813AB90009605 /* Locations */,
 				771CDF6A20CC0E555A100EEE /* Notifications */,
@@ -426,6 +448,16 @@
 			path = Dashboard;
 			sourceTree = "<group>";
 		};
+		03C232B9AB7E551B91F9C575 /* Filament */ = {
+			isa = PBXGroup;
+			children = (
+				013F7A319FAE93072F4272D2 /* AddSpoolView.swift */,
+				CD9A3AD3F5C5DD33CAF7C6CB /* SpoolInventoryView.swift */,
+				0D305E8384A01A3EBE5866CF /* SpoolPickerView.swift */,
+			);
+			path = Filament;
+			sourceTree = "<group>";
+		};
 		CF12EED79C368B077ED14222 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -460,6 +492,7 @@
 		E26E1BBC87C8546803F01CA4 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				34D860B7B852D3B6814A7CAF /* AddSpoolViewModel.swift */,
 				AC9740564FFEA02088E0E2C8 /* AuthViewModel.swift */,
 				AC19E58C13E4D3505F4AC0B5 /* DashboardViewModel.swift */,
 				F9121CFE5C6DFAB79CD12B21 /* JobDetailViewModel.swift */,
@@ -468,6 +501,8 @@
 				C8090CB206CE8E8AE1084796 /* NotificationsViewModel.swift */,
 				4AB0049295C7EA8B4B2FF0CA /* PrinterDetailViewModel.swift */,
 				4F5C0DDAD4063D1EA8540264 /* PrinterListViewModel.swift */,
+				C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */,
+				03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -658,6 +693,15 @@
 				EF380A83B48A16EAB8906C70 /* ThemeManager.swift in Sources */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* AppDelegate.swift in Sources */,
 				D1E2F3A4B5C6D7E8F9A0B1C2 /* PushNotificationManager.swift in Sources */,
+				2CB42A860B669F5B702F984D /* FilamentModels.swift in Sources */,
+				BADFC6669F70FAF0AF21DB37 /* SpoolService.swift in Sources */,
+				5B82756AC8306EB8A20E68EE /* SpoolServiceProtocol.swift in Sources */,
+				A391E9CBE39F5EAF1A94264D /* SpoolPickerView.swift in Sources */,
+				A5DAEF79F0E6036756BD6A96 /* SpoolInventoryView.swift in Sources */,
+				4FFB267499981D7206071A85 /* AddSpoolView.swift in Sources */,
+				264690BE3784294A9AADB33B /* SpoolPickerViewModel.swift in Sources */,
+				3F2B3B9AEAE8DF4B91541072 /* SpoolInventoryViewModel.swift in Sources */,
+				26F5D2EC28D2FD075AF12C08 /* AddSpoolViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

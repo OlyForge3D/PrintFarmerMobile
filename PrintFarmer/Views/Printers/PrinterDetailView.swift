@@ -57,6 +57,139 @@ struct PrinterDetailView: View {
             viewModel.configure(printerService: services.printerService)
             await viewModel.loadPrinter()
         }
+        .sheet(isPresented: $viewModel.showSpoolPicker) {
+            SpoolPickerView { spool in
+                Task { await viewModel.setActiveSpool(spool) }
+            }
+        }
+    }
+
+    // MARK: - Filament Section
+
+    private func filamentSection(_ printer: Printer) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Filament")
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 10) {
+                if let spool = printer.spoolInfo, spool.hasActiveSpool {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color(hex: spool.colorHex ?? "#808080"))
+                            .frame(width: 28, height: 28)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.pfBorder, lineWidth: 1)
+                            )
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(spool.filamentName ?? spool.spoolName ?? "Unknown")
+                                .font(.subheadline.weight(.medium))
+
+                            HStack(spacing: 6) {
+                                if let material = spool.material {
+                                    Text(material)
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.pfBackgroundTertiary, in: Capsule())
+                                }
+                                if let vendor = spool.vendor {
+                                    Text(vendor)
+                                        .font(.caption)
+                                        .foregroundStyle(Color.pfTextSecondary)
+                                }
+                            }
+                        }
+
+                        Spacer()
+                    }
+
+                    // Remaining weight progress
+                    if let remaining = spool.remainingWeightG {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Remaining")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.pfTextSecondary)
+                                Spacer()
+                                Text("\(Int(remaining))g")
+                                    .font(.caption.weight(.medium))
+                            }
+
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.pfBackgroundTertiary)
+                                        .frame(height: 8)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.pfAccent)
+                                        .frame(width: geo.size.width * filamentProgress(remaining: remaining), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
+                        }
+                    }
+
+                    Divider()
+
+                    HStack(spacing: 12) {
+                        Button {
+                            viewModel.loadFilament()
+                        } label: {
+                            Label("Change Filament", systemImage: "arrow.triangle.2.circlepath")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(role: .destructive) {
+                            Task { await viewModel.ejectFilament() }
+                        } label: {
+                            Label("Eject", systemImage: "eject.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color.pfError)
+                    }
+                    .disabled(viewModel.isPerformingAction)
+                } else {
+                    // No filament loaded
+                    VStack(spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "cylinder")
+                                .font(.title2)
+                                .foregroundStyle(Color.pfTextTertiary)
+                            Text("No filament loaded")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.pfTextSecondary)
+                            Spacer()
+                        }
+
+                        Button {
+                            viewModel.loadFilament()
+                        } label: {
+                            Label("Load Filament", systemImage: "plus.circle.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.pfAccent)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    /// Estimate progress assuming ~1000g full spool when no initial weight data is available
+    private func filamentProgress(remaining: Double) -> CGFloat {
+        let assumed = 1000.0
+        return min(max(CGFloat(remaining / assumed), 0), 1)
     }
 
     // MARK: - Main Content
@@ -79,6 +212,9 @@ struct PrinterDetailView: View {
 
                 // Camera Snapshot
                 cameraSection(printer)
+
+                // Filament
+                filamentSection(printer)
 
                 // Actions
                 if printer.isOnline {

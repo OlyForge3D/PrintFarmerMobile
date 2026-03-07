@@ -44,6 +44,8 @@ final class PrinterDetailViewModel {
         }
     }
 
+    var showSpoolPicker = false
+
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
 
@@ -53,6 +55,40 @@ final class PrinterDetailViewModel {
 
     func configure(printerService: any PrinterServiceProtocol) {
         self.printerService = printerService
+    }
+
+    // MARK: - Filament / Spool
+
+    func loadFilament() {
+        showSpoolPicker = true
+    }
+
+    func ejectFilament() async {
+        guard let printerService else { return }
+        isPerformingAction = true
+        actionError = nil
+        do {
+            _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: nil)
+            _ = try await printerService.unloadFilament(printerId: printerId)
+            await loadPrinter()
+        } catch {
+            actionError = error.localizedDescription
+        }
+        isPerformingAction = false
+    }
+
+    func setActiveSpool(_ spool: SpoolmanSpool) async {
+        guard let printerService else { return }
+        isPerformingAction = true
+        actionError = nil
+        do {
+            _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: spool.id)
+            _ = try await printerService.loadFilament(printerId: printerId)
+            await loadPrinter()
+        } catch {
+            actionError = error.localizedDescription
+        }
+        isPerformingAction = false
     }
 
     func loadPrinter() async {
