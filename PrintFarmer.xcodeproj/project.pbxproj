@@ -57,6 +57,7 @@
 		8BF25372E6C0C5D86559801C /* MockSignalRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C12D0C96BEDCD759DF8A6F1 /* MockSignalRService.swift */; };
 		8E016F38A846594333A70CEB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0262E35EBDB310533C010A /* SettingsView.swift */; };
 		8ED9E2039EB36A33F0B9850D /* Formatting+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9719B51C89BBC3E717E76E /* Formatting+Extensions.swift */; };
+		660DA45F179749438845EEE1 /* SpoolmanSpool+ColorName.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C6B85B1BB446FB9FACBC8D /* SpoolmanSpool+ColorName.swift */; };
 		8F2654878B838B7E5AA35AAC /* PrinterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E94D9CC41318FFA43B8B260 /* PrinterListView.swift */; };
 		937FF5DB1F58D068175C1581 /* MockAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4E6FB4888EBB6541E982BC /* MockAPIClient.swift */; };
 		940708CCB42A9134DABC1B06 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDD6FCA23053FB398C63F95 /* APIClient.swift */; };
@@ -129,6 +130,7 @@
 		07BDD1556443A5859F5EE43F /* StatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsService.swift; sourceTree = "<group>"; };
 		0B45A5C9AA17194A8ED47D1F /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		0C9719B51C89BBC3E717E76E /* Formatting+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Formatting+Extensions.swift"; sourceTree = "<group>"; };
+		E9C6B85B1BB446FB9FACBC8D /* SpoolmanSpool+ColorName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpoolmanSpool+ColorName.swift"; sourceTree = "<group>"; };
 		0D305E8384A01A3EBE5866CF /* SpoolPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoolPickerView.swift; sourceTree = "<group>"; };
 		10120F9FBE4ED41F47B5FDBB /* StatisticsServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsServiceProtocol.swift; sourceTree = "<group>"; };
 		1706B0E2CB9F9ADFA2B914EB /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
@@ -568,6 +570,7 @@
 			isa = PBXGroup;
 			children = (
 				0C9719B51C89BBC3E717E76E /* Formatting+Extensions.swift */,
+				E9C6B85B1BB446FB9FACBC8D /* SpoolmanSpool+ColorName.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -708,6 +711,7 @@
 			files = (
 				2868397DE77379D694A2172C /* PFarmApp.swift in Sources */,
 				8ED9E2039EB36A33F0B9850D /* Formatting+Extensions.swift in Sources */,
+				660DA45F179749438845EEE1 /* SpoolmanSpool+ColorName.swift in Sources */,
 				42EB02BCF9914C6BAF27AD77 /* Models.swift in Sources */,
 				AC275E3BCF7CF6F70474DA5A /* RequestModels.swift in Sources */,
 				4D9D08DD59DF23C812B2963C /* SignalRModels.swift in Sources */,

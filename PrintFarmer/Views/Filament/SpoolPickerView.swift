@@ -26,8 +26,13 @@ struct SpoolPickerView: View {
                     } description: {
                         Text("No spools available. Add spools in the Inventory tab.")
                     }
+                } else if viewModel.hasActiveSearch && viewModel.filteredSpools.isEmpty {
+                    ContentUnavailableView.search(text: viewModel.searchText)
                 } else {
-                    spoolList
+                    VStack(spacing: 0) {
+                        materialFilterChips
+                        spoolList
+                    }
                 }
             }
             .navigationTitle("Select Spool")
@@ -58,7 +63,7 @@ struct SpoolPickerView: View {
                 }
                 #endif
             }
-            .searchable(text: $viewModel.searchText, prompt: "Filter by material, vendor…")
+            .searchable(text: $viewModel.searchText, prompt: "Search by name, material, color…")
             .refreshable {
                 await viewModel.loadSpools()
             }
@@ -110,6 +115,54 @@ struct SpoolPickerView: View {
         }
     }
 
+    private var materialFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                // "All" chip
+                Button {
+                    withAnimation {
+                        viewModel.selectedMaterial = nil
+                    }
+                } label: {
+                    Text("All")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(viewModel.selectedMaterial == nil ? .white : Color.pfTextSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            viewModel.selectedMaterial == nil ? Color.pfAccent : Color.pfBackgroundTertiary,
+                            in: Capsule()
+                        )
+                }
+                
+                // Material chips
+                ForEach(viewModel.availableMaterials, id: \.self) { material in
+                    Button {
+                        withAnimation {
+                            if viewModel.selectedMaterial == material {
+                                viewModel.selectedMaterial = nil
+                            } else {
+                                viewModel.selectedMaterial = material
+                            }
+                        }
+                    } label: {
+                        Text(material)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(viewModel.selectedMaterial == material ? .white : Color.pfTextSecondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                viewModel.selectedMaterial == material ? Color.pfAccent : Color.pfBackgroundTertiary,
+                                in: Capsule()
+                            )
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
+    }
+    
     private var spoolList: some View {
         List(viewModel.filteredSpools) { spool in
             Button {

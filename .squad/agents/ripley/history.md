@@ -73,10 +73,14 @@
 - DTO contract unchanged; backend now sends correct original filename value
 - Impact: All API consumers (iOS, web, etc.) see user-friendly filenames
 
-### Spool Filtering
-- Verified spool filtering functionality already exists in codebase
-- SpoolPickerView has .searchable() and SpoolPickerViewModel has filteredSpools
-- No additional work needed — feature is complete and functional
+### Spool Filtering (Enhanced)
+- Both SpoolInventoryView and SpoolPickerView had `.searchable()` + `filteredSpools` but filtering was limited to name/material/vendor
+- Expanded filter criteria: now includes location, comment, and hex-to-color-name matching
+- Added `SpoolmanSpool+ColorName.swift` extension for approximate color name lookup from hex codes (e.g., searching "red" matches #FF0000)
+- Added `ContentUnavailableView.search` empty state when filtered results are empty
+- Added `hasActiveSearch` computed property to both ViewModels for empty-state gating
+- Updated search bar prompts to "Search by name, material, color…" for discoverability
+- Key files: `PrintFarmer/Extensions/SpoolmanSpool+ColorName.swift`, both ViewModels, both Views
 
 ### NFCService Sendable Pattern (Lambert)
 - NFCService implements Sendable protocol for safe concurrent use in ViewModels

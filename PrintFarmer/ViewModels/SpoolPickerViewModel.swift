@@ -5,6 +5,7 @@ import os
 final class SpoolPickerViewModel {
     var spools: [SpoolmanSpool] = []
     var searchText = ""
+    var selectedMaterial: String?
     var isLoading = false
     var errorMessage: String?
 
@@ -30,15 +31,35 @@ final class SpoolPickerViewModel {
         self.nfcScanner = scanner
     }
 
+    var availableMaterials: [String] {
+        let materials = Set(spools.map { $0.material })
+        return materials.sorted()
+    }
+    
     var filteredSpools: [SpoolmanSpool] {
-        guard !searchText.isEmpty else { return spools }
+        var result = spools
+        
+        // Apply material filter first
+        if let material = selectedMaterial {
+            result = result.filter { $0.material == material }
+        }
+        
+        // Then apply search text filter
+        guard !searchText.isEmpty else { return result }
         let query = searchText.lowercased()
-        return spools.filter { spool in
+        return result.filter { spool in
             spool.material.lowercased().contains(query)
             || (spool.filamentName?.lowercased().contains(query) ?? false)
             || (spool.vendor?.lowercased().contains(query) ?? false)
             || spool.name.lowercased().contains(query)
+            || (spool.location?.lowercased().contains(query) ?? false)
+            || (spool.comment?.lowercased().contains(query) ?? false)
+            || spool.colorNameMatches(query)
         }
+    }
+
+    var hasActiveSearch: Bool {
+        !searchText.isEmpty || selectedMaterial != nil
     }
 
     func loadSpools() async {
