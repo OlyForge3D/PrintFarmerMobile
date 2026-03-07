@@ -1,5 +1,6 @@
 #if os(iOS)
 import SwiftUI
+import AVFoundation
 @preconcurrency import VisionKit
 
 struct QRScannerView: View {
