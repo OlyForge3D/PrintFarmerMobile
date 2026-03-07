@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Printer Service
 
-actor PrinterService {
+actor PrinterService: PrinterServiceProtocol {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {
@@ -30,7 +30,50 @@ actor PrinterService {
         try await apiClient.put("/api/printers/\(id)/maintenance", body: inMaintenance)
     }
 
-    func sendCommand(printerId: UUID, command: String) async throws {
-        try await apiClient.post("/api/printers/\(printerId)/command/\(command)")
+    // MARK: - Printer Commands
+
+    func pause(id: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(id)/pause")
+    }
+
+    func resume(id: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(id)/resume")
+    }
+
+    func cancel(id: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(id)/cancel")
+    }
+
+    func stop(id: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(id)/stop")
+    }
+
+    func emergencyStop(id: UUID) async throws -> CommandResult {
+        try await apiClient.post("/api/printers/\(id)/emergency-stop")
+    }
+
+    // MARK: - Status & Data
+
+    func getStatus(id: UUID) async throws -> PrinterStatusDetail {
+        try await apiClient.get("/api/printers/\(id)/status")
+    }
+
+    func getSnapshot(id: UUID) async throws -> Data {
+        try await apiClient.getData("/api/printers/\(id)/snapshot")
+    }
+
+    func getCurrentJob(id: UUID) async throws -> PrintJobStatusInfo? {
+        try await apiClient.get("/api/printers/\(id)/printjob")
+    }
+
+    // MARK: - Queue Overview
+
+    func getQueueOverview(model: String? = nil, nozzle: Double? = nil, material: String? = nil) async throws -> [QueueOverview] {
+        var params: [String] = []
+        if let model { params.append("model=\(model)") }
+        if let nozzle { params.append("nozzle=\(nozzle)") }
+        if let material { params.append("material=\(material)") }
+        let query = params.isEmpty ? "" : "?\(params.joined(separator: "&"))"
+        return try await apiClient.get("/api/job-queue\(query)")
     }
 }

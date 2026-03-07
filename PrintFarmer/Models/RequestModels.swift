@@ -56,6 +56,16 @@ struct UpdateLocationRequest: Codable, Sendable {
     let description: String?
 }
 
+// MARK: - Notification Request DTOs
+
+struct MarkMultipleReadRequest: Codable, Sendable {
+    let notificationIds: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case notificationIds = "NotificationIds"
+    }
+}
+
 // MARK: - API Response Wrappers
 
 struct PaginatedResponse<T: Codable & Sendable>: Codable, Sendable {

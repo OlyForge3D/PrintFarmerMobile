@@ -74,6 +74,9 @@
 		E0411324A6C10BFCD5EAB595 /* PrinterDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281DF848F7722BE9E0E28A2A /* PrinterDetailViewModelTests.swift */; };
 		709F2758FA2B8BF406D1813C /* PrinterListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59E2A16E7C0B2D793C038A6 /* PrinterListViewModelTests.swift */; };
 		EA1637E6E57AC07CE7EBCF2D /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A04E921C5D66B7F4B5F80B3C /* KeychainSwift */; };
+		BCB617F9B1642391E9805237 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277D5F88316714ECC4B60E5C /* Color+Hex.swift */; };
+		98213E171862DBCDFD587795 /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0C8B18479C00C8058A3260 /* ThemeColors.swift */; };
+		EF380A83B48A16EAB8906C70 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D5770CC799908B9483AE95 /* ThemeManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,6 +158,9 @@
 		016588B049630508F9B77403 /* LoginViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModelTests.swift; sourceTree = "<group>"; };
 		281DF848F7722BE9E0E28A2A /* PrinterDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterDetailViewModelTests.swift; sourceTree = "<group>"; };
 		A59E2A16E7C0B2D793C038A6 /* PrinterListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterListViewModelTests.swift; sourceTree = "<group>"; };
+		277D5F88316714ECC4B60E5C /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		8E0C8B18479C00C8058A3260 /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
+		F2D5770CC799908B9483AE95 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,6 +208,7 @@
 				8AF644FAF32A52C4D65E8316 /* Navigation */,
 				2FBE1183347281A5833ADCC0 /* Protocols */,
 				15E99E10A0724AD818418752 /* Services */,
+				0F5AE4587EEF6236D08F3F6D /* Theme */,
 				D8E08A4195085C8E465A95A6 /* Utilities */,
 				E26E1BBC87C8546803F01CA4 /* ViewModels */,
 				9DEC4721376EF809C40ACF4D /* Views */,
@@ -442,6 +449,16 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		0F5AE4587EEF6236D08F3F6D /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				277D5F88316714ECC4B60E5C /* Color+Hex.swift */,
+				8E0C8B18479C00C8058A3260 /* ThemeColors.swift */,
+				F2D5770CC799908B9483AE95 /* ThemeManager.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -576,6 +593,9 @@
 				D3B43552C5380F3A3AFD1F77 /* PrinterDetailView.swift in Sources */,
 				8F2654878B838B7E5AA35AAC /* PrinterListView.swift in Sources */,
 				8E016F38A846594333A70CEB /* SettingsView.swift in Sources */,
+				BCB617F9B1642391E9805237 /* Color+Hex.swift in Sources */,
+				98213E171862DBCDFD587795 /* ThemeColors.swift in Sources */,
+				EF380A83B48A16EAB8906C70 /* ThemeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

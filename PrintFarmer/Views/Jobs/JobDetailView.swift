@@ -112,10 +112,10 @@ struct JobDetailView: View {
                     }
                 }
                 .padding()
-                .background(.background, in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(.quaternary, lineWidth: 1)
+                        .strokeBorder(Color.pfBorder, lineWidth: 1)
                 )
             }
         }
@@ -160,10 +160,10 @@ struct JobDetailView: View {
 
             }
             .padding()
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(.quaternary, lineWidth: 1)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
     }
@@ -194,10 +194,10 @@ struct JobDetailView: View {
                 }
             }
             .padding()
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(.quaternary, lineWidth: 1)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
     }
@@ -261,10 +261,10 @@ struct JobDetailView: View {
 
     private func progressColor(for job: PrintJob) -> Color {
         switch job.status {
-        case .printing: .blue
-        case .paused: .orange
-        case .failed: .red
-        default: .blue
+        case .printing: .pfAccent
+        case .paused: .pfWarning
+        case .failed: .pfError
+        default: .pfAccent
         }
     }
 

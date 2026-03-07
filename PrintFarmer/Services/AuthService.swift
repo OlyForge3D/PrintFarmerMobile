@@ -41,7 +41,7 @@ actor AuthService {
     }
 
     func logout() async {
-        try? await apiClient.post("/api/auth/logout")
+        try? await apiClient.postVoid("/api/auth/logout")
         clearCredentials()
         await apiClient.setAccessToken(nil)
     }

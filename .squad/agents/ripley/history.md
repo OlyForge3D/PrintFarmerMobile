@@ -103,3 +103,9 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **PrintProgressBar default color changed** from `.blue` to `.pfAccent` (green) — brand-consistent progress bars.
 - **Status colors unified:** Printing→pfSecondaryAccent (blue), Ready→pfSuccess (green), Paused→pfWarning (amber), Error→pfError (red), Offline→pfTextTertiary.
 - **Pre-existing build errors:** APIClient.swift has Swift 6 concurrency warnings for ISO8601DateFormatter statics; not related to theme work.
+
+### Xcode pbxproj Theme File Registration (2025-07-17)
+- **Problem:** 3 Theme files (Color+Hex.swift, ThemeColors.swift, ThemeManager.swift) existed on disk in `PrintFarmer/Theme/` but were not referenced in `PrintFarmer.xcodeproj/project.pbxproj`. SPM auto-discovers sources so `swift build` worked, but Xcode builds failed with 22 errors (`Type 'Color' has no member 'pfCard'` etc).
+- **Fix:** Manually edited project.pbxproj to add: 3 PBXFileReference entries, 3 PBXBuildFile entries (linked to Sources build phase), a new "Theme" PBXGroup under the PrintFarmer group, and 3 entries in PBXSourcesBuildPhase for the PrintFarmer target.
+- **Pattern for future files:** When adding files outside Xcode (e.g., via squad agents), 4 pbxproj touches are needed per file: PBXFileReference, PBXBuildFile, PBXGroup child, and PBXSourcesBuildPhase entry. UUIDs are 24-char uppercase hex and must not collide.
+- **Validation:** Always run `plutil -lint PrintFarmer.xcodeproj/project.pbxproj` after edits — pbxproj is plist-format and fragile.

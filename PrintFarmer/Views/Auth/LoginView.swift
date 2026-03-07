@@ -46,7 +46,7 @@ struct LoginView: View {
         VStack(spacing: 12) {
             Image(systemName: "printer.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.pfAccent)
 
             Text("PrintFarmer")
                 .font(.largeTitle.bold())
@@ -99,7 +99,7 @@ struct LoginView: View {
             }
         }
         .padding(12)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Credentials
@@ -133,14 +133,14 @@ struct LoginView: View {
         if let error = authViewModel.errorMessage {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.pfError)
                 Text(error)
                     .font(.callout)
             }
-            .foregroundStyle(.red)
+            .foregroundStyle(Color.pfError)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+            .background(Color.pfError.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }

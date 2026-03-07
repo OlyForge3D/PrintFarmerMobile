@@ -2,9 +2,10 @@ import Foundation
 
 @MainActor @Observable
 final class JobListViewModel {
-    var queueOverview: [QueueOverview] = []
+    var jobs: [QueuedPrintJobResponse] = []
     var isLoading = false
     var errorMessage: String?
+    var showRecentJobs = false
 
     private var jobService: (any JobServiceProtocol)?
 
@@ -18,7 +19,7 @@ final class JobListViewModel {
         errorMessage = nil
 
         do {
-            queueOverview = try await jobService.list()
+            jobs = try await jobService.listAllJobs()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -46,15 +47,36 @@ final class JobListViewModel {
         }
     }
 
-    var printersWithActiveJobs: [QueueOverview] {
-        queueOverview.filter { $0.currentJobId != nil }
+    // MARK: - Grouped Jobs
+
+    /// Jobs actively printing, starting, or paused on a printer
+    var activeJobs: [QueuedPrintJobResponse] {
+        jobs.filter {
+            guard let status = $0.job.jobStatus else { return false }
+            return [.printing, .starting, .paused].contains(status)
+        }
+        .sorted { ($0.job.actualStartTimeUtc ?? .distantPast) > ($1.job.actualStartTimeUtc ?? .distantPast) }
     }
 
-    var printersWithQueuedJobs: [QueueOverview] {
-        queueOverview.filter { $0.queuedJobsCount > 0 }
+    /// Jobs waiting in the queue (queued or assigned but not yet started)
+    var queuedJobs: [QueuedPrintJobResponse] {
+        jobs.filter {
+            guard let status = $0.job.jobStatus else { return false }
+            return [.queued, .assigned].contains(status)
+        }
+        .sorted { $0.job.queuePosition < $1.job.queuePosition }
     }
 
-    var availablePrinters: [QueueOverview] {
-        queueOverview.filter { $0.isAvailable && $0.currentJobId == nil }
+    /// Recently completed, failed, or cancelled jobs
+    var recentJobs: [QueuedPrintJobResponse] {
+        jobs.filter {
+            guard let status = $0.job.jobStatus else { return false }
+            return [.completed, .failed, .cancelled].contains(status)
+        }
+        .sorted { ($0.job.actualEndTimeUtc ?? $0.job.createdAtUtc) > ($1.job.actualEndTimeUtc ?? $1.job.createdAtUtc) }
+    }
+
+    var hasAnyJobs: Bool {
+        !jobs.isEmpty
     }
 }

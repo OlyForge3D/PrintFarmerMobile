@@ -9,6 +9,8 @@ final class ServiceContainer: @unchecked Sendable {
     let printerService: PrinterService
     let jobService: JobService
     let locationService: LocationService
+    let statisticsService: StatisticsService
+    let notificationService: NotificationService
     let signalRService: SignalRService
 
     init(baseURL: URL? = nil) {
@@ -20,8 +22,12 @@ final class ServiceContainer: @unchecked Sendable {
         self.printerService = PrinterService(apiClient: apiClient)
         self.jobService = JobService(apiClient: apiClient)
         self.locationService = LocationService(apiClient: apiClient)
+        self.statisticsService = StatisticsService(apiClient: apiClient)
+        self.notificationService = NotificationService(apiClient: apiClient)
+
+        let client = apiClient
         self.signalRService = SignalRService(serverURL: resolvedURL) {
-            nil
+            await client.currentAccessToken()
         }
     }
 }

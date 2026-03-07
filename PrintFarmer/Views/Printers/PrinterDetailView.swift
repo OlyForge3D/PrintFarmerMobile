@@ -123,10 +123,10 @@ struct PrinterDetailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(.quaternary, lineWidth: 1)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
         )
     }
 
@@ -155,10 +155,10 @@ struct PrinterDetailView: View {
                 )
             }
             .padding()
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(.quaternary, lineWidth: 1)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
     }
@@ -181,10 +181,10 @@ struct PrinterDetailView: View {
                 }
             }
             .padding()
-            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(.quaternary, lineWidth: 1)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
     }

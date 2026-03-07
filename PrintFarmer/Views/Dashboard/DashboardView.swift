@@ -60,12 +60,12 @@ struct DashboardView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible()),
             ], spacing: 12) {
-                SummaryCard(title: "Total", count: viewModel.printers.count, icon: "printer", color: .primary)
-                SummaryCard(title: "Online", count: viewModel.onlineCount, icon: "wifi", color: .green)
-                SummaryCard(title: "Printing", count: viewModel.printingCount, icon: "printer.fill", color: .blue)
-                SummaryCard(title: "Paused", count: viewModel.pausedCount, icon: "pause.circle", color: .orange)
-                SummaryCard(title: "Offline", count: viewModel.offlineCount, icon: "wifi.slash", color: .gray)
-                SummaryCard(title: "Error", count: viewModel.errorCount, icon: "exclamationmark.triangle", color: .red)
+                SummaryCard(title: "Total", count: viewModel.printers.count, icon: "printer", color: .pfTextPrimary)
+                SummaryCard(title: "Online", count: viewModel.onlineCount, icon: "wifi", color: .pfSuccess)
+                SummaryCard(title: "Printing", count: viewModel.printingCount, icon: "printer.fill", color: .pfSecondaryAccent)
+                SummaryCard(title: "Paused", count: viewModel.pausedCount, icon: "pause.circle", color: .pfWarning)
+                SummaryCard(title: "Offline", count: viewModel.offlineCount, icon: "wifi.slash", color: .pfTextTertiary)
+                SummaryCard(title: "Error", count: viewModel.errorCount, icon: "exclamationmark.triangle", color: .pfError)
             }
         }
     }
@@ -86,8 +86,8 @@ struct DashboardView: View {
                         .font(.caption.weight(.semibold).monospacedDigit())
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(.blue.opacity(0.15), in: Capsule())
-                        .foregroundStyle(.blue)
+                        .background(Color.pfAccent.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Color.pfAccent)
                 }
 
                 Spacer()
@@ -142,21 +142,21 @@ struct DashboardView: View {
     private var maintenanceAlert: some View {
         HStack(spacing: 10) {
             Image(systemName: "wrench.and.screwdriver.fill")
-                .foregroundStyle(.purple)
+                .foregroundStyle(Color.pfWarning)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(viewModel.maintenanceCount) printer(s) in maintenance")
                     .font(.subheadline.weight(.medium))
                 Text(viewModel.printersInMaintenance.map(\.name).joined(separator: ", "))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.pfTextSecondary)
                     .lineLimit(1)
             }
 
             Spacer()
         }
         .padding(12)
-        .background(.purple.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.pfWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - States
@@ -206,10 +206,10 @@ private struct SummaryCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(.quaternary, lineWidth: 1)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
         )
     }
 }
@@ -261,10 +261,10 @@ private struct ActiveJobRow: View {
             }
         }
         .padding(12)
-        .background(.background, in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(.quaternary, lineWidth: 1)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
         )
     }
 }

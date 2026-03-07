@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6439CF22188FA14BBD363342"
+               BlueprintIdentifier = "DA9CB9901F607FAA5F633728"
                BuildableName = "PrintFarmer.app"
                BlueprintName = "PrintFarmer"
                ReferencedContainer = "container:PrintFarmer.xcodeproj">
@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BA128F9D3C0D15FFB32AEEA8"
+               BlueprintIdentifier = "AFC2BA1C050C049765D60160"
                BuildableName = "PrintFarmerTests.xctest"
                BlueprintName = "PrintFarmerTests"
                ReferencedContainer = "container:PrintFarmer.xcodeproj">
@@ -57,7 +57,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6439CF22188FA14BBD363342"
+            BlueprintIdentifier = "DA9CB9901F607FAA5F633728"
             BuildableName = "PrintFarmer.app"
             BlueprintName = "PrintFarmer"
             ReferencedContainer = "container:PrintFarmer.xcodeproj">
@@ -74,7 +74,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6439CF22188FA14BBD363342"
+            BlueprintIdentifier = "DA9CB9901F607FAA5F633728"
             BuildableName = "PrintFarmer.app"
             BlueprintName = "PrintFarmer"
             ReferencedContainer = "container:PrintFarmer.xcodeproj">

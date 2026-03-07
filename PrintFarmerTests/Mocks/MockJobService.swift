@@ -3,11 +3,13 @@ import Foundation
 
 final class MockJobService: JobServiceProtocol, @unchecked Sendable {
     var queueOverviewsToReturn: [QueueOverview] = []
+    var queuedJobResponsesToReturn: [QueuedPrintJobResponse] = []
     var jobToReturn: PrintJob?
     var errorToThrow: Error?
 
     // Call tracking
     var listJobsCalled = false
+    var listAllJobsCalled = false
     var getJobCalledWith: UUID?
     var createCalledWith: CreatePrintJobRequest?
     var updateCalledWith: (id: UUID, request: UpdatePrintJobRequest)?
@@ -20,6 +22,12 @@ final class MockJobService: JobServiceProtocol, @unchecked Sendable {
         listJobsCalled = true
         if let error = errorToThrow { throw error }
         return queueOverviewsToReturn
+    }
+
+    func listAllJobs() async throws -> [QueuedPrintJobResponse] {
+        listAllJobsCalled = true
+        if let error = errorToThrow { throw error }
+        return queuedJobResponsesToReturn
     }
 
     func get(id: UUID) async throws -> PrintJob {
@@ -65,9 +73,11 @@ final class MockJobService: JobServiceProtocol, @unchecked Sendable {
 
     func reset() {
         queueOverviewsToReturn = []
+        queuedJobResponsesToReturn = []
         jobToReturn = nil
         errorToThrow = nil
         listJobsCalled = false
+        listAllJobsCalled = false
         getJobCalledWith = nil
         createCalledWith = nil
         updateCalledWith = nil

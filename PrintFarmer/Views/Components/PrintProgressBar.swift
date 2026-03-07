@@ -5,7 +5,7 @@ struct PrintProgressBar: View {
     let progress: Double
     var showLabel: Bool = true
     var height: CGFloat = 8
-    var color: Color = .blue
+    var color: Color = .pfAccent
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {

@@ -10,20 +10,20 @@ struct JobListView: View {
 
         NavigationStack(path: $router.jobsPath) {
             Group {
-                if viewModel.isLoading && viewModel.queueOverview.isEmpty {
-                    ProgressView("Loading queue…")
+                if viewModel.isLoading && viewModel.jobs.isEmpty {
+                    ProgressView("Loading jobs…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if viewModel.queueOverview.isEmpty {
+                } else if !viewModel.hasAnyJobs {
                     EmptyStateView(
                         icon: "tray",
-                        title: "No Printers in Queue",
-                        message: "The queue is empty. Add jobs to see them here."
+                        title: "No Print Jobs",
+                        message: "No jobs in the queue. Jobs will appear here when queued."
                     )
                 } else {
-                    queueList
+                    jobList
                 }
             }
-            .navigationTitle("Job Queue")
+            .navigationTitle("Jobs")
             .refreshable {
                 await viewModel.loadJobs()
             }
@@ -37,81 +37,211 @@ struct JobListView: View {
         }
     }
 
-    // MARK: - Queue List
+    // MARK: - Job List
 
-    private var queueList: some View {
+    private var jobList: some View {
         List {
-            if !viewModel.printersWithActiveJobs.isEmpty {
-                Section("Active") {
-                    ForEach(viewModel.printersWithActiveJobs) { overview in
-                        QueueOverviewRow(overview: overview)
-                            .onTapGesture {
-                                if let jobId = overview.currentJobId {
-                                    router.jobsPath.append(AppDestination.jobDetail(id: jobId))
-                                }
-                            }
+            if !viewModel.activeJobs.isEmpty {
+                Section {
+                    ForEach(viewModel.activeJobs) { item in
+                        activeJobRow(item)
                     }
+                } header: {
+                    Label("Printing", systemImage: "printer.fill")
                 }
             }
 
-            if !viewModel.printersWithQueuedJobs.isEmpty {
-                Section("Queued") {
-                    ForEach(viewModel.printersWithQueuedJobs) { overview in
-                        QueueOverviewRow(overview: overview)
+            if !viewModel.queuedJobs.isEmpty {
+                Section {
+                    ForEach(viewModel.queuedJobs) { item in
+                        queuedJobRow(item)
                     }
+                } header: {
+                    Label("In Queue", systemImage: "tray.full")
                 }
             }
 
-            if !viewModel.availablePrinters.isEmpty {
-                Section("Available") {
-                    ForEach(viewModel.availablePrinters) { overview in
-                        QueueOverviewRow(overview: overview)
+            if !viewModel.recentJobs.isEmpty {
+                Section(isExpanded: $viewModel.showRecentJobs) {
+                    ForEach(viewModel.recentJobs.prefix(10)) { item in
+                        recentJobRow(item)
                     }
+                } header: {
+                    Label("Recent", systemImage: "clock")
                 }
             }
         }
         .listStyle(.plain)
     }
-}
 
-// MARK: - Queue Overview Row
+    // MARK: - Active Job Row
 
-private struct QueueOverviewRow: View {
-    let overview: QueueOverview
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(overview.printerName)
-                    .font(.headline)
-                Spacer()
-                if overview.isAvailable {
-                    Text("Available")
-                        .font(.caption)
-                        .foregroundStyle(.green)
+    private func activeJobRow(_ item: QueuedPrintJobResponse) -> some View {
+        Button {
+            if let uuid = item.job.jobUUID {
+                router.jobsPath.append(AppDestination.jobDetail(id: uuid))
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(item.job.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Spacer()
+                    StatusBadge(jobStatus: item.job.jobStatus)
                 }
-            }
 
-            if let jobName = overview.currentJobName {
-                Text(jobName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Text(overview.printerModel)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-
-                Spacer()
-
-                if overview.queuedJobsCount > 0 {
-                    Text("\(overview.queuedJobsCount) queued")
+                if let printerName = item.job.printerName {
+                    Label(printerName, systemImage: "printer")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if let startTime = item.job.actualStartTimeUtc,
+                   let estSeconds = item.job.estimatedPrintTimeSeconds, estSeconds > 0 {
+                    let elapsed = Date.now.timeIntervalSince(startTime)
+                    let total = TimeInterval(estSeconds)
+                    let progress = min(1.0, elapsed / total)
+                    PrintProgressBar(progress: progress, height: 6, color: progressColor(for: item.job.jobStatus))
+
+                    HStack {
+                        if item.job.isMultiCopy {
+                            Label("\(item.job.completedCopies)/\(item.job.copies)", systemImage: "doc.on.doc")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        let remaining = max(0, total - elapsed)
+                        Label("~\(remaining.durationFormatted) left", systemImage: "clock")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Queued Job Row
+
+    private func queuedJobRow(_ item: QueuedPrintJobResponse) -> some View {
+        Button {
+            if let uuid = item.job.jobUUID {
+                router.jobsPath.append(AppDestination.jobDetail(id: uuid))
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(item.job.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Spacer()
+                    priorityIndicator(item.job.priority)
+                }
+
+                HStack(spacing: 12) {
+                    if let printerName = item.job.printerName {
+                        Label(printerName, systemImage: "printer")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    if item.job.isMultiCopy {
+                        Label("\(item.job.copies) copies", systemImage: "doc.on.doc")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let duration = item.job.estimatedDuration {
+                        Label(duration.durationFormatted, systemImage: "clock")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack {
+                    Text("#\(item.job.queuePosition) in queue")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Text(item.job.createdAtUtc.relativeFormatted)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Recent Job Row
+
+    private func recentJobRow(_ item: QueuedPrintJobResponse) -> some View {
+        Button {
+            if let uuid = item.job.jobUUID {
+                router.jobsPath.append(AppDestination.jobDetail(id: uuid))
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(item.job.name)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    Spacer()
+                    StatusBadge(jobStatus: item.job.jobStatus)
+                }
+
+                HStack {
+                    if let printerName = item.job.printerName {
+                        Text(printerName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if let endTime = item.job.actualEndTimeUtc {
+                        Text(endTime.relativeFormatted)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                if let reason = item.job.failureReason, item.job.jobStatus == .failed {
+                    Text(reason)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private func progressColor(for status: PrintJobStatus?) -> Color {
+        switch status {
+        case .printing: .pfAccent
+        case .paused: .pfWarning
+        default: .pfAccent
+        }
+    }
+
+    @ViewBuilder
+    private func priorityIndicator(_ priority: Int) -> some View {
+        if let p = PrintJobPriority.from(intValue: priority), p == .high || p == .urgent {
+            HStack(spacing: 2) {
+                Image(systemName: p == .urgent ? "exclamationmark.triangle.fill" : "flag.fill")
+                    .font(.caption2)
+                Text(p == .urgent ? "Urgent" : "High")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(p == .urgent ? .red : .orange)
+        }
     }
 }

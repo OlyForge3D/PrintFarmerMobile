@@ -2,13 +2,25 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(ThemeManager.self) private var themeManager
     @State private var showLogoutConfirmation = false
     @State private var showChangeURL = false
     @State private var newServerURL = ""
 
     var body: some View {
+        @Bindable var themeManager = themeManager
+
         NavigationStack {
             List {
+                Section("Appearance") {
+                    Picker("Theme", selection: $themeManager.themeMode) {
+                        ForEach(ThemeMode.allCases) { mode in
+                            Label(mode.displayName, systemImage: mode.icon)
+                                .tag(mode)
+                        }
+                    }
+                }
+
                 Section("Account") {
                     if let user = authViewModel.currentUser {
                         LabeledContent("Username", value: user.username)

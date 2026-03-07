@@ -4,6 +4,7 @@ import Foundation
 
 protocol JobServiceProtocol: Sendable {
     func list() async throws -> [QueueOverview]
+    func listAllJobs() async throws -> [QueuedPrintJobResponse]
     func get(id: UUID) async throws -> PrintJob
     func create(_ request: CreatePrintJobRequest) async throws -> PrintJob
     func update(id: UUID, _ request: UpdatePrintJobRequest) async throws -> PrintJob

@@ -66,7 +66,7 @@ struct PrinterCardView: View {
             }
         }
         .padding(14)
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(statusAccentColor.opacity(0.3), lineWidth: 1)
@@ -74,12 +74,12 @@ struct PrinterCardView: View {
     }
 
     private var statusAccentColor: Color {
-        if !printer.isOnline { return .gray }
+        if !printer.isOnline { return .pfTextTertiary }
         switch printer.state?.lowercased() {
-        case "printing": return .blue
-        case "paused": return .orange
-        case "error": return .red
-        default: return .green
+        case "printing": return .pfSecondaryAccent
+        case "paused": return .pfWarning
+        case "error": return .pfError
+        default: return .pfSuccess
         }
     }
 }

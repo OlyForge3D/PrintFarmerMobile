@@ -22,52 +22,52 @@ extension StatusBadge {
     /// Creates a badge from a printer's live state string.
     init(printerState: String?, isOnline: Bool) {
         if !isOnline {
-            self.init(text: "Offline", color: .gray)
+            self.init(text: "Offline", color: .pfTextTertiary)
             return
         }
         guard let state = printerState?.lowercased() else {
-            self.init(text: "Unknown", color: .gray)
+            self.init(text: "Unknown", color: .pfTextTertiary)
             return
         }
         switch state {
         case "printing":
-            self.init(text: "Printing", color: .blue)
+            self.init(text: "Printing", color: .pfSecondaryAccent)
         case "paused":
-            self.init(text: "Paused", color: .orange)
+            self.init(text: "Paused", color: .pfWarning)
         case "ready", "idle", "operational":
-            self.init(text: "Idle", color: .green)
+            self.init(text: "Idle", color: .pfSuccess)
         case "error":
-            self.init(text: "Error", color: .red)
+            self.init(text: "Error", color: .pfError)
         case "maintenance":
             self.init(text: "Maintenance", color: .purple)
         default:
-            self.init(text: state.capitalized, color: .secondary)
+            self.init(text: state.capitalized, color: .pfTextSecondary)
         }
     }
 
     /// Creates a badge from a job status enum.
     init(jobStatus: PrintJobStatus?) {
         guard let jobStatus else {
-            self.init(text: "Unknown", color: .gray)
+            self.init(text: "Unknown", color: .pfTextTertiary)
             return
         }
         switch jobStatus {
         case .queued:
-            self.init(text: "Queued", color: .secondary)
+            self.init(text: "Queued", color: .pfTextSecondary)
         case .assigned:
             self.init(text: "Assigned", color: .cyan)
         case .starting:
-            self.init(text: "Starting", color: .blue)
+            self.init(text: "Starting", color: .pfSecondaryAccent)
         case .printing:
-            self.init(text: "Printing", color: .blue)
+            self.init(text: "Printing", color: .pfSecondaryAccent)
         case .paused:
-            self.init(text: "Paused", color: .orange)
+            self.init(text: "Paused", color: .pfWarning)
         case .completed:
-            self.init(text: "Completed", color: .green)
+            self.init(text: "Completed", color: .pfSuccess)
         case .failed:
-            self.init(text: "Failed", color: .red)
+            self.init(text: "Failed", color: .pfError)
         case .cancelled:
-            self.init(text: "Cancelled", color: .gray)
+            self.init(text: "Cancelled", color: .pfTextTertiary)
         }
     }
 }

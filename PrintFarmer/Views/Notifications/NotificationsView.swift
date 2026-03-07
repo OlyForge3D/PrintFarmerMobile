@@ -103,7 +103,7 @@ private struct NotificationRow: View {
         HStack(spacing: 12) {
             // Unread indicator
             Circle()
-                .fill(notification.isRead ? .clear : .blue)
+                .fill(notification.isRead ? Color.clear : Color.pfAccent)
                 .frame(width: 8, height: 8)
 
             // Icon
@@ -148,12 +148,12 @@ private struct NotificationRow: View {
 
     private var iconColor: Color {
         switch notification.type {
-        case .jobCompleted: .green
-        case .jobFailed: .red
-        case .jobStarted, .jobResumed: .blue
-        case .jobPaused: .orange
-        case .queueAlert: .orange
-        case .systemAlert: .blue
+        case .jobCompleted: .pfSuccess
+        case .jobFailed: .pfError
+        case .jobStarted, .jobResumed: .pfSecondaryAccent
+        case .jobPaused: .pfWarning
+        case .queueAlert: .pfWarning
+        case .systemAlert: .pfSecondaryAccent
         }
     }
 }
