@@ -156,6 +156,20 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **Phase 2 NFC note:** SpoolPickerView and AddSpoolView are ready for OpenSpool/OpenPrintTag NFC scan integration (Phase 2). Future "Scan NFC" button will auto-populate spool data from tag.
 - **SPM build clean:** `swift build` succeeds with zero errors.
 
+### Phase 2 Scanning UI (2025-07-19)
+- **3 new view files created:** QRScannerView (VisionKit DataScannerViewController wrapper), NFCScanButton (reusable NFC scan button component), NFCWriteView (sheet for writing NFC tags from spool data)
+- **SpoolPickerView extended:** Added QR scan and NFC scan toolbar buttons. QR scan presents QRScannerView as sheet; NFC scan triggers SpoolScannerProtocol.scan(). Both auto-select spool on successful ID match, or navigate to AddSpoolView with pre-filled data for new spool data.
+- **SpoolPickerViewModel extended:** Added `isQRScannerPresented`, `isScanning`, `scanError`, `scannedSpoolData` state. Added `handleQRScan(qrText:)` with QR text parser (supports plain int, URL path, JSON formats), `handleNFCScan()`, `handleScanResult(_:)` shared logic, `parseSpoolId(from:)` private helper.
+- **AddSpoolView/ViewModel extended:** Accept optional `ScannedSpoolData` parameter. Pre-fills material, color, vendor, weight, diameter, temperature. Shows "Pre-filled from NFC tag scan" banner when `isPrefilledFromScan` is true. Added `diameterMm` and `extruderTempC` fields to ViewModel.
+- **PrinterDetailView extended:** Added NFCScanButton "Scan to Load" in filament section (both when spool is loaded and when empty). Compact variant when spool loaded, full-width when empty. Added NFC scan error alert and scanned data sheet.
+- **PrinterDetailViewModel extended:** Added `handleNFCScanToLoad()` method, `loadSpoolById(_:)` private helper, `nfcScanError`, `nfcScannedData`, `showScannedDataSheet` state, `configureNFCScanner(_:)` for DI.
+- **SpoolInventoryView extended:** Added context menu on each spool row with "Write NFC Tag" option. Long-press presents NFCWriteView as sheet via `.sheet(item:)`.
+- **SpoolmanSpool used as `.sheet(item:)` binding** — works because it conforms to `Identifiable` (id: Int).
+- **NFCScanButton uses `.bordered` style only** — ternary between `.bordered` and `.borderedProminent` doesn't work with Swift's type system for ButtonStyle.
+- **QRScannerView iOS-only:** Wrapped in `#if os(iOS)` since VisionKit DataScannerViewController is iOS-only. AVCaptureDevice permission check on `.task`.
+- **pbxproj:** 3 new files registered with E1-prefixed UUIDs (non-conflicting with Lambert's). plutil lint passes.
+- **Lambert dependency:** Views reference SpoolScannerProtocol (Lambert's file, already committed). NFCService.writeTag() not yet wired in NFCWriteView — placeholder returns false until Lambert delivers.
+
 ## Cross-Agent Context (2026-03-07T16:03:00Z)
 
 **Lambert (Filament Models & Services) provides:**

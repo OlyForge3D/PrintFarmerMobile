@@ -105,3 +105,17 @@ _Ash ready to implement feature screens and navigation flows._
 - **AuthViewModel testing pattern:** Uses MockURLProtocol integration testing (AuthVM → AuthService → APIClient) since AuthService is a concrete actor without protocol. Different from other VMs which use protocol-based mocks.
 - **No SettingsViewModel or StatisticsViewModel exist** — Settings is view-only, statistics are embedded in DashboardViewModel.
 - **Coverage gaps remaining:** JobService, StatisticsService, NotificationService lack dedicated service-level tests (they're covered indirectly via MockURLProtocol in auth tests and ViewModel tests use protocol mocks). PushNotificationManager untestable without UIKit runtime (singleton + UNUserNotificationCenter).
+
+### Phase 2 Scanning Test Suite (2025-07-20)
+- **4 new test files created** for QR/NFC scanning features:
+  - QRCodeParserTests.swift (22 cases): URL formats, plain numeric, JSON, invalid inputs, edge cases (zero, negative, floating point, malformed JSON)
+  - NFCTagParserTests.swift (18 cases): OpenSpool all/partial fields, OpenPrintTag all/partial fields, invalid data, string-typed values, round-trip payload creation
+  - SpoolPickerViewModelScanTests.swift (21 cases): QR scan success/invalid/not-found, NFC scan spoolId/newSpoolData/cancelled/error variants, scanner not available, network error, scanning state tracking
+  - MockScannerService.swift: Configurable mock for SpoolScannerProtocol with call tracking
+- **MockSpoolService.swift** registered in pbxproj (was on disk but missing from project)
+- **New Utilities test group** created in PrintFarmerTests
+- **All UUIDs use F1 prefix** to avoid conflicts with Lambert (D1) and Ripley (E1)
+- **QRCodeParser rejects id <= 0** — tests for 0 and negative numbers correctly expect nil
+- **NFCTagParser.parseOpenSpool returns non-nil for empty JSON** — it creates ScannedSpoolData with all-nil fields (not nil itself). Tests reflect actual behavior.
+- **SpoolPickerViewModel uses private parseSpoolId()** for QR scanning — it delegates to internal parsing, NOT QRCodeParser.parse(). The VM's parser accepts slightly different formats than the standalone QRCodeParser (e.g., "spool" singular path, "id" JSON key). Tests match actual VM behavior.
+- **Build: ✅ zero errors** | **Lint: ✅ zero errors**

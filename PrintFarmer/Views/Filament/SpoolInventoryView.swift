@@ -4,6 +4,7 @@ struct SpoolInventoryView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel = SpoolInventoryViewModel()
     @State private var showAddSpool = false
+    @State private var nfcWriteSpool: SpoolmanSpool?
 
     var body: some View {
         NavigationStack {
@@ -65,6 +66,13 @@ struct SpoolInventoryView: View {
                         Task { await viewModel.loadSpools() }
                     }
             }
+            .sheet(item: $nfcWriteSpool) { spool in
+                NFCWriteView(spool: spool) {
+                    // Placeholder: Lambert's NFCService.writeTag() will be called here
+                    // For now, return false since the service isn't wired yet
+                    return false
+                }
+            }
             .task {
                 viewModel.configure(spoolService: services.spoolService)
                 await viewModel.loadSpools()
@@ -76,6 +84,13 @@ struct SpoolInventoryView: View {
         List {
             ForEach(viewModel.filteredSpools) { spool in
                 SpoolInventoryRowView(spool: spool)
+                    .contextMenu {
+                        Button {
+                            nfcWriteSpool = spool
+                        } label: {
+                            Label("Write NFC Tag", systemImage: "wave.3.right")
+                        }
+                    }
             }
             .onDelete { indexSet in
                 let spoolsToDelete = indexSet.map { viewModel.filteredSpools[$0] }

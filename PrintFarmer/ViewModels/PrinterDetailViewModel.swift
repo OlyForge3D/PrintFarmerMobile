@@ -45,6 +45,11 @@ final class PrinterDetailViewModel {
     }
 
     var showSpoolPicker = false
+    var nfcScanError: String?
+    var nfcScannedData: ScannedSpoolData?
+    var showScannedDataSheet = false
+
+    private var nfcScanner: (any SpoolScannerProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -57,10 +62,52 @@ final class PrinterDetailViewModel {
         self.printerService = printerService
     }
 
+    func configureNFCScanner(_ scanner: any SpoolScannerProtocol) {
+        self.nfcScanner = scanner
+    }
+
     // MARK: - Filament / Spool
 
     func loadFilament() {
         showSpoolPicker = true
+    }
+
+    // MARK: - NFC Scan to Load
+
+    func handleNFCScanToLoad() {
+        guard let nfcScanner, nfcScanner.isAvailable else {
+            nfcScanError = "NFC scanning is not available on this device."
+            return
+        }
+
+        Task {
+            let result = await nfcScanner.scan()
+            switch result {
+            case .spoolId(let id):
+                await loadSpoolById(id)
+            case .newSpoolData(let data):
+                nfcScannedData = data
+                showScannedDataSheet = true
+            case .cancelled:
+                break
+            case .error(let error):
+                nfcScanError = error.localizedDescription
+            }
+        }
+    }
+
+    private func loadSpoolById(_ id: Int) async {
+        guard let printerService else { return }
+        isPerformingAction = true
+        actionError = nil
+        do {
+            _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: id)
+            _ = try await printerService.loadFilament(printerId: printerId)
+            await loadPrinter()
+        } catch {
+            actionError = error.localizedDescription
+        }
+        isPerformingAction = false
     }
 
     func ejectFilament() async {

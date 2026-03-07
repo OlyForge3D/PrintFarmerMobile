@@ -13,6 +13,10 @@ final class ServiceContainer: @unchecked Sendable {
     let notificationService: NotificationService
     let signalRService: SignalRService
     let spoolService: SpoolService
+    #if canImport(UIKit)
+    let qrScannerService: QRSpoolScannerService
+    let nfcService: NFCService
+    #endif
 
     init(baseURL: URL? = nil) {
         let resolvedURL = baseURL
@@ -26,6 +30,10 @@ final class ServiceContainer: @unchecked Sendable {
         self.statisticsService = StatisticsService(apiClient: apiClient)
         self.notificationService = NotificationService(apiClient: apiClient)
         self.spoolService = SpoolService(apiClient: apiClient)
+        #if canImport(UIKit)
+        self.qrScannerService = QRSpoolScannerService()
+        self.nfcService = NFCService()
+        #endif
 
         let client = apiClient
         self.signalRService = SignalRService(serverURL: resolvedURL) {

@@ -5,9 +5,19 @@ struct AddSpoolView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = AddSpoolViewModel()
 
+    var scannedData: ScannedSpoolData?
+
     var body: some View {
         NavigationStack {
             Form {
+                if viewModel.isPrefilledFromScan {
+                    Section {
+                        Label("Pre-filled from NFC tag scan", systemImage: "wave.3.right")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.pfAccent)
+                    }
+                }
+
                 if viewModel.isLoading {
                     Section {
                         HStack {
@@ -48,6 +58,9 @@ struct AddSpoolView: View {
             }
             .task {
                 viewModel.configure(spoolService: services.spoolService)
+                if let scannedData {
+                    viewModel.prefill(from: scannedData)
+                }
                 await viewModel.loadReferenceData()
             }
             .onChange(of: viewModel.didSave) { _, saved in

@@ -82,3 +82,14 @@
 - **Open question:** Backend NFC flow assumes ESP32 hardware pushes scans. Phone-initiated scans need coordination — either register phone as virtual NFC device or add phone-specific scan endpoint.
 - **Open question:** Spoolman dependency — need to confirm if always configured or if local Spool entity fallback is needed.
 - **Decomposition:** `.squad/decisions/inbox/dallas-filament-nfc-feature.md`
+
+### QR Code Scanning for Phase 2 (2026-03-07)
+- **Request:** Jeff wanted QR scanning for Phase 2 as alternative to NFC for spool-to-printer linking
+- **Backend Analysis:** ✅ No QR generation needed on backend. Spoolman (external) already generates QR codes with spool IDs embedded (URL format: `https://spoolman/spools/<id>`). Existing `setActiveSpool` and `getSpool` endpoints fully support QR-based linking.
+- **iOS Approach:** Two frameworks available — VisionKit (iOS 16+, high-level, beautiful UX) and AVFoundation (iOS 7+, lower-level, maximum coverage). **Decided:** VisionKit Tier 1 (iOS 16+) + AVFoundation Tier 2 fallback (deferred to Phase 2.5 if device coverage becomes critical). Hybrid approach gives best UX + 85%+ device coverage.
+- **QR Payload Parsing:** Spoolman QR codes use 3 formats: URL path `/spools/<id>`, plain numeric ID, or JSON. Built single parser that handles all three.
+- **Shared Abstraction:** Designed `SpoolScannerProtocol` shared by QR and NFC — both return `SpoolScanResult` enum (spoolId | cancelled | error). SpoolPickerView doesn't care whether user tapped QR or NFC button.
+- **Phase 2 Scope:** Added 3 new QR work items (9 hours total) to existing Phase 2: QRSpoolScannerService (Lambert 4h), SpoolPickerView QR integration (Ripley 3h), test coverage (Ash 2h). Total Phase 2 now ~20 hours (NFC + QR parallel).
+- **Permission Model:** Camera access only (no entitlements needed unlike NFC). Info.plist NSCameraUsageDescription + standard permission flow.
+- **Risk Assessment:** Permission denial, invalid QR codes, and device coverage all mitigated. No backend work needed.
+- **Decision Document:** `.squad/decisions/inbox/dallas-qr-code-scoping.md`

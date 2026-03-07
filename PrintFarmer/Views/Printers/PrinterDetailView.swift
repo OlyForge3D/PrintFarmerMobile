@@ -62,6 +62,21 @@ struct PrinterDetailView: View {
                 Task { await viewModel.setActiveSpool(spool) }
             }
         }
+        .sheet(isPresented: $viewModel.showScannedDataSheet) {
+            if let data = viewModel.nfcScannedData {
+                AddSpoolView(scannedData: data)
+                    .onDisappear {
+                        Task { await viewModel.loadPrinter() }
+                    }
+            }
+        }
+        .alert("Scan Error", isPresented: .constant(viewModel.nfcScanError != nil)) {
+            Button("OK") { viewModel.nfcScanError = nil }
+        } message: {
+            if let error = viewModel.nfcScanError {
+                Text(error)
+            }
+        }
     }
 
     // MARK: - Filament Section
@@ -153,6 +168,10 @@ struct PrinterDetailView: View {
                         .tint(Color.pfError)
                     }
                     .disabled(viewModel.isPerformingAction)
+
+                    NFCScanButton(action: {
+                        viewModel.handleNFCScanToLoad()
+                    }, compact: true)
                 } else {
                     // No filament loaded
                     VStack(spacing: 12) {
@@ -174,6 +193,10 @@ struct PrinterDetailView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(Color.pfAccent)
+
+                        NFCScanButton(action: {
+                            viewModel.handleNFCScanToLoad()
+                        })
                     }
                 }
             }

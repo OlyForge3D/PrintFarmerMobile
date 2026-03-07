@@ -38,6 +38,25 @@ struct SpoolPickerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                #if os(iOS)
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 12) {
+                        Button {
+                            viewModel.isQRScannerPresented = true
+                        } label: {
+                            Image(systemName: "qrcode.viewfinder")
+                        }
+                        .accessibilityLabel("Scan QR code")
+
+                        Button {
+                            viewModel.handleNFCScan()
+                        } label: {
+                            Image(systemName: "wave.3.right")
+                        }
+                        .accessibilityLabel("Scan NFC tag")
+                    }
+                }
+                #endif
             }
             .searchable(text: $viewModel.searchText, prompt: "Filter by material, vendor…")
             .refreshable {
@@ -47,9 +66,45 @@ struct SpoolPickerView: View {
                 if viewModel.isLoading && viewModel.spools.isEmpty {
                     ProgressView("Loading spools…")
                 }
+                if viewModel.isScanning {
+                    ProgressView("Looking up spool…")
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .alert("Scan Error", isPresented: .constant(viewModel.scanError != nil)) {
+                Button("OK") { viewModel.scanError = nil }
+            } message: {
+                if let error = viewModel.scanError {
+                    Text(error)
+                }
+            }
+            #if os(iOS)
+            .sheet(isPresented: $viewModel.isQRScannerPresented) {
+                QRScannerView(
+                    onScan: { qrText in
+                        viewModel.handleQRScan(qrText: qrText)
+                    },
+                    onCancel: {
+                        viewModel.isQRScannerPresented = false
+                    }
+                )
+            }
+            #endif
+            .sheet(isPresented: $viewModel.showScannedDataSheet) {
+                if let data = viewModel.scannedSpoolData {
+                    AddSpoolView(scannedData: data)
+                        .onDisappear {
+                            Task { await viewModel.loadSpools() }
+                        }
+                }
             }
             .task {
                 viewModel.configure(spoolService: services.spoolService)
+                viewModel.onAutoSelect = { spool in
+                    onSelect(spool)
+                    dismiss()
+                }
                 await viewModel.loadSpools()
             }
         }

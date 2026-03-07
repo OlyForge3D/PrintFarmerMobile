@@ -181,3 +181,14 @@
 - ✓ Extended PrinterServiceProtocol — setActiveSpool(_:), loadFilament(), unloadFilament(), changeFilament()
 - ✓ APIClient.patch() — HTTP PATCH support for updates
 - **Status:** All service contracts finalized; no breaking changes expected. Ripley successfully built 6 UI views + 3 ViewModels consuming this layer (committed 1102dac).
+
+### Phase 2 Scanning Services (2026-07-17)
+- **Files created:** SpoolScannerProtocol.swift (protocol + error types + ScannedSpoolData), QRCodeParser.swift (3-format QR parsing), NFCTagParser.swift (OpenSpool + OpenPrintTag + payload creation), QRSpoolScannerService.swift (VisionKit DataScanner bridge), NFCService.swift (CoreNFC read + write), MockQRSpoolScannerService.swift, MockNFCService.swift.
+- **ServiceContainer updated:** Conditionally registers QRSpoolScannerService and NFCService behind `#if canImport(UIKit)`.
+- **pbxproj updated:** 7 new files registered (5 main target, 2 test target). plutil validates clean.
+- **No Info.plist:** Project uses iOS 17 modern build system without standalone Info.plist. Camera and NFC usage descriptions need Xcode target Info tab or manual plist creation — flagged in decisions inbox for Dallas/Ripley.
+- **No backend NFC endpoint:** Searched ~/s/PFarm1 — no `/api/nfc-devices/scan` exists. NFC is client-side only; tags encode/decode spool data directly.
+- **Build:** Zero errors from scanning services. Pre-existing errors in NFCScanButton.swift and PrinterDetailView.swift are Ripley's UI code (ButtonStyle not available in SPM macOS build context).
+- **Swiftlint:** Zero errors, one warning fixed (non_optional_string_data_conversion).
+- **NFC write uses NFCTagReaderSession** (not NFCNDEFReaderSession) to get read-write access to tags. Supports ISO 14443 tags (NTAG, MIFARE).
+- **OpenSpool format chosen** as the write standard. Both OpenSpool and OpenPrintTag are supported for reading.

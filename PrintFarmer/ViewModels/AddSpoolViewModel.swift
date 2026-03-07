@@ -10,6 +10,8 @@ final class AddSpoolViewModel {
     var colorHex = "#10b981"
     var totalWeightG: Double = 1000
     var spoolWeightG: Double = 200
+    var diameterMm: Double = 1.75
+    var extruderTempC: Int?
 
     // Reference data
     var materials: [SpoolmanMaterial] = []
@@ -22,11 +24,36 @@ final class AddSpoolViewModel {
     var errorMessage: String?
     var didSave = false
 
+    // Scan pre-fill
+    var isPrefilledFromScan = false
+
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "AddSpool")
     private var spoolService: (any SpoolServiceProtocol)?
 
     func configure(spoolService: any SpoolServiceProtocol) {
         self.spoolService = spoolService
+    }
+
+    func prefill(from scannedData: ScannedSpoolData) {
+        isPrefilledFromScan = true
+        if let material = scannedData.material, !material.isEmpty {
+            selectedMaterial = material
+        }
+        if let hex = scannedData.colorHex, !hex.isEmpty {
+            colorHex = hex
+        }
+        if let vendor = scannedData.vendor, !vendor.isEmpty {
+            selectedVendor = vendor
+        }
+        if let weight = scannedData.weight, weight > 0 {
+            totalWeightG = weight
+        }
+        if let diameter = scannedData.diameter, diameter > 0 {
+            diameterMm = diameter
+        }
+        if let temp = scannedData.temperature, temp > 0 {
+            extruderTempC = temp
+        }
     }
 
     var isFormValid: Bool {
