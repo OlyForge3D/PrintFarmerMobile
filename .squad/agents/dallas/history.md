@@ -72,3 +72,13 @@
 - **False positive from explore agent:** Claim that CreatePrintJobRequest/UpdatePrintJobRequest were "completely wrong" was verified false — they match backend `CreatePrintJobDto` and `UpdatePrintJobDto` exactly. Always verify agent findings against source.
 - **Estimated fix effort:** ~5 hours total. Critical fixes: ~1 hour.
 - **Report:** `.squad/decisions/inbox/dallas-qa-audit.md`
+
+### Filament & NFC Feature Decomposition (2025-07-19)
+- **Backend status:** Fully ready. FilamentType, Spool, NfcDevice, NfcScanEvent entities and full CRUD endpoints already exist. Spoolman integration proxies all spool operations. NFC device heartbeat and scan event endpoints exist for ESP32 hardware.
+- **iOS gap:** `Printer.spoolInfo: PrinterSpoolInfo?` model exists but PrinterDetailView never displays it. No SpoolService, no NFC code, no filament UI anywhere.
+- **Phase 1 (Filament Management):** 7 work items — Lambert builds SpoolService + models, Ripley builds filament section in PrinterDetailView, spool picker sheet, inventory view, add spool form. ~12 hours.
+- **Phase 2 (NFC Tags):** 6 work items — Lambert builds NFCService (CoreNFC + OpenSpool parsing) + Info.plist config, Ripley builds scan-to-load, write-tag, and NFC-enhanced add-spool flows. ~10 hours.
+- **CoreNFC requirements:** Info.plist `NFCReaderUsageDescription`, NFC Tag Reading entitlement, NDEF select identifiers. All iOS 17 devices support NFC. No simulator testing possible.
+- **Open question:** Backend NFC flow assumes ESP32 hardware pushes scans. Phone-initiated scans need coordination — either register phone as virtual NFC device or add phone-specific scan endpoint.
+- **Open question:** Spoolman dependency — need to confirm if always configured or if local Spool entity fallback is needed.
+- **Decomposition:** `.squad/decisions/inbox/dallas-filament-nfc-feature.md`
