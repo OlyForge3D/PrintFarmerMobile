@@ -196,6 +196,7 @@ private final class NFCWriteDelegate: NSObject, NFCTagReaderSessionDelegate, @un
             )
             let ndefMessage = NFCNDEFMessage(records: [ndefPayload])
 
+            nonisolated(unsafe) let session = session
             ndef.writeNDEF(ndefMessage) { writeError in
                 if let writeError {
                     session.invalidate(errorMessage: "Write failed.")
