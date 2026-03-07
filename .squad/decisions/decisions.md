@@ -235,6 +235,55 @@ Full codebase audit covering runtime, API contracts, UI, navigation, theme, conc
 
 ---
 
+### 14. Test Coverage Extension (Ash, 2026-07-18)
+**Status:** Implemented
+
+Extended test suite from 146 → 226 test cases (+80). Four new ViewModel test suites cover all previously untested ViewModels.
+
+**AuthViewModel Testing Pattern:**
+AuthViewModel depends on concrete `AuthService` actor (no protocol). Tests use MockURLProtocol integration testing through the full AuthVM → AuthService → APIClient stack. This is different from other ViewModel tests which use protocol-based mocks via `configure()`.
+
+**Recommendation for Ripley/Lambert:** Consider extracting `AuthServiceProtocol` from the concrete `AuthService` to enable protocol-based mock testing. `AuthServiceProtocol` already exists in TestProtocols.swift but isn't used by production code.
+
+**PushNotificationManager Not Testable:**
+PushNotificationManager is a singleton with concrete UIKit dependencies (UNUserNotificationCenter, UIApplication). Cannot be unit tested without significant refactoring. Acceptable risk for MVP — push notification flows should be validated via manual QA on device.
+
+**Coverage Gaps Remaining:**
+| Component | Status | Notes |
+|-----------|--------|-------|
+| JobService (actor) | Indirect | Tested via ViewModel mocks; needs dedicated MockURLProtocol tests like PrinterServiceTests |
+| StatisticsService (actor) | Indirect | Same as above |
+| NotificationService (actor) | Indirect | Same as above |
+| PushNotificationManager | Untestable | Singleton + UIKit runtime dependency |
+
+**Impact:**
+- All team members: new test suites follow established patterns and should pass in Xcode
+- SPM `swift build` still blocked by pre-existing XCTest module limitation (not related to changes)
+
+### 15. Feature Decomposition: Filament Management + NFC Tag Support (Dallas, 2026-07-19)
+**Status:** Proposed
+
+The backend is **fully ready** — FilamentType, Spool, NfcDevice, and NfcScanEvent entities already exist with complete CRUD endpoints, Spoolman integration, and NFC scan event processing.
+
+**User Decisions Applied:**
+- Spool inventory → new tab in tab bar
+- NFC format → support both OpenSpool and OpenPrintTag
+- Spoolman always available (no fallback needed)
+
+**Phase 1: Filament Management** (Core spool selection, inventory management)
+**Phase 2: NFC Tag Support** (CoreNFC scanning/writing with OpenSpool + OpenPrintTag formats)
+
+**Implementation Plan:**
+- **Sprint 1 (Phase 1 Core):** P1-7 Models, P1-2 SpoolService, P1-1 Filament section, P1-6 ViewModel extensions, P1-3 Spool picker
+- **Sprint 2 (Phase 1 Complete):** P1-4 Spool inventory tab, P1-5 Add spool form
+- **Sprint 3 (Phase 2):** P2-2 Info.plist/entitlements, P2-1 NFCService, P2-3 Scan-to-load, P2-6/P2-4/P2-5 UI flows
+
+**Total Estimate:** ~22 hours of implementation
+
+**Dependency Graph:** See feature document for detailed P1-1 through P2-6 work item breakdown, dependencies, and open questions.
+
+---
+
 ## Cross-References
 
 **Backend Contract Docs:** `~/s/PFarm1/src/api/` (Controllers, DTOs, Startup/ControllerStartup.cs)  
