@@ -51,7 +51,7 @@ struct JobCardView: View {
 
                 Spacer()
 
-                Text(job.createdAt.relativeFormatted)
+                Text((job.createdAt ?? Date()).relativeFormatted)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }

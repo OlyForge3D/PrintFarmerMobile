@@ -19,14 +19,14 @@ struct ContentView: View {
                 .tabItem { Label("Jobs", systemImage: "list.bullet.rectangle") }
                 .tag(AppTab.jobs)
 
+            SpoolInventoryView()
+                .tabItem { Label("Inventory", systemImage: "cylinder.fill") }
+                .tag(AppTab.inventory)
+
             NotificationsView()
                 .tabItem { Label("Alerts", systemImage: "bell") }
                 .tag(AppTab.notifications)
                 .badge(router.notificationBadgeCount)
-
-            SpoolInventoryView()
-                .tabItem { Label("Inventory", systemImage: "cylinder.fill") }
-                .tag(AppTab.inventory)
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gear") }

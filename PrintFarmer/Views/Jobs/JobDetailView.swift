@@ -10,10 +10,9 @@ struct JobDetailView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.job == nil {
-                ProgressView("Loading job…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage, viewModel.job == nil {
+            if let job = viewModel.job {
+                jobContent(job)
+            } else if let error = viewModel.errorMessage {
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
                 } description: {
@@ -23,8 +22,9 @@ struct JobDetailView: View {
                         Task { await viewModel.loadJob() }
                     }
                 }
-            } else if let job = viewModel.job {
-                jobContent(job)
+            } else {
+                ProgressView("Loading job…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle(viewModel.job?.name ?? "Job")
@@ -176,7 +176,7 @@ struct JobDetailView: View {
                 .font(.headline)
 
             VStack(spacing: 0) {
-                infoRow(label: "Created", value: job.createdAt.formatted(date: .abbreviated, time: .shortened), icon: "calendar")
+                infoRow(label: "Created", value: (job.createdAt ?? Date()).formatted(date: .abbreviated, time: .shortened), icon: "calendar")
 
                 if let started = job.actualStartTime {
                     Divider()

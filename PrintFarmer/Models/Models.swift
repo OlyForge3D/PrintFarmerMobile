@@ -413,8 +413,8 @@ struct PrintJob: Codable, Identifiable, Sendable {
     let gcodeFileName: String
     let assignedPrinterId: UUID?
     let assignedPrinterName: String?
-    let createdAt: Date
-    let updatedAt: Date
+    let createdAt: Date?
+    let updatedAt: Date?
     let actualStartTime: Date?
     let actualEndTime: Date?
     let estimatedPrintTime: String?
