@@ -143,3 +143,9 @@
 - **Token expiry pre-check:** Added `isTokenExpired()` to AuthService with 5-minute buffer. APIClient checks this via a closure (`tokenExpiryChecker`) before every request. If expired, posts `.sessionExpired` and throws `.unauthorized` without hitting the network.
 - **Silent error suppression:** Replaced `try?` in PrinterDetailViewModel (status, currentJob, snapshot) and DashboardViewModel (statistics summary) with proper `do/catch` blocks that log warnings via `os.Logger`. Primary data failures still propagate to `errorMessage`; secondary data failures are logged but don't block the view.
 - **AuthViewModel isolation:** Changed from `@Observable @unchecked Sendable` to `@MainActor @Observable` to properly handle notification observer lifecycle under Swift 6 strict concurrency. Used `nonisolated(unsafe)` for the observer property to allow cleanup in `deinit`.
+
+### Cross-Agent Learning (2026-03-07 QA Batch)
+- **Ripley completed:** AppRouter & AuthViewModel @MainActor, all 17 hardcoded colors → theme tokens (3 new: pfMaintenance, pfAssigned, pfTempMild), error UI in JobListView & NotificationsView, placeholder navigation → Coming Soon, dashboard empty state, accessibility labels
+- **Ripley's theme system:** 22 color tokens in ThemeColors.swift with adaptive light/dark support, ThemeManager for persistence, global pfAccent (green) tint. All future views must use Color.pf* tokens.
+- **Decision record:** All QA audit fixes merged into decisions.md (decision #5 auto-logout, #6 enum serialization, #13 audit status)
+- **Outcome:** All critical + important issues resolved; build clean; commit 7fb1419

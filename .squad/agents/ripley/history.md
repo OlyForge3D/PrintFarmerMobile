@@ -119,7 +119,7 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
   - Moved `isLoading = true` before the guard in `loadPrinter()`. If the guard fails, an error message is now set instead of silent return.
 - **Backend note:** `GET /api/printers/{id}` returns `PrinterDto` which lacks `InMaintenance`/`IsEnabled` fields present in `CompletePrinterDto` (list endpoint). Our Printer model handles this via `decodeIfPresent` defaults, so decoding works but maintenance status may show incorrect after detail fetch. Separate issue to address later.
 
-### QA Audit Fixes (2025-07-18)
+### QA Audit Fixes (2025-07-18 → 2026-03-07)
 - **C1 — AppRouter @MainActor:** Added `@MainActor` annotation to AppRouter. It manages NavigationPath and selectedTab (UI state) and must be main-actor-isolated.
 - **C2 — AuthViewModel @MainActor:** Replaced `@unchecked Sendable` with `@MainActor`. Required `nonisolated deinit` and `nonisolated(unsafe)` for the NotificationCenter observer to satisfy Swift 6 concurrency rules.
 - **JobListView & NotificationsView error display:** Both ViewModels set `errorMessage` on failure but views never showed it. Added `ContentUnavailableView` error states with retry buttons before the empty state checks.
@@ -128,3 +128,10 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **Dashboard empty state:** Added `EmptyStateView` when printer list is empty instead of showing "0" counts in summary cards.
 - **Accessibility labels:** Added `.accessibilityLabel()` to StatusBadge (all instances), TemperatureView (combined element with label+current+target), PrinterListView cards (printer name+state+online), and PrinterDetailView action buttons (maintenance toggle, emergency stop).
 - **ShapeStyle gotcha revisited:** When using `Color.pfError` in `.tint()`, must use explicit `Color.pfError` form since `.tint()` accepts `ShapeStyle` and implicit member lookup won't find custom `Color` statics.
+
+### Cross-Agent Learning (2026-03-07 QA Batch)
+- **Lambert completed:** SignalR date decoder (dual-format), safe URLComponents, 401 auto-logout pattern, token expiry pre-check (5-min buffer), silent error suppression in secondary data loads (status, currentJob, stats)
+- **Lambert's token validation:** AuthService.isTokenExpired() checked via closure before every APIClient request. 401 posts Notification.Name.sessionExpired → AuthViewModel logout → LoginView
+- **Pattern alignment:** AppRouter & AuthViewModel both now @MainActor; all ViewModels follow same pattern
+- **Decision record:** All QA audit fixes merged into decisions.md (decision #7 theme system, #8 color extensions, #9 printer detail fix, #10 jobs tab fix)
+- **Outcome:** All critical + important issues resolved; build clean; commit 7fb1419
