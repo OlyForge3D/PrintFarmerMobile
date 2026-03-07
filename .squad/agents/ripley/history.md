@@ -252,3 +252,21 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - Jeff's "blank page" report was actually about missing affordances, not a literally empty view — always verify before assuming the worst
 - Backend pause/resume lives on `JobQueueAnalyticsController` (`/api/job-queue-analytics/jobs/`), not on `JobQueueController` — different base paths for different job operations
 - Swipe actions on List rows with Button-styled items work fine in SwiftUI — no conflict with the tap navigation
+- SpoolInventoryView NFC: followed SpoolPickerView pattern exactly — NFC button in toolbar HStack, scanner overlay, error alert, scanned data sheet. ServiceContainer.nfcService is behind `#if canImport(UIKit)` so NFC configuration must be guarded too.
+- ScrollViewReader + onChange(of: highlightedSpoolId) pattern works well for scroll-to-and-highlight on scan result
+
+### Blank Screen After Login Fix (2025-07-19)
+- **Root cause:** `PFarmApp` (App struct) read `authViewModel.isAuthenticated` directly in its body. `@Observable` property tracking inside an `App` struct can be unreliable — when `isAuthenticated` changed after login, SwiftUI sometimes didn't re-evaluate the body, leaving the user on a blank/stale screen.
+- **Fix applied:**
+  1. Extracted auth-gating conditional into a new `RootView` (View struct) where `@Observable` tracking via `@Environment` is reliable.
+  2. Added `hasCheckedAuth` flag to `AuthViewModel` — set `true` after `restoreSession()` completes.
+  3. RootView has three states: checking (branded launch screen), authenticated (ContentView), unauthenticated (LoginView). Something always renders.
+  4. All `.environment()` values now applied at the PFarmApp level, inherited by all children.
+- **Pattern:** Never gate conditional view rendering on `@Observable` properties inside an `App` struct body — always extract into a `View`.
+- **Files:** `PFarmApp.swift`, `Views/RootView.swift` (new), `ViewModels/AuthViewModel.swift`
+
+### Print Job Filename Display Fix (2025-07-22)
+- **Root cause:** Backend `JobQueueService.cs` mapped `GcodeFileName` from `GcodeFile.FileName` (GUID-based on-disk filename) instead of `GcodeFile.Name` (original user-uploaded display name). The `StoredFile` base class has both: `Name` = "Original filename for display", `FileName` = "GUID-based filename on disk".
+- **Fix:** Changed all 5 DTO mapping sites in `JobQueueService.cs` to use `.Name` instead of `.FileName`. Also fixed job creation where `PrintJob.Name` was being set to the disk filename.
+- **iOS side:** No iOS changes needed — the `PrintJob.gcodeFileName` field and computed `name` property correctly display whatever the API sends. The bug was entirely server-side.
+- **Spool picker search:** Task 2 (add filtering to spool picker) was already implemented — `SpoolPickerView` already has `.searchable()` and `SpoolPickerViewModel` already has `filteredSpools` that filters by material, filamentName, vendor, and name.
