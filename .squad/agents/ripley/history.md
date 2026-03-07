@@ -66,6 +66,15 @@
 
 ## Recent Work (2026-03-07)
 
+### Material Type Filter Chips + Expanded Search (2026-03-07)
+- Added material type filter chips to both SpoolInventoryView and SpoolPickerView (FilterChip-based segmented control)
+- Expanded search filter to include color (hex-to-name heuristic), location, and comment fields
+- Created `SpoolmanSpool+ColorName.swift` extension for lightweight color matching (common filament palette)
+- Added `hasActiveSearch` computed property to both ViewModels for empty-state gating
+- Implemented `ContentUnavailableView.search` empty state when filtered results yield nothing
+- Updated search bar prompts: "Search by name, material, color…"
+- Key files: `SpoolInventoryView.swift`, `SpoolPickerView.swift`, `SpoolInventoryViewModel.swift`, `SpoolPickerViewModel.swift`, `SpoolmanSpool+ColorName.swift` (new)
+
 ### GcodeFile Filename Mapping Fix
 - Fixed backend JobQueueService.cs mapping: GcodeFile.FileName → GcodeFile.Name (6 locations)
 - User-uploaded filenames now display in job detail views instead of internal GUID-based disk names

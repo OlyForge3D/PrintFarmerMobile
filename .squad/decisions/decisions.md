@@ -282,6 +282,31 @@ The backend is **fully ready** — FilamentType, Spool, NfcDevice, and NfcScanEv
 
 **Dependency Graph:** See feature document for detailed P1-1 through P2-6 work item breakdown, dependencies, and open questions.
 
+### 16. Spool Inventory Filtering & Search Enhancement (Ripley, 2026-03-07)
+**Status:** Implemented
+
+Enhanced SpoolInventoryView and SpoolPickerView with expanded search and material type filtering.
+
+**Changes:**
+1. Expanded search filter in ViewModels to check name + material + vendor + location + comment + color name
+2. Added `SpoolmanSpool+ColorName.swift` extension with hex-to-color-name heuristic (lightweight, suitable for filament palette)
+3. Added material type filter chips (FilterChip-based segmented control) to both Views
+4. Added `ContentUnavailableView.search` empty state when filtered results are empty
+5. Updated search bar prompts: "Search by name, material, color…"
+
+**Files Changed:**
+- `PrintFarmer/Views/Filament/SpoolInventoryView.swift` 
+- `PrintFarmer/Views/Filament/SpoolPickerView.swift`
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift`
+- `PrintFarmer/ViewModels/SpoolPickerViewModel.swift`
+- `PrintFarmer/Extensions/SpoolmanSpool+ColorName.swift` (new)
+
+**Impact:**
+- Users can now search spools by color, location, or comment fields
+- Filtering is client-side only — no backend changes needed
+- MVVM pattern maintained; filter logic in ViewModels
+- `hasActiveSearch` computed property gates empty-state display
+
 ---
 
 ## Cross-References
