@@ -155,3 +155,17 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
 - **pbxproj registration:** 9 new files + 1 new group (Filament) registered in project.pbxproj. Also registered Lambert's 3 unregistered files (FilamentModels.swift, SpoolService.swift, SpoolServiceProtocol.swift).
 - **Phase 2 NFC note:** SpoolPickerView and AddSpoolView are ready for OpenSpool/OpenPrintTag NFC scan integration (Phase 2). Future "Scan NFC" button will auto-populate spool data from tag.
 - **SPM build clean:** `swift build` succeeds with zero errors.
+
+## Cross-Agent Context (2026-03-07T16:03:00Z)
+
+**Lambert (Filament Models & Services) provides:**
+- ✓ SpoolServiceProtocol — 8 methods: list, get, create, update, delete; pagination (limit/offset)
+- ✓ Extended PrinterServiceProtocol — setActiveSpool(_:), loadFilament(), unloadFilament(), changeFilament()
+- ✓ FilamentModels — SpoolmanSpool, SpoolmanFilament, SpoolmanVendor, SpoolmanMaterial, SpoolmanPagedResult
+- ✓ APIClient.patch() — HTTP PATCH support
+- **Delivered:** All service contracts finalized and tested (committed 758e10a)
+
+**Ash (Test Coverage) needs:**
+- MockSpoolService — full mock with call tracking
+- 3 new ViewModel tests — SpoolPickerViewModel, SpoolInventoryViewModel, AddSpoolViewModel
+- Integration with existing mock infrastructure

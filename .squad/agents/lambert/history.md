@@ -172,4 +172,12 @@
 - **MockSpoolService.swift:** Full mock with call tracking and `reset()`.
 - **MockPrinterService.swift:** Extended with filament method stubs and call tracking.
 - **Key backend finding:** `PrinterSpoolInfo` already existed in Models.swift — removed duplicate from FilamentModels.swift. Backend spool list returns `SpoolmanPagedResult<SpoolmanSpoolDto>` (paginated with `items`/`totalCount`), NOT a flat array. Used `limit`/`offset` pagination (matching Spoolman's native API) rather than `page`/`pageSize`.
-- **JSON naming:** Backend uses `JsonNamingPolicy.CamelCase` — Swift property names match JSON keys directly (no key strategy needed).
+- **JSON naming:** Backend uses `JsonNamingPolicy.CamelCase` — Swift property names match JSON keys directly (no key strategy needed)
+
+## Cross-Agent Context (2026-03-07T16:03:00Z)
+
+**Ripley (Filament UI) depends on:**
+- ✓ SpoolServiceProtocol — 8 methods: list, get, create, update, delete spools; pagination support (limit/offset)
+- ✓ Extended PrinterServiceProtocol — setActiveSpool(_:), loadFilament(), unloadFilament(), changeFilament()
+- ✓ APIClient.patch() — HTTP PATCH support for updates
+- **Status:** All service contracts finalized; no breaking changes expected. Ripley successfully built 6 UI views + 3 ViewModels consuming this layer (committed 1102dac).

@@ -2,7 +2,65 @@
 
 ## Active Decisions
 
-### Camera Snapshot Display Strategy (Ripley, 2025-07-18)
+### Decision: Spoolman Spool Model Naming & Pagination (Lambert)
+**Date:** 2026-03-07  
+**Status:** Implemented
+
+## Context
+Phase 1 filament/spool models needed to match backend DTOs precisely.
+
+## Decisions
+
+1. **Model names use `Spoolman` prefix** (`SpoolmanSpool`, `SpoolmanFilament`, `SpoolmanVendor`, `SpoolmanMaterial`) to match backend DTO names and avoid collision with future domain models (e.g., a simpler `Spool` view model).
+
+2. **Pagination uses `limit`/`offset`** (not `page`/`pageSize`) — matches Spoolman's native API which the backend proxies. Return type is `SpoolmanPagedResult<T>` with `items` and `totalCount`.
+
+3. **Added `patch()` to APIClient** — backend uses HTTP PATCH for spool and filament updates. This is a new HTTP method available to all services.
+
+4. **`SetActiveSpoolRequest` returns `CommandResult`** (not `Printer`) — matches backend's `PrintersController.SetActiveSpoolAsync` which returns `CommandResult`.
+
+5. **Added `changeFilament()` to PrinterService** — backend has `filament-change` (M600) in addition to `filament-load`/`filament-unload`. Included for completeness.
+
+## Impact
+- Ripley can build filament management UI against `SpoolServiceProtocol` and the extended `PrinterServiceProtocol`.
+- ViewModels should use `SpoolmanPagedResult` for infinite scroll / pagination patterns.
+
+---
+
+### Filament UI Architecture (Ripley)
+**Date:** 2026-03-07  
+**Status:** Implemented
+
+## Tab Structure Change
+- Added **Inventory** tab (6th tab) to ContentView TabView using `cylinder.fill` SF Symbol
+- Added `AppTab.inventory` case and `inventoryPath` NavigationPath to AppRouter
+- Tab order: Dashboard → Printers → Jobs → Alerts → **Inventory** → Settings
+
+## Filament Section in PrinterDetailView
+- Filament section always renders between Camera and Actions sections
+- Shows active spool info (color swatch, material, vendor, weight progress bar) or "No filament loaded" empty state
+- "Load Filament" / "Change Filament" → presents SpoolPickerView as `.sheet`
+- "Eject" → calls `printerService.setActiveSpool(nil)` + `printerService.unloadFilament()`
+- `setActiveSpool(_:)` → calls `printerService.setActiveSpool(spoolId)` + `printerService.loadFilament()`
+
+## SpoolService Dependency
+- ViewModels use `SpoolServiceProtocol` (Lambert's protocol) via `ServiceContainer.spoolService`
+- PrinterDetailViewModel uses `PrinterServiceProtocol` filament methods (setActiveSpool, loadFilament, unloadFilament) — NOT SpoolServiceProtocol
+- SpoolPickerViewModel and SpoolInventoryViewModel use `SpoolServiceProtocol` for listing/creating/deleting spools
+
+## Phase 2 NFC Hook
+- SpoolPickerView and AddSpoolView are designed to accept NFC-scanned spool data (OpenSpool / OpenPrintTag formats)
+- Future work: Add "Scan NFC" button that auto-populates spool fields from tag
+
+**Impact:**
+- **Lambert:** No changes needed — all services already built and working
+- **Ash:** 3 new ViewModels need test coverage (SpoolPickerViewModel, SpoolInventoryViewModel, AddSpoolViewModel); MockSpoolService needed
+- **Dallas:** AppRouter has new `inventory` case — any navigation routing logic should account for it
+
+---
+
+### Camera Snapshot Display Strategy (Ripley)
+**Date:** 2025-07-18  
 **Status:** Implemented
 
 Two-tier loading strategy for camera snapshots in PrinterDetailView:
@@ -18,7 +76,8 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 
 ---
 
-### Push Notification Infrastructure (Lambert, 2026-07-17)
+### Push Notification Infrastructure (Lambert)
+**Date:** 2026-07-17  
 **Status:** Implemented (client-side); backend endpoint pending
 
 #### Architecture
@@ -53,7 +112,8 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 
 ---
 
-### Copilot Model Directive (Jeff Papiez, 2026-03-06)
+### Copilot Model Directive (Jeff Papiez)
+**Date:** 2026-03-06  
 **Status:** Accepted
 
 #### Recommended Model for Code-Writing Agents
@@ -63,7 +123,8 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 
 ---
 
-### Login Screen Architecture (Ripley, 2026-03-06)
+### Login Screen Architecture (Ripley)
+**Date:** 2026-03-06  
 **Status:** Implemented
 
 #### Form State Separation
@@ -88,7 +149,8 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 
 ---
 
-### Auth Response Contract: Single JWT Token (Lambert, 2026-03-06)
+### Auth Response Contract: Single JWT Token (Lambert)
+**Date:** 2026-03-06  
 **Status:** Implemented
 
 #### Token Model
@@ -112,7 +174,8 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 
 ---
 
-### iOS Project Structure (Dallas, 2025-07-16)
+### iOS Project Structure (Dallas)
+**Date:** 2025-07-16  
 **Status:** Accepted
 
 #### Architecture: MVVM + Repository Pattern
