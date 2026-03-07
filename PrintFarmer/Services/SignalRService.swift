@@ -35,7 +35,17 @@ final class SignalRService: @unchecked Sendable, SignalRServiceProtocol {
         self.session = session
 
         self.decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        // Match APIClient's dual-format date decoder — ASP.NET Core emits fractional seconds
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let text = try container.decode(String.self)
+            if let date = APIClient.iso8601WithFractional.date(from: text) { return date }
+            if let date = APIClient.iso8601Plain.date(from: text) { return date }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Cannot decode date string: \(text)"
+            )
+        }
     }
 
     // MARK: - Public API
@@ -90,7 +100,9 @@ final class SignalRService: @unchecked Sendable, SignalRServiceProtocol {
     }
 
     private func negotiate(jwt: String?) async throws -> SignalRNegotiateResponse {
-        var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: true)!
+        guard var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: true) else {
+            throw NetworkError.invalidURL(serverURL.absoluteString)
+        }
         components.path = (components.path.hasSuffix("/") ? components.path : components.path + "/") + "hubs/printers/negotiate"
         components.queryItems = [URLQueryItem(name: "negotiateVersion", value: "1")]
 
@@ -114,7 +126,9 @@ final class SignalRService: @unchecked Sendable, SignalRServiceProtocol {
     }
 
     private func openWebSocket(connectionToken: String, jwt: String?) async throws {
-        var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: true)!
+        guard var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: true) else {
+            throw NetworkError.invalidURL(serverURL.absoluteString)
+        }
         let isSecure = components.scheme == "https"
         components.scheme = isSecure ? "wss" : "ws"
         components.path = (components.path.hasSuffix("/") ? components.path : components.path + "/") + "hubs/printers"

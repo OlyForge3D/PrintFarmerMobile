@@ -8,19 +8,20 @@ actor APIClient {
     private let encoder: JSONEncoder
     private var baseURL: URL
     private var accessToken: String?
+    private var tokenExpiryChecker: (@Sendable () async -> Bool)?
 
     /// Key used to persist the server URL across launches.
     static let serverURLKey = "pf_server_url"
 
     /// ISO 8601 formatter with fractional seconds (matches ASP.NET Core output).
-    private nonisolated(unsafe) static let iso8601WithFractional: ISO8601DateFormatter = {
+    nonisolated(unsafe) static let iso8601WithFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
     /// ISO 8601 formatter without fractional seconds (fallback).
-    private nonisolated(unsafe) static let iso8601Plain: ISO8601DateFormatter = {
+    nonisolated(unsafe) static let iso8601Plain: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
@@ -50,6 +51,12 @@ actor APIClient {
 
     func setAccessToken(_ token: String?) {
         self.accessToken = token
+    }
+
+    /// Registers a closure that checks whether the current token is expired.
+    /// Called before each API request to proactively reject expired tokens.
+    func setTokenExpiryChecker(_ checker: @escaping @Sendable () async -> Bool) {
+        self.tokenExpiryChecker = checker
     }
 
     func updateBaseURL(_ url: URL) {
@@ -87,6 +94,7 @@ actor APIClient {
     }
 
     func getData(_ path: String) async throws -> Data {
+        try await checkTokenExpiry()
         let request = try buildRequest(path: path, method: "GET")
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
@@ -130,6 +138,8 @@ actor APIClient {
     // MARK: - Internal
 
     private func buildRequest(path: String, method: String) throws -> URLRequest {
+        // Pre-flight: reject if token is known to be expired
+        // (check is sync-safe — the actual async check happens in execute/executeVoid wrappers)
         guard let url = URL(string: path, relativeTo: baseURL) else {
             throw NetworkError.invalidURL(path)
         }
@@ -145,6 +155,7 @@ actor APIClient {
     }
 
     private func execute<T: Decodable>(_ request: URLRequest) async throws -> T {
+        try await checkTokenExpiry()
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
         do {
@@ -160,8 +171,16 @@ actor APIClient {
     }
 
     private func executeVoid(_ request: URLRequest) async throws {
+        try await checkTokenExpiry()
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
+    }
+
+    private func checkTokenExpiry() async throws {
+        if let checker = tokenExpiryChecker, await checker() {
+            NotificationCenter.default.post(name: .sessionExpired, object: nil)
+            throw NetworkError.unauthorized
+        }
     }
 
     private func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
@@ -189,6 +208,7 @@ actor APIClient {
         case 200...299:
             return
         case 401:
+            NotificationCenter.default.post(name: .sessionExpired, object: nil)
             throw NetworkError.unauthorized
         case 403:
             throw NetworkError.forbidden
@@ -246,4 +266,10 @@ enum NetworkError: LocalizedError, Sendable {
         case .authFailed(let message): message
         }
     }
+}
+
+// MARK: - Session Expired Notification
+
+extension Notification.Name {
+    static let sessionExpired = Notification.Name("SessionExpired")
 }

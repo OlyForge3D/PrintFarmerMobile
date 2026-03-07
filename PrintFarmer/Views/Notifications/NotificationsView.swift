@@ -13,6 +13,16 @@ struct NotificationsView: View {
                 if viewModel.isLoading && viewModel.notifications.isEmpty {
                     ProgressView("Loading notifications…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.errorMessage, viewModel.notifications.isEmpty {
+                    ContentUnavailableView {
+                        Label("Error", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Retry") {
+                            Task { await viewModel.loadNotifications() }
+                        }
+                    }
                 } else if viewModel.notifications.isEmpty {
                     EmptyStateView(
                         icon: "bell.slash",
@@ -63,7 +73,7 @@ struct NotificationsView: View {
                             } label: {
                                 Label("Read", systemImage: "envelope.open")
                             }
-                            .tint(.blue)
+                            .tint(Color.pfHomed)
                         }
                     }
                     .swipeActions(edge: .trailing) {

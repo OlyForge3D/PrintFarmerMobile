@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import os
 
 @MainActor @Observable
 final class PrinterDetailViewModel {
@@ -13,6 +14,8 @@ final class PrinterDetailViewModel {
     var showConfirmation = false
     var pendingAction: DestructiveAction?
     var actionError: String?
+
+    private let logger = Logger(subsystem: "com.printfarmer.ios", category: "PrinterDetail")
 
     enum DestructiveAction: Identifiable {
         case cancelPrint
@@ -63,11 +66,28 @@ final class PrinterDetailViewModel {
 
         do {
             printer = try await printerService.get(id: printerId)
-            statusDetail = try? await printerService.getStatus(id: printerId)
-            currentJob = try? await printerService.getCurrentJob(id: printerId)
-            snapshotData = try? await printerService.getSnapshot(id: printerId)
         } catch {
             errorMessage = error.localizedDescription
+            isLoading = false
+            return
+        }
+
+        do {
+            statusDetail = try await printerService.getStatus(id: printerId)
+        } catch {
+            logger.warning("Failed to load printer status: \(error.localizedDescription)")
+        }
+
+        do {
+            currentJob = try await printerService.getCurrentJob(id: printerId)
+        } catch {
+            logger.warning("Failed to load current job: \(error.localizedDescription)")
+        }
+
+        do {
+            snapshotData = try await printerService.getSnapshot(id: printerId)
+        } catch {
+            logger.warning("Failed to load snapshot: \(error.localizedDescription)")
         }
 
         isLoading = false

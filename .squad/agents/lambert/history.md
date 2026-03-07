@@ -135,3 +135,11 @@
 - **Swift 6 concurrency:** Static `ISO8601DateFormatter` properties marked `nonisolated(unsafe)`.
 - **Test fixtures:** Updated from integer enum values to string values matching backend `JsonStringEnumConverter` output. Fixed stale PrintJob fixture fields (`name`, `queuedAt`, `startedAt`, `autoAssign` removed; `remainingCopies` added). Fixed enum raw value assertions from Int to String.
 - **PrinterFastDto:** Backend has a SEPARATE `PrinterFastDto` (returned by `GetAllFastDtosAsync`) which includes `CameraSnapshotUrl` but fewer live-status fields. Not currently used by iOS but good to know.
+
+### QA Audit Fixes (2026-07-16)
+- **SignalR date decoder:** Was using `.iso8601` which rejects fractional seconds from ASP.NET Core. Now uses the same custom dual-format decoder as APIClient (tries fractional first, falls back to plain). Made APIClient's `iso8601WithFractional` and `iso8601Plain` formatters internal (no longer private) so SignalRService can reuse them.
+- **SignalR force unwraps:** Replaced two `URLComponents(url:resolvingAgainstBaseURL:)!` force unwraps in `negotiate()` and `openWebSocket()` with `guard let` + `throw NetworkError.invalidURL`. Prevents crashes on malformed server URLs.
+- **401 auto-logout:** APIClient now posts `Notification.Name.sessionExpired` on 401 responses. AuthViewModel observes this notification and calls `logout()` automatically, flipping `isAuthenticated = false` which triggers SwiftUI navigation back to LoginView.
+- **Token expiry pre-check:** Added `isTokenExpired()` to AuthService with 5-minute buffer. APIClient checks this via a closure (`tokenExpiryChecker`) before every request. If expired, posts `.sessionExpired` and throws `.unauthorized` without hitting the network.
+- **Silent error suppression:** Replaced `try?` in PrinterDetailViewModel (status, currentJob, snapshot) and DashboardViewModel (statistics summary) with proper `do/catch` blocks that log warnings via `os.Logger`. Primary data failures still propagate to `errorMessage`; secondary data failures are logged but don't block the view.
+- **AuthViewModel isolation:** Changed from `@Observable @unchecked Sendable` to `@MainActor @Observable` to properly handle notification observer lifecycle under Swift 6 strict concurrency. Used `nonisolated(unsafe)` for the observer property to allow cleanup in `deinit`.

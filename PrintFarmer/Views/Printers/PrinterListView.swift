@@ -72,6 +72,7 @@ struct PrinterListView: View {
                             PrinterCardView(printer: printer)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("\(printer.name), \(printer.state ?? "unknown") status\(printer.isOnline ? ", online" : ", offline")")
                     }
                 }
             }

@@ -235,7 +235,7 @@ struct JobDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .tint(Color.pfError)
             }
         }
         .disabled(viewModel.isPerformingAction)

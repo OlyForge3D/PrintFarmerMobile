@@ -13,6 +13,7 @@ struct StatusBadge: View {
             .padding(.vertical, 3)
             .background(color.opacity(0.15), in: Capsule())
             .foregroundStyle(color)
+            .accessibilityLabel("\(text) status")
     }
 }
 
@@ -39,7 +40,7 @@ extension StatusBadge {
         case "error":
             self.init(text: "Error", color: .pfError)
         case "maintenance":
-            self.init(text: "Maintenance", color: .purple)
+            self.init(text: "Maintenance", color: .pfMaintenance)
         default:
             self.init(text: state.capitalized, color: .pfTextSecondary)
         }
@@ -55,7 +56,7 @@ extension StatusBadge {
         case .queued:
             self.init(text: "Queued", color: .pfTextSecondary)
         case .assigned:
-            self.init(text: "Assigned", color: .cyan)
+            self.init(text: "Assigned", color: .pfAssigned)
         case .starting:
             self.init(text: "Starting", color: .pfSecondaryAccent)
         case .printing:

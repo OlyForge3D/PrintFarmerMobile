@@ -13,6 +13,16 @@ struct JobListView: View {
                 if viewModel.isLoading && viewModel.jobs.isEmpty {
                     ProgressView("Loading jobs…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.errorMessage, viewModel.jobs.isEmpty {
+                    ContentUnavailableView {
+                        Label("Error", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Retry") {
+                            Task { await viewModel.loadJobs() }
+                        }
+                    }
                 } else if !viewModel.hasAnyJobs {
                     EmptyStateView(
                         icon: "tray",
@@ -213,7 +223,7 @@ struct JobListView: View {
                 if let reason = item.job.failureReason, item.job.jobStatus == .failed {
                     Text(reason)
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.pfError)
                         .lineLimit(2)
                 }
             }
@@ -241,7 +251,7 @@ struct JobListView: View {
                 Text(p == .urgent ? "Urgent" : "High")
                     .font(.caption2.weight(.semibold))
             }
-            .foregroundStyle(p == .urgent ? .red : .orange)
+            .foregroundStyle(p == .urgent ? Color.pfError : Color.pfWarning)
         }
     }
 }

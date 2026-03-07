@@ -37,6 +37,7 @@ actor AuthService {
 
         storeToken(token, expiresAt: response.expiresAt)
         await apiClient.setAccessToken(token)
+        await registerTokenExpiryChecker()
         return response
     }
 
@@ -57,6 +58,7 @@ actor AuthService {
         }
 
         await apiClient.setAccessToken(token)
+        await registerTokenExpiryChecker()
 
         // Validate token by fetching current user
         do {
@@ -77,6 +79,18 @@ actor AuthService {
         keychain.get(Self.tokenKey) != nil
     }
 
+    /// Returns `true` when the stored token has expired or will expire within 5 minutes.
+    func isTokenExpired() -> Bool {
+        guard let expiryString = keychain.get(Self.tokenExpiryKey),
+              let expiryInterval = Double(expiryString) else {
+            // No expiry stored — can't validate, assume not expired
+            return false
+        }
+        let expiryDate = Date(timeIntervalSince1970: expiryInterval)
+        let bufferSeconds: TimeInterval = 5 * 60
+        return Date().addingTimeInterval(bufferSeconds) >= expiryDate
+    }
+
     // MARK: - Token Storage
 
     private func storeToken(_ token: String, expiresAt: Date?) {
@@ -92,5 +106,12 @@ actor AuthService {
     private func clearCredentials() {
         keychain.delete(Self.tokenKey)
         keychain.delete(Self.tokenExpiryKey)
+    }
+
+    private func registerTokenExpiryChecker() async {
+        await apiClient.setTokenExpiryChecker { [weak self] in
+            guard let self else { return true }
+            return await self.isTokenExpired()
+        }
     }
 }

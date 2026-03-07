@@ -35,7 +35,7 @@ struct PrinterCardView: View {
                                 .monospacedDigit()
                         } icon: {
                             Image(systemName: "flame")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.pfNotHomed)
                         }
                         .font(.caption)
                     }
@@ -46,15 +46,17 @@ struct PrinterCardView: View {
                                 .monospacedDigit()
                         } icon: {
                             Image(systemName: "square.stack.3d.up")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.pfHomed)
                         }
                         .font(.caption)
                     }
                 }
             }
 
-            // Job progress (if printing)
-            if let jobName = printer.jobName, let progress = printer.progress {
+            // Job progress (only when actively printing or paused)
+            if let jobName = printer.jobName, let progress = printer.progress,
+               let state = printer.state?.lowercased(),
+               state == "printing" || state == "paused" {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(jobName)
                         .font(.caption)

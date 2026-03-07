@@ -61,3 +61,14 @@
 - **Validation:** Balanced braces/parens confirmed, all 14 required pbxproj sections present, all 66 Swift files (47 source + 19 test) cross-checked against disk
 - **Key insight:** Hand-crafted pbxproj files are fragile. When agents add files via SPM (`swift build` validates), the xcodeproj falls out of sync. Future file additions need a regeneration step or the team should consider workspace+SPM-only approach.
 - **Generator script pattern:** Deterministic IDs via `hashlib.md5(name)[:24]` — regeneration produces identical output if file tree hasn't changed
+
+### Comprehensive QA Audit (2025-07-18)
+- **Scope:** Full codebase audit — runtime, API contracts, UI, navigation, theme, concurrency
+- **Backend verified:** All 22 MVP endpoint paths, field names, and types match backend DTOs and controllers. No API contract mismatches found.
+- **Previous fix confirmed:** PrinterDetailViewModel method mismatches (snapshotURL/cancelPrint/setMaintenance) from MVP build have been resolved.
+- **Critical findings (4):** AppRouter and AuthViewModel missing `@MainActor`; SignalR date decoder uses `.iso8601` (rejects fractional seconds from backend); SignalR force unwraps on URLComponents.
+- **Important findings (7):** 17 hardcoded colors not using pf* theme; 3 placeholder navigation destinations; silent `try?` error suppression in ViewModels; no accessibility labels anywhere; SignalR has unprotected mutable state under `@unchecked Sendable`.
+- **Minor findings (5):** Protocol missing update/delete methods; .task without id tracking; test suite has 2 inverted assertions and 4 untested services.
+- **False positive from explore agent:** Claim that CreatePrintJobRequest/UpdatePrintJobRequest were "completely wrong" was verified false — they match backend `CreatePrintJobDto` and `UpdatePrintJobDto` exactly. Always verify agent findings against source.
+- **Estimated fix effort:** ~5 hours total. Critical fixes: ~1 hour.
+- **Report:** `.squad/decisions/inbox/dallas-qa-audit.md`

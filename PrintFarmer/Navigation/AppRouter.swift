@@ -1,6 +1,6 @@
 import SwiftUI
 
-@Observable
+@MainActor @Observable
 final class AppRouter {
     var selectedTab: AppTab = .dashboard
     var dashboardPath = NavigationPath()

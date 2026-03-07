@@ -82,4 +82,13 @@ extension Color {
     static let pfHomed = Color(hex: "#2096f3")
     /// Not-homed indicator — orange
     static let pfNotHomed = Color(hex: "#fb8c00")
+
+    // MARK: Extended Status
+
+    /// Maintenance mode — purple
+    static let pfMaintenance = adaptive(light: "#7c3aed", dark: "#a78bfa")
+    /// Assigned/pending — teal
+    static let pfAssigned = adaptive(light: "#0891b2", dark: "#22d3ee")
+    /// Temperature mild (>50°C) — yellow
+    static let pfTempMild = adaptive(light: "#ca8a04", dark: "#facc15")
 }

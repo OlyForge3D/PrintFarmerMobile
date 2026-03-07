@@ -39,14 +39,16 @@ struct TemperatureView: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(current?.temperatureFormatted ?? "unknown")\(target != nil && target! > 0 ? ", target \(target!.temperatureFormatted)" : "")")
     }
 
     private var temperatureColor: Color {
         guard let current else { return .secondary }
-        if current > 200 { return .red }
-        if current > 100 { return .orange }
-        if current > 50 { return .yellow }
-        return .blue
+        if current > 200 { return .pfError }
+        if current > 100 { return .pfWarning }
+        if current > 50 { return .pfTempMild }
+        return .pfHomed
     }
 }
 

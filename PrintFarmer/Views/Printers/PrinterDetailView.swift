@@ -70,8 +70,10 @@ struct PrinterDetailView: View {
                 // Temperatures
                 temperatureSection(printer)
 
-                // Current Job
-                if let jobName = printer.jobName {
+                // Current Job (only when printing or paused)
+                if let jobName = printer.jobName,
+                   let state = printer.state?.lowercased(),
+                   state == "printing" || state == "paused" {
                     currentJobSection(jobName: jobName, progress: printer.progress)
                 }
 
@@ -97,7 +99,7 @@ struct PrinterDetailView: View {
                 StatusBadge(printerState: printer.state, isOnline: printer.isOnline)
 
                 if printer.inMaintenance {
-                    StatusBadge(text: "Maintenance", color: .purple)
+                    StatusBadge(text: "Maintenance", color: .pfMaintenance)
                 }
 
                 Spacer()
@@ -228,11 +230,11 @@ struct PrinterDetailView: View {
                 // Contextual actions based on state
                 if viewModel.isPrinting {
                     HStack(spacing: 12) {
-                        actionButton("Pause", icon: "pause.fill", color: .orange) {
+                        actionButton("Pause", icon: "pause.fill", color: .pfWarning) {
                             await viewModel.pausePrinter()
                         }
 
-                        actionButton("Cancel", icon: "xmark.circle.fill", color: .red) {
+                        actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
                             viewModel.requestCancel()
                         }
                     }
@@ -240,18 +242,18 @@ struct PrinterDetailView: View {
 
                 if viewModel.isPaused {
                     HStack(spacing: 12) {
-                        actionButton("Resume", icon: "play.fill", color: .green) {
+                        actionButton("Resume", icon: "play.fill", color: .pfSuccess) {
                             await viewModel.resumePrinter()
                         }
 
-                        actionButton("Cancel", icon: "xmark.circle.fill", color: .red) {
+                        actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
                             viewModel.requestCancel()
                         }
                     }
                 }
 
                 if viewModel.isPrinting || viewModel.isPaused {
-                    actionButton("Stop", icon: "stop.fill", color: .orange) {
+                    actionButton("Stop", icon: "stop.fill", color: .pfWarning) {
                         await viewModel.stopPrinter()
                     }
                 }
@@ -267,6 +269,7 @@ struct PrinterDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
 
                 // Emergency Stop (always available when online)
                 Button(role: .destructive) {
@@ -277,7 +280,8 @@ struct PrinterDetailView: View {
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .tint(Color.pfError)
+                .accessibilityLabel("Emergency stop printer")
             }
             .disabled(viewModel.isPerformingAction)
         }

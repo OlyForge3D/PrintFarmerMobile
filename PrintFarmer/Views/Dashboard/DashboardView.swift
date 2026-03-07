@@ -21,11 +21,20 @@ struct DashboardView: View {
                             maintenanceAlert
                         }
 
-                        // Fleet summary cards
-                        summarySection
+                        if viewModel.printers.isEmpty {
+                            // Empty fleet state
+                            EmptyStateView(
+                                icon: "printer",
+                                title: "No Printers",
+                                message: "No printers are registered. Add printers in PrintFarmer to see your fleet here."
+                            )
+                        } else {
+                            // Fleet summary cards
+                            summarySection
 
-                        // Active jobs
-                        activeJobsSection
+                            // Active jobs
+                            activeJobsSection
+                        }
                     }
                 }
                 .padding()
@@ -224,11 +233,23 @@ func destinationView(for destination: AppDestination) -> some View {
     case .jobDetail(let id):
         JobDetailView(jobId: id)
     case .locationDetail:
-        Text("Location Detail")
+        ContentUnavailableView {
+            Label("Coming Soon", systemImage: "map")
+        } description: {
+            Text("Location details will be available in a future update.")
+        }
     case .createJob:
-        Text("Create Job")
+        ContentUnavailableView {
+            Label("Coming Soon", systemImage: "plus.circle")
+        } description: {
+            Text("Job creation will be available in a future update.")
+        }
     case .createPrinter:
-        Text("Create Printer")
+        ContentUnavailableView {
+            Label("Coming Soon", systemImage: "printer.fill.and.paper")
+        } description: {
+            Text("Printer setup will be available in a future update.")
+        }
     }
 }
 

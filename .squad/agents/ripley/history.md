@@ -118,3 +118,13 @@ Ash's test suite discovered that PrinterDetailViewModel calls methods that don't
   - Reordered view conditionals: content first (printer non-nil), error second, else shows ProgressView. This guarantees something always renders.
   - Moved `isLoading = true` before the guard in `loadPrinter()`. If the guard fails, an error message is now set instead of silent return.
 - **Backend note:** `GET /api/printers/{id}` returns `PrinterDto` which lacks `InMaintenance`/`IsEnabled` fields present in `CompletePrinterDto` (list endpoint). Our Printer model handles this via `decodeIfPresent` defaults, so decoding works but maintenance status may show incorrect after detail fetch. Separate issue to address later.
+
+### QA Audit Fixes (2025-07-18)
+- **C1 — AppRouter @MainActor:** Added `@MainActor` annotation to AppRouter. It manages NavigationPath and selectedTab (UI state) and must be main-actor-isolated.
+- **C2 — AuthViewModel @MainActor:** Replaced `@unchecked Sendable` with `@MainActor`. Required `nonisolated deinit` and `nonisolated(unsafe)` for the NotificationCenter observer to satisfy Swift 6 concurrency rules.
+- **JobListView & NotificationsView error display:** Both ViewModels set `errorMessage` on failure but views never showed it. Added `ContentUnavailableView` error states with retry buttons before the empty state checks.
+- **17 hardcoded colors replaced:** All `.red`, `.orange`, `.blue`, `.yellow`, `.purple`, `.cyan` instances replaced with theme colors (`pfError`, `pfWarning`, `pfHomed`, `pfNotHomed`, `pfMaintenance`, `pfAssigned`, `pfTempMild`). Added 3 new colors to ThemeColors.swift: `pfMaintenance` (purple), `pfAssigned` (teal), `pfTempMild` (yellow).
+- **Placeholder navigation destinations:** Replaced empty `Text()` for locationDetail, createJob, createPrinter with `ContentUnavailableView` "Coming Soon" screens.
+- **Dashboard empty state:** Added `EmptyStateView` when printer list is empty instead of showing "0" counts in summary cards.
+- **Accessibility labels:** Added `.accessibilityLabel()` to StatusBadge (all instances), TemperatureView (combined element with label+current+target), PrinterListView cards (printer name+state+online), and PrinterDetailView action buttons (maintenance toggle, emergency stop).
+- **ShapeStyle gotcha revisited:** When using `Color.pfError` in `.tint()`, must use explicit `Color.pfError` form since `.tint()` accepts `ShapeStyle` and implicit member lookup won't find custom `Color` statics.

@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 @MainActor @Observable
 final class DashboardViewModel {
@@ -7,6 +8,8 @@ final class DashboardViewModel {
     var summary: StatisticsSummary?
     var isLoading = false
     var errorMessage: String?
+
+    private let logger = Logger(subsystem: "com.printfarmer.ios", category: "Dashboard")
 
     private var printerService: (any PrinterServiceProtocol)?
     private var jobService: (any JobServiceProtocol)?
@@ -33,7 +36,11 @@ final class DashboardViewModel {
             printers = try await printersTask
             queueOverview = try await queueTask
 
-            summary = try? await statisticsService?.getSummary()
+            do {
+                summary = try await statisticsService?.getSummary()
+            } catch {
+                logger.warning("Failed to load statistics summary: \(error.localizedDescription)")
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
