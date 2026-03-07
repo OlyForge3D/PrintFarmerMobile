@@ -157,6 +157,10 @@ private final class NFCWriteDelegate: NSObject, NFCTagReaderSessionDelegate, @un
     }
 
     func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+        // NFCTagReaderSession predates Swift Concurrency and isn't Sendable.
+        // Rebind once so all nested @Sendable closures capture the safe binding.
+        nonisolated(unsafe) let session = session
+
         guard let tag = tags.first else {
             session.invalidate(errorMessage: "No tag detected.")
             resume(throwing: SpoolScanError.invalidPayload("No tag detected."))
@@ -196,7 +200,6 @@ private final class NFCWriteDelegate: NSObject, NFCTagReaderSessionDelegate, @un
             )
             let ndefMessage = NFCNDEFMessage(records: [ndefPayload])
 
-            nonisolated(unsafe) let session = session
             ndef.writeNDEF(ndefMessage) { writeError in
                 if let writeError {
                     session.invalidate(errorMessage: "Write failed.")
