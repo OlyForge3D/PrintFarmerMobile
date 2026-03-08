@@ -175,6 +175,7 @@ final class PrinterDetailViewModel {
     }
 
     func setActiveSpool(_ spool: SpoolmanSpool) async {
+        showSpoolPicker = false
         guard let printerService else {
             print("⚠️ setActiveSpool: printerService is nil")
             return
