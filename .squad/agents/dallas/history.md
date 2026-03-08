@@ -159,3 +159,51 @@
 - **Scope document:** Merged into `.squad/decisions.md` — fully detailed 8 WIs, data model changes, API contracts, test plan, timeline
 - **Cross-team impact:** Lambert (WI-2/5), Ripley (WI-3/4/6), Ash (WI-8 tests)
 - **Deliverables:** Orchestration log, session log, decisions.md updated
+
+## 2026-03-08T22:05Z — Beta Release Strategy (SUCCESS)
+
+**Batch:** Infrastructure & Release Planning  
+**Outcome:** ✅ Comprehensive decision document delivered
+
+### Analysis Scope
+TestFlight + GitHub Actions CI/CD infrastructure for PrintFarmer iOS beta distribution. Comprehensive decision covering 7 sections:
+
+**Sections Delivered:**
+1. **TestFlight Setup** — Apple Developer prerequisites, internal vs external tester flow (≤25 instant, 10k with 24-48h review)
+2. **GitHub Actions Workflow** — Tag-triggered (`v*-beta*`, `v*-rc*`) multi-job pipeline on macos-latest
+3. **Code Signing** — fastlane match + encrypted private cert repo, GitHub Secrets for FASTLANE_USER/PASSWORD/MATCH_PASSWORD
+4. **Version Strategy** — SemVer versioning (1.0.0-beta.N) + deterministic build numbers via git commit count
+5. **Dual-Remote Flow** — dev (origin) → release remote with explicit tag push for audit trail
+6. **GitHub Secrets** — Matrix of 4 secrets (fastlane email, app-specific pwd, match encryption key, slack webhook)
+7. **Workflow + Templates** — Complete `.github/workflows/testflight-beta.yml` + `ExportOptions.plist`
+
+### Key Architectural Decisions
+- ✅ TestFlight only (no alternatives viable for AppStore submission path)
+- ✅ Git tag trigger (explicit versioning, prevents spurious builds, SemVer integration)
+- ✅ fastlane match (centralized certs, no hardcoded credentials, team-friendly)
+- ✅ Deterministic build numbers (no CI conflicts, reproducible)
+- ✅ Explicit dual-remote push (audit trail for releases, separation of concerns)
+- ✅ Internal testers first (Week 1-2 alpha) → external (Week 3+ beta, post-review)
+
+### Cross-Team Impact
+- **Lambert:** No code changes; CI/CD orthogonal to services
+- **Ripley:** No code changes; CI/CD orthogonal to views
+- **Ash:** No test changes; CI/CD infrastructure outside test suite
+- **Infrastructure:** One-time setup (App Store Connect record, certs, GitHub Secrets)
+
+### Deliverables
+- ✅ 21.2 KB decision document merged to `.squad/decisions.md`
+- ✅ Orchestration log: `.squad/orchestration-log/2026-03-08T22-05-dallas.md`
+- ✅ Session log: `.squad/log/2026-03-08T22-05-beta-release-strategy.md`
+- ✅ Dallas history.md updated (this entry)
+
+### Next Steps (User/Team)
+1. Create App Store Connect record for PrintFarmer (in "Prepare for Submission" state)
+2. Generate Distribution Certificate (Certificates, Identifiers & Profiles)
+3. Generate App Store Provisioning Profile (explicit, not ad-hoc)
+4. Add internal testers (5-10 team members in App Store Connect > TestFlight)
+5. Create fastlane match private repo, generate encryption key
+6. Configure GitHub Secrets (FASTLANE_USER, FASTLANE_PASSWORD, MATCH_PASSWORD)
+7. Check in `.github/workflows/testflight-beta.yml` + `.github/ExportOptions.plist`
+8. Test: Tag first release (e.g., `git tag -a v1.0.0-beta.1`), push to release remote
+9. Monitor GitHub Actions, verify TestFlight build appears in App Store Connect (~30 min)
