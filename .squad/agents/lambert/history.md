@@ -82,3 +82,21 @@
 - Optional fields in request DTOs must match existing ViewModel expectations (PredictionRequest adapted to support both String? and Int?, not forcing breaking changes)
 - Computed Identifiable properties (FleetPrinterStatistics.id) enable DTOs without explicit id JSON fields
 - ISO8601 formatters reused across services for consistency (date query params use iso8601Plain)
+
+---
+
+## 2026-03-08T17:32Z — NFC Navigation Fix (Ripley) — Cross-Agent Impact
+
+**Status:** ✅ Completed (Ripley)
+
+### Impact on Lambert
+- **No service changes needed** — PushNotificationManager already posts `.pushNotificationTapped` notification correctly
+- **Verification:** AppRouter.swift and PFarmApp.swift now properly observe and handle the notification in the UI layer
+- **No impact on existing service protocols** — Push notification infrastructure remains unchanged; only the consumer (AppRouter) was missing
+
+### Context
+- Ripley fixed bug where app stayed on current printer when tapping NFC notification for a different printer
+- Root cause #1: NavigationPath race condition in AppRouter.navigate() — added 50ms async delay between reset and append
+- Root cause #2: Missing `.pushNotificationTapped` observer in PFarmApp — server push deep links were silently dropped
+- Files changed: `AppRouter.swift`, `PFarmApp.swift`
+- Decision logged: `.squad/decisions.md` — NFC/Deep Link Navigation Race Condition Fix (Ripley)

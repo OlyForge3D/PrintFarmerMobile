@@ -243,3 +243,51 @@ Built ViewModels and Views for 7 new features: Maintenance, AutoPrint, Job Analy
 - **Lambert:** ServiceContainer needs 5 new service properties: `maintenanceService`, `autoPrintService`, `jobAnalyticsService`, `predictiveService`, `dispatchService`. All ViewModels use `configure()` pattern with these service protocols.
 - **Ash:** 7 new ViewModels need test coverage with mock services.
 - **Dallas:** AppRouter has new `maintenance` tab case and `maintenancePath` NavigationPath. AppDestination has 6 new cases.
+
+---
+
+### Decision: NFC Printer Tag Write Delegate Architecture (Ripley)
+**Date:** 2026-03-08
+**Status:** Implemented
+
+## Context
+The existing NFCWriteDelegate takes raw `Data` bytes and wraps them in an OpenSpool media-type NDEF record. Printer tags need a URI record (`printfarmer://printer/{UUID}`) plus a text record with the printer name.
+
+## Decision
+Created a separate `NFCMessageWriteDelegate` that accepts a full `NFCNDEFMessage` rather than refactoring the existing delegate. The `writePrinterTag` method on `NFCService` is concrete (not added to `SpoolScannerProtocol`) since printer tag writing is NFC-specific and doesn't apply to QR scanner implementations.
+
+## Rationale
+- Keeps the existing spool writing path untouched and stable
+- `NFCMessageWriteDelegate` is more flexible — can write any NDEF message composition
+- Accessing via `nfcScanner as? NFCService` cast is acceptable since printer tag writing is inherently NFC-only
+- iOS handles URI record recognition automatically — no need to modify the read delegate for printer tags
+
+## Alternatives Considered
+- Refactoring NFCWriteDelegate to accept either Data or NFCNDEFMessage — rejected, adds complexity to working code
+- Adding `writePrinterTag` to SpoolScannerProtocol — rejected, QR scanners can't write NFC tags
+
+---
+
+### Decision: NFC/Deep Link Navigation Race Condition Fix (Ripley)
+**Date:** 2026-03-08
+**Status:** Implemented
+
+## Context
+When a user had Printer A open and tapped an NFC notification for Printer B, the app stayed on Printer A. Two issues:
+1. `AppRouter.navigate(to:)` reset NavigationPath and appended synchronously — SwiftUI batched this as a single update and did an in-place view update instead of pop-then-push.
+2. `PushNotificationManager` posted `.pushNotificationTapped` but no view observed it, so server push notification deep links were silently dropped.
+
+## Decisions
+
+1. **Async delay between NavigationPath reset and append** — `navigate(to:)` now resets `printersPath` synchronously, then appends the new destination after a 50ms `Task.sleep` in a `@MainActor` Task. This ensures SwiftUI processes the pop before the push.
+
+2. **Added `.onReceive` for `.pushNotificationTapped`** — PFarmApp.swift now observes this notification, extracts the `"link"` URL from userInfo, parses via `DeepLinkHandler`, and calls `router.navigate(to:)`. Guarded with `#if canImport(UIKit)`.
+
+## Impact
+- **Lambert:** No changes needed — PushNotificationManager already posts the notification correctly.
+- **Ash:** AppRouter.navigate(to:) is now async internally — any tests calling it should account for the 50ms delay before asserting NavigationPath contents.
+- **Dallas:** No architectural changes — same deep link flow, just properly separated across render cycles.
+
+## Files Changed
+- `PrintFarmer/Navigation/AppRouter.swift` — navigate(to:) uses async delay
+- `PrintFarmer/PFarmApp.swift` — added .onReceive for .pushNotificationTapped

@@ -190,3 +190,25 @@ PrintFarmerTests/ViewModels/
 - URL scheme: `printfarmer://` with host-based routing (`printer` host)
 - Navigation group added to PrintFarmerTests in Xcode project
 - pbxproj IDs: D1 prefix used for Navigation test entries
+
+---
+
+## 2026-03-08T17:32Z — NFC Navigation Fix (Ripley) — Cross-Agent Impact
+
+**Status:** ✅ Completed (Ripley)
+
+### Impact on Ash
+- **AppRouter.navigate(to:)** is now async internally — added 50ms `Task.sleep` delay between NavigationPath reset and append
+- **Testing impact:** Any unit tests calling `router.navigate(to:)` and immediately asserting NavigationPath contents will fail due to async delay
+- **Mitigation:** Tests should either:
+  1. Use `Task { await Task.sleep(50_000_000) }` before asserting, OR
+  2. Mock AppRouter.navigate(to:) entirely, OR
+  3. Use integration tests that wait for UI updates naturally
+- **Files affected:** Any test files that mock AppRouter or call navigate() directly
+- **Action:** Review NavigationPath-related tests; add async/await handling as needed
+
+### Context
+- Ripley fixed two issues causing NFC deep link navigation to fail
+- Issue #1: NavigationPath race condition — SwiftUI batched reset+append as single update
+- Issue #2: Missing `.pushNotificationTapped` observer in PFarmApp — server push deep links were silently dropped
+- Files changed: `AppRouter.swift`, `PFarmApp.swift`

@@ -122,3 +122,21 @@
 - Manual device QA (Spoolman QR + NFC tags)
 - Phase 2b: Backend device registration (NFC)
 - Phase 2.5: AVFoundation fallback (if coverage critical)
+
+---
+
+## 2026-03-08T17:32Z — NFC Navigation Fix (Ripley) — Cross-Agent Impact
+
+**Status:** ✅ Completed (Ripley)
+
+### Impact on Dallas
+- **AppRouter navigation flow** — Unchanged architecture; same deep link handling flow, just properly sequenced across render cycles
+- **Push notification deep link delivery** — PFarmApp.swift now observes `.pushNotificationTapped` notification and navigates to the correct printer/job detail
+- **Navigation timing** — AppRouter.navigate(to:) now uses async delay (50ms) between NavigationPath reset and append to fix SwiftUI batching issue
+- **No backend changes needed** — Existing push notification infrastructure works correctly; iOS client-side flow now complete
+
+### Context
+- Ripley fixed bug where app stayed on current printer when tapping NFC notification for a different printer
+- Root causes: NavigationPath race condition + missing notification observer
+- Files changed: `AppRouter.swift`, `PFarmApp.swift`
+- Architecture document: `.squad/decisions.md` — NFC/Deep Link Navigation Race Condition Fix (Ripley)

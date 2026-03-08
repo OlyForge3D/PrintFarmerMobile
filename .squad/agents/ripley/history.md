@@ -109,3 +109,9 @@
 - AutoPrintServiceProtocol.markReady(printerId:) is the existing API for marking printers ready
 - Adding files to Xcode project requires unique 24-char hex IDs in pbxproj; must verify against existing IDs to avoid collisions
 - Key files: DeepLinkHandler.swift (Navigation/), NFCService.swift (NFCMessageWriteDelegate), AppRouter.swift (navigate method), PFarmApp.swift (.onOpenURL)
+
+### NFC Navigation Race Condition Fix (2026-03-08)
+- **NavigationPath reset + append race condition** — SwiftUI batches synchronous NavigationPath mutations in the same block. Resetting to empty and immediately appending a new destination in `AppRouter.navigate(to:)` caused SwiftUI to attempt an in-place update instead of pop-then-push, leaving the user stuck on the old printer.
+- **Fix pattern:** Insert `Task.sleep(for: .milliseconds(50))` between NavigationPath reset and append, wrapped in `Task { @MainActor in }`. This forces SwiftUI to process the pop (empty path) in one render pass before the push (new destination) in the next.
+- **Push notification observer gap** — `PushNotificationManager` posts `.pushNotificationTapped` but PFarmApp.swift had no `.onReceive` for it. Added `#if canImport(UIKit)` guarded `.onReceive` handler that extracts the `"link"` URL from userInfo, parses it via `DeepLinkHandler`, and calls `router.navigate(to:)`.
+- **Lesson:** When SwiftUI NavigationPath changes need to pop-then-push, always separate the mutations across render cycles with an async delay.
