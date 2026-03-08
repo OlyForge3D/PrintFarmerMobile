@@ -108,7 +108,7 @@ struct PrinterDetailView: View {
                         Button {
                             viewModel.loadFilament()
                         } label: {
-                            Label("Load Filament", systemImage: "plus.circle.fill")
+                            Label("Set Filament", systemImage: "plus.circle.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -195,7 +195,7 @@ struct PrinterDetailView: View {
             Button {
                 viewModel.loadFilament()
             } label: {
-                Label("Change Filament", systemImage: "arrow.triangle.2.circlepath")
+                Label("Change Filament", systemImage: "arrow.triangle.swap")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)

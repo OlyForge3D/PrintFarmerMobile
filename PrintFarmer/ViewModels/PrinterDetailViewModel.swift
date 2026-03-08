@@ -102,7 +102,6 @@ final class PrinterDetailViewModel {
         actionError = nil
         do {
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: id)
-            _ = try await printerService.loadFilament(printerId: printerId)
             await loadPrinter()
         } catch {
             actionError = error.localizedDescription
@@ -130,7 +129,6 @@ final class PrinterDetailViewModel {
         actionError = nil
         do {
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: spool.id)
-            _ = try await printerService.loadFilament(printerId: printerId)
             await loadPrinter()
         } catch {
             actionError = error.localizedDescription
