@@ -45,60 +45,18 @@
 - MockSpoolService, MockScannerService stubs available
 - XCUITest files ready (deferred to after target creation in Xcode)
 
+#### 7-Feature UI Build & Service Integration (2026-03-08)
+- **Built 7 ViewModels + 11 Views** across Maintenance, AutoPrint, Job Analytics, Predictive, Dispatch, Job History, Uptime
+- **Pattern consistency:** All follow @MainActor @Observable + configure(services:) + loadX() async
+- **Navigation:** Added AppTab.maintenance + 6 AppDestination cases for drill-down
+- **iPad-adaptive:** All new views use horizontalSizeClass for multi-column layouts
+- **Build status:** 33 new files added, ~10 source mismatches resolved, clean build
+- **Parallel execution:** Lambert's 5 services (MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService) built in parallel with UIViews; Build verification caught/fixed all integration issues
+- **Key learnings:** ViewModel pattern scales cleanly; service layer design must complete before UI references; consistent naming critical for parallel execution; source mismatch resolution via build verification prevents compile surprises
+
 ---
 
-## Recent Work (2026-03-08, Completed 2026-03-08T05:16Z)
-
-### 7-Feature UI Build (18 files: 7 ViewModels + 11 Views)
-- **Created 7 ViewModels + 11 Views** across Maintenance, AutoPrint, Job Analytics, Predictive Insights, Dispatch, Job History/Timeline, and Uptime/Reliability features
-- **Pattern consistency:** All ViewModels follow `@MainActor @Observable` + `configure(services:)` + `loadX() async` pattern
-- **Navigation integration:** Added `AppTab.maintenance` + `maintenancePath` to AppRouter; 6 new `AppDestination` cases for drill-down navigation
-- **Tab order updated:** Dashboard → Printers → Jobs → Inventory → Alerts → Maintenance → Settings (7 tabs, wrench.adjustable icon)
-- **ContentView:** Added Maintenance tab to both compact (TabView) and regular (NavigationSplitView sidebar) layouts
-- **PrinterDetailView:** Added AutoPrintSection component + Predictive Insights NavigationLink to both iPhone and iPad layouts
-- **DashboardView:** Added Dispatch Dashboard NavigationLink card at bottom
-- **JobListView:** Added toolbar buttons for Job Analytics and Job History navigation
-- **destinationView() helper:** Extended with 6 new cases for routing to all new views
-- **Service protocols referenced:** MaintenanceServiceProtocol, AutoPrintServiceProtocol, JobAnalyticsServiceProtocol, PredictiveServiceProtocol, DispatchServiceProtocol
-- **ServiceContainer expectations:** maintenanceService, autoPrintService, jobAnalyticsService, predictiveService, dispatchService properties (Lambert building these in parallel)
-- **iPad-adaptive:** All new views use `@Environment(\.horizontalSizeClass)` for adaptive grid layouts where applicable
-- **SF Symbols used:** wrench.adjustable, gauge.with.dots.needle.33percent, chart.bar, clock.arrow.circlepath, arrow.triangle.branch, chart.line.text.clipboard
-- **Build status:** 33 new files added to Xcode; ~10 source mismatches with Lambert's models/protocols fixed by build verification; all compiled successfully
-
-### Cross-Agent Work: Lambert's 5 Service Layers (2026-03-08)
-- **Lambert (agent-32)** built 5 service layers (15 files: 5 models, 5 protocols, 5 services) in parallel
-- **Services delivered:** MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService
-- **Models:** 30+ new DTOs covering maintenance issues, auto-print rules, job analytics metrics, failure predictions, dispatch routing
-- **Protocols:** All follow existing pattern (actor-based, with default-parameter extensions)
-- **ServiceContainer:** All 5 services registered and ready for dependency injection
-- **Key design decisions:** PredictionRequest adapted to match ViewModel expectations; FleetPrinterStatistics uses computed Identifiable; date query params use ISO 8601 plain format
-- **Dependency:** All 7 new ViewModels reference these 5 service protocols; ready to integrate once Lambert confirms ServiceContainer registration
-
-### Cross-Agent Work: Build Verification & Source Reconciliation (2026-03-08)
-- **Build verification agent** (sync mode) added 33 new files to Xcode.pbxproj
-- **Source mismatches fixed:** ~10 mismatches between Lambert's model names/protocol methods and Ripley's ViewModel references reconciled
-- **Outcome:** All code compiled; zero errors, zero new warnings across new files
-
-## Learnings
-
-### 7-Feature UI Build at Scale (2026-03-08)
-- **ViewModel pattern consistency** — All 7 new ViewModels follow the established @MainActor @Observable + configure(services:) + loadX() async pattern established by earlier ViewModels
-- **Navigation structure scalability** — AppRouter's AppTab enum + NavigationPath + AppDestination cases scale cleanly; 6 new feature screens added without disrupting existing navigation
-- **Parallel agent execution** — Lambert (services) + Ripley (UIs) + Build verification (source reconciliation) worked seamlessly when contracts are well-defined upfront
-- **Source mismatch resolution** — Build verification caught ~10 mismatches between Lambert's model/protocol naming and Ripley's ViewModel references; all resolved with zero rework
-- **iPad-adaptive patterns** — Using @Environment(\.horizontalSizeClass) throughout new features ensures consistent multi-column experience on iPad without duplicating view code
-
-### Service Layer Consumption Patterns (2026-03-08)
-- ViewModels receive ServiceContainer in configure(services:), extract needed protocols, avoid tight coupling
-- Service protocols pre-computed Identifiable (FleetPrinterStatistics) work seamlessly in List/ForEach
-- Optional fields in request DTOs (PredictionRequest) support flexible API responses without breaking UI
-- Date query parameters use ISO8601Plain format for consistent URL serialization across all services
-
-### Cross-Agent Dependency Management (2026-03-08)
-- Service layer design (Lambert) must be completed and validated before UI implementation (Ripley) can reference them
-- Build verification as a separate agent catches integration issues early; prevents compile-time surprises
-- Maintaining consistent naming conventions across service models/protocols/ViewModels is critical for parallel team execution
-- Testing infrastructure (mocks, fixtures) should be pre-built for services before UIs consume them (Ash's responsibility)
+## Recent Work (2026-03-08, Completed 2026-03-08T05:16Z → 2026-03-08T21:51Z)
 
 ### NFC Printer Tag Deep Linking (2026-03-08)
 - `printfarmer://printer/{UUID}` URL scheme registered in Info.plist via CFBundleURLTypes
@@ -191,5 +149,119 @@
 3. **Start:** WI-3 (badge) — can parallelize with WI-4
 4. **Gate:** WI-6 (write flow) blocked until WI-5 viewmodel complete
 5. **Coordinate:** Ash's test fixtures during WI-6 development
+
+---
+
+### Spool NFC Tag Writing Feature — Implemented (2026-03-08)
+
+**All 6 work items completed in a single pass:**
+
+1. **Model (WI-1):** Added `hasNfcTag: Bool?` to `SpoolmanSpool` in `FilamentModels.swift` — optional for backward compat with API responses
+2. **NFCService (WI-2):** Added `writeSpoolTag(spool:)` method with dual-record NDEF format:
+   - Record 1: URI `printfarmer://spool/{id}` for deep-link navigation
+   - Record 2: Text payload with OpenSpool JSON (`material`, `color_hex`, `brand`, `weight_g`, `spoolman_id`)
+   - Reuses existing `NFCMessageWriteDelegate` infrastructure (same as printer tags)
+   - Legacy single-record `writeTag(spool:)` preserved for backward compat
+3. **DeepLinkHandler (WI-3):** Added `.spoolDetail(id: Int)` case, parsing `printfarmer://spool/{id}` URLs via switch on `url.host`
+4. **AppRouter (WI-3b):** Added `pendingSpoolHighlightId: Int?` handoff; navigates to inventory tab and highlights spool
+5. **UI Badge (WI-4):** NFC indicator on every spool row — green `wave.3.right` if `hasNfcTag == true`, gray `minus` otherwise; accessibility labels included
+6. **UI Filter (WI-5):** "No NFC Tag" filter chip using `wave.3.right.circle` SF Symbol, toggles `showOnlyMissingNFC` in ViewModel
+7. **UI Write Flow (WI-6):** Context menu "Write NFC Tag" only shown when `spool.hasNfcTag != true`; wired to `viewModel.writeNFCTag(for:)` which calls `NFCService.writeSpoolTag()` and updates local `hasNfcTag` state on success
+
+**Key files modified:**
+- `PrintFarmer/Models/FilamentModels.swift` — hasNfcTag field
+- `PrintFarmer/Services/NFCService.swift` — writeSpoolTag() dual-record method
+- `PrintFarmer/Navigation/DeepLinkHandler.swift` — spool route parsing
+- `PrintFarmer/Navigation/AppRouter.swift` — pendingSpoolHighlightId + navigate
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift` — filter, write state, markSpoolNFCWritten
+- `PrintFarmer/Views/Filament/SpoolInventoryView.swift` — badge, filter chip, write flow wiring
+
+## Learnings
+
+### Spool NFC Dual-Record NDEF Pattern (2026-03-08)
+- **Dual-record NDEF mirrors printer tag pattern:** URI record for in-app deep links + text record for universal NFC readers. Both use `NFCMessageWriteDelegate` (not `NFCWriteDelegate` which writes raw bytes).
+- **SpoolmanSpool is a Codable struct with all `let` properties** — updating a single field requires reconstructing the entire struct. The `markSpoolNFCWritten()` helper does this explicitly.
+- **Optional pattern matching gotcha in Swift:** `if case SpoolScanError.cancelled = error as? SpoolScanError` fails because `as?` returns Optional and pattern matching on Optional is ambiguous. Use `if let scanError = error as? SpoolScanError, case .cancelled = scanError` instead.
+- **DeepLinkHandler URL parsing:** `url.host` gives the first path segment of custom URL schemes (`printfarmer://spool/42` → host = "spool"). Path components after host are in `url.pathComponents`.
+- **Filter chip pattern:** Single-purpose toggle chip with capsule background, placed in its own `HStack` with `Spacer()` for left-alignment, below the status filter chips.
+
+---
+
+---
+
+## 2026-03-08T21:51Z — Spool NFC Tag Writing Feature — COMPLETE
+
+**Status:** ✅ Implemented (Ripley) & Ready for Testing (Ash)
+
+### All 6 Work Items Completed
+
+**1. Model (WI-1):** Added `hasNfcTag: Bool?` to `SpoolmanSpool` in `FilamentModels.swift`
+   - Optional for backward compatibility with backend responses
+   - All new test fixtures include `hasNfcTag: nil` parameter
+
+**2. NFCService (WI-2):** Added `writeSpoolTag(spool:)` method with dual-record NDEF format
+   - Record 1: URI `printfarmer://spool/{id}` for deep-link navigation
+   - Record 2: Text payload with OpenSpool JSON (`material`, `color_hex`, `brand`, `weight_g`, `spoolman_id`)
+   - Reuses existing `NFCMessageWriteDelegate` infrastructure (same as printer tags)
+   - Legacy single-record `writeTag(spool:)` preserved for backward compat
+
+**3. DeepLinkHandler (WI-3):** Added `.spoolDetail(id: Int)` case, parsing `printfarmer://spool/{id}` URLs
+   - URL parsing via `url.host` and `url.pathComponents`
+   - Coordinates with AppRouter for navigation
+
+**4. AppRouter (WI-3b):** Added `pendingSpoolHighlightId: Int?` handoff
+   - Navigates to inventory tab and highlights specific spool
+   - Used by DeepLinkHandler and NFC write success flow
+
+**5. UI Badge (WI-4):** NFC indicator on every spool row
+   - Green `wave.3.right` if `hasNfcTag == true`
+   - Gray `minus` if `hasNfcTag == false`
+   - Accessibility labels: "NFC tag present" / "NFC tag not written"
+
+**6. UI Filter (WI-5):** "No NFC Tag" filter chip
+   - Uses `wave.3.right.circle` SF Symbol
+   - Toggles `showOnlyMissingNFC` in ViewModel
+   - Filter logic: `if showOnlyMissingNFC { result = result.filter { ($0.hasNfcTag ?? true) == false } }`
+   - Default OFF (show all spools)
+
+**7. UI Write Flow (WI-6):** Context menu "Write NFC Tag"
+   - Only shown when `spool.hasNfcTag != true`
+   - Wired to `viewModel.writeNFCTag(for:)`
+   - Shows loading state while writing: `.disabled(viewModel.isWritingNFC)`
+   - Shows error alert if `viewModel.writeNFCError != nil`
+   - Post-write: Calls `loadSpools()` to refresh `hasNfcTag` from backend
+   - Auto-highlights spool for 0.5s on success
+
+### Key Files Modified
+- `PrintFarmer/Models/FilamentModels.swift` — hasNfcTag field
+- `PrintFarmer/Services/NFCService.swift` — writeSpoolTag() dual-record method
+- `PrintFarmer/Navigation/DeepLinkHandler.swift` — spool route parsing
+- `PrintFarmer/Navigation/AppRouter.swift` — pendingSpoolHighlightId + navigate
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift` — filter, write state, markSpoolNFCWritten
+- `PrintFarmer/Views/Filament/SpoolInventoryView.swift` — badge, filter chip, write flow UI
+
+### Build Status
+✅ **Clean build** — Zero errors, zero new warnings
+- Pre-existing test failures (3 XCUITest cases) unrelated to changes
+
+### Critical Notes
+- **iPhone-only feature:** Jeff confirmed iPads do NOT support Core NFC — feature restricted to iPhone devices only
+- **Optional coalescing:** Filter treats missing `hasNfcTag` as "has NFC" (`($0.hasNfcTag ?? true) == false`)
+- **Dual-record reuses infrastructure:** No new NFCMessageWriteDelegate classes needed — `writeSpoolTag()` uses same delegate as `writePrinterTag()`
+
+### Learnings
+
+#### Spool NFC Dual-Record NDEF Pattern
+- **Dual-record mirrors printer tag pattern:** URI record for in-app deep links + text record for universal NFC readers. Both use `NFCMessageWriteDelegate`.
+- **SpoolmanSpool is immutable:** Updating a single field requires reconstructing entire struct (all `let` properties). Helper `markSpoolNFCWritten()` does this explicitly.
+- **Optional pattern matching in Swift:** `if case SpoolScanError.cancelled = error as? SpoolScanError` fails because `as?` returns Optional. Use `if let scanError = error as? SpoolScanError, case .cancelled = scanError` instead.
+- **DeepLinkHandler URL parsing:** `url.host` gives first path segment of custom URL schemes (`printfarmer://spool/42` → host = "spool"). Path components after host in `url.pathComponents`.
+- **Filter chip pattern:** Single-purpose toggle chip with capsule background, placed in HStack with Spacer() for left-alignment, below status filter chips.
+
+### Ready for Testing (Ash — WI-8)
+- All MockSpoolService fixtures should include `hasNfcTag: nil` parameter
+- Test scenarios: HasNFC state, NoNFC state, FilterActive state
+- Write flow tests: Success path (calls NFCService, reloads spools), error path (sets writeNFCError, user can retry)
+- Highlight behavior test: spoolId set/cleared after 0.5s delay
 
 ---

@@ -30,58 +30,27 @@
 
 ### Testing Infrastructure (2026-07-18 → 2026-03-08)
 - **Unit tests:** MockURLProtocol for in-process mocking; MockServices for all protocols; 145+ test cases validating MVP endpoint coverage; 61 test cases for parser contracts (QR/NFC)
-- **XCUITest infrastructure:** MockAPIServer (NWListener-based TCP server, not MockURLProtocol, due to process isolation); environment variable injection (PFARM_MOCK_SERVER_URL); wildcard route matching (/api/printers/*); canned JSON responses (MockResponses enum); Spoolman test fixtures
-- **Build verification:** 33 new files added to Xcode.pbxproj (2026-03-08); ~10 source mismatches reconciled between Lambert models/protocols and Ripley ViewModels
+- **XCUITest infrastructure:** MockAPIServer (NWListener-based TCP server); environment variable injection; wildcard route matching; canned JSON responses; Spoolman test fixtures
+- **Build verification:** 33 new files added to Xcode.pbxproj; ~10 source mismatches reconciled between Lambert models/protocols and Ripley ViewModels
 
-### Known Issues & Resolutions
-- **Spoolman "Available" filter (Issue #1, 2026-07-18):** SpoolmanJsonParser.cs had fallback `inUse = !archived` when in_use absent — set all non-archived spools to inUse=true, breaking Available filter. Fixed: removed fallback, defaults to false. iOS filter logic was correct all along.
-- **XCUITest target setup (Decision, 2026-07-20):** XCUITest files ready, but target creation requires manual Xcode step (UI Testing Bundle wizard); deferred to Ripley UI test implementation
-- **NFCService Sendable (2026-03-07):** Fixed Sendable warning at line 201 using nonisolated(unsafe) rebinding pattern for @Sendable closures in tagReaderSession callback
-- **SwiftLint violations (2026-03-08):** Fixed 28 violations across 10 files (trailing whitespace, vertical whitespace, control statements, line length, cyclomatic complexity)
+#### Known Issues & Resolutions (2026-03-06 → 2026-03-08)
+- **Spoolman "Available" filter (Issue #1, 2026-07-18):** Fixed fallback logic in SpoolmanJsonParser — was incorrectly setting inUse=true for all non-archived spools
+- **XCUITest target setup (Decision, 2026-07-20):** Files ready; target creation requires manual Xcode step (deferred to Ripley)
+- **NFCService Sendable warning:** Fixed using nonisolated(unsafe) rebinding pattern for @Sendable closures
+- **SwiftLint violations (2026-03-08):** Fixed 28 violations across 10 files
+
+#### New Service Layers — 5 Services (2026-03-08)
+- **Built:** MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService (5 services, 30+ DTOs, all registered in ServiceContainer)
+- **Models:** 5 model files with 30+ DTOs across service domains
+- **Protocols:** 5 protocol files with default-parameter extensions (pattern: StatisticsServiceProtocol)
+- **Services:** 5 actor-based implementations using apiClient.get/post/put
+- **PredictionRequest adapted:** Flexible optional fields to match existing ViewModel expectations without breaking changes
+- **Date query params:** Used APIClient.iso8601Plain.string(from:) for consistent URL serialization
+- **Build verified:** Zero errors, zero new warnings
 
 ---
 
-## Recent Work (2026-03-08, Completed 2026-03-08T05:16Z)
-
-### New Service Layers (5 files, 15 total with models & protocols)
-- Created 5 new service layers (15 files) for Maintenance, AutoPrint, JobAnalytics, Predictive, Dispatch
-- **Models:** 30+ new DTOs across 5 model files in PrintFarmer/Models/ServiceModels/
-- **Protocols:** 5 protocol files with default-parameter extensions (same pattern as StatisticsServiceProtocol)
-- **Services:** 5 actor-based service implementations using apiClient.get/post/put
-- **ServiceContainer:** Registered all 5 new services as `let` properties in init
-- **PredictionRequest adapted:** Existing PredictiveViewModel expected `material: String?` and `estimatedDurationSeconds: Int?` (not the task spec's non-optional String and Double). Added `failureProbability` field alongside `predictedFailureLikelihood` to match ViewModel usage.
-- **Date query params:** Used `APIClient.iso8601Plain.string(from:)` for date→string in URL query parameters
-- **FleetPrinterStatistics:** Used computed `id` property (backed by `printerId`) with explicit CodingKeys to satisfy Identifiable without a dedicated `id` JSON field
-- **Build verified:** Zero errors, zero new warnings
-
-### Cross-Agent Work: Ripley's 7-Feature UI Build (2026-03-08)
-- **Ripley (agent-33)** built 7 feature UIs (18 files: 7 ViewModels + 11 Views) in parallel
-- **Features delivered:** Maintenance Analytics, AutoPrint, Job Analytics, Predictive Insights, Dispatch Dashboard, Job History/Timeline, Uptime/Reliability
-- **Navigation:** New Maintenance tab added (6th tab after Inventory); 6 AppDestination cases for drill-down navigation
-- **Integration points:** PrinterDetailView has new AutoPrintSection + Predictive Insights link; DashboardView has Dispatch card; JobListView has Job Analytics/History toolbar buttons
-- **iPad-adaptive:** All new views use horizontalSizeClass for proper multi-column layouts on iPad
-- **Build verification:** Added 33 new files to Xcode, fixed ~10 source mismatches between Lambert's models/protocols and Ripley's ViewModels
-- **Dependency:** All 7 ViewModels reference this batch of 5 service layers; Ripley waiting for final ServiceContainer integration
-
-### Cross-Agent Work: Build Verification & Source Reconciliation (2026-03-08)
-- **Build verification agent** (sync mode) validated Lambert's 15 files + Ripley's 18 files
-- **Source mismatches fixed:** ~10 mismatches between Lambert's model names/protocol methods and Ripley's ViewModel references
-- **Files added:** All 33 new files properly registered in Xcode project.pbxproj with collision-free UUIDs
-- **Outcome:** All code compiled successfully; zero errors, zero new warnings
-
-## Learnings
-
-### Cross-Team Collaboration (2026-03-08)
-- Parallel agent execution (Lambert + Ripley + Build verification) requires upfront planning for source compatibility
-- Model/protocol naming must be coordinated before ViewModels reference them; build verification catches mismatches early
-- Service patterns should be established once (StatisticsServiceProtocol) and replicated for consistency
-- ServiceContainer DI pattern scales well to 12+ services (MVP 7 + new 5) with no friction
-
-### Service Layer Design at Scale
-- 5 new service layers (MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService) follow existing Actor-based patterns
-- Optional fields in request DTOs must match existing ViewModel expectations (PredictionRequest adapted to support both String? and Int?, not forcing breaking changes)
-- Computed Identifiable properties (FleetPrinterStatistics.id) enable DTOs without explicit id JSON fields
-- ISO8601 formatters reused across services for consistency (date query params use iso8601Plain)
+## Recent Work (2026-03-08, Completed 2026-03-08T05:16Z → 2026-03-08T21:51Z)
 
 ---
 
@@ -205,5 +174,51 @@
 3. **Start:** WI-5 (viewmodel) — can parallelize with WI-2
 4. **Coordinate:** Ripley's WI-3/4 in parallel (they gate on WI-2 completion)
 5. **After:** WI-7 (integration) once WI-6 nears completion
+
+---
+
+---
+
+## 2026-03-08T21:51Z — Spool NFC Tag Writing Feature — CROSS-AGENT IMPACT
+
+**Status:** ✅ Ripley completed all 6 work items (model, NFCService, DeepLinkHandler, AppRouter, UI badge, UI filter, UI write flow)
+
+### Cross-Agent Coordination Completed
+
+**Model (WI-1):** Added `hasNfcTag: Bool?` to `SpoolmanSpool`
+- Optional field for backward compatibility with backend responses
+- All existing MockSpoolService fixtures updated to include `hasNfcTag: nil` parameter
+- No changes needed to existing service protocols
+
+**NFCService (WI-2):** New `writeSpoolTag(spool:)` method for dual-record NDEF write
+- Record 1: URI `printfarmer://spool/{id}` for deep links
+- Record 2: OpenSpool JSON text record (material, color_hex, brand, weight_g, spoolman_id)
+- Reuses existing `NFCMessageWriteDelegate` infrastructure
+- No new dependencies or breaking changes to existing services
+
+**ViewModel Integration (WI-5):** SpoolInventoryViewModel enhancements
+- Added `isWritingNFC: Bool`, `writeNFCError: String?`, `highlightedSpoolId: Int?` state
+- Added `writeNFCTag(for:)` method that calls `NFCService.writeSpoolTag()` and reloads spools
+- Added `markSpoolNFCWritten()` helper to reconstruct SpoolmanSpool with updated `hasNfcTag`
+
+### Integration Points
+- DeepLinkHandler parses `printfarmer://spool/{id}` URLs (same pattern as `printfarmer://printer/{uuid}`)
+- AppRouter uses `pendingSpoolHighlightId` handoff (same pattern as `pendingNFCReadyPrinterId` for printer tags)
+- SpoolInventoryView wires write button to `viewModel.writeNFCTag(for:)` with loading/error states
+
+### No Service Changes Required
+- All existing `SpoolServiceProtocol`, `PrinterServiceProtocol`, and `NFCService` contracts remain unchanged
+- `ServiceContainer` needs no modifications (already registers all services)
+- MockSpoolService fixtures just need `hasNfcTag: nil` parameter added to initializers
+
+### Architecture Consistency
+- Spool NFC writing follows exact same pattern as printer NFC writing (dual-record, deep link, AppRouter handoff)
+- All implementations use established @Observable/@MainActor/@Sendable patterns (no new concurrency patterns)
+- Error handling follows existing UI conventions (alert + retry)
+
+### Ready for Testing (Ash — WI-8)
+- Test fixtures: `SpoolmanSpool(..., hasNfcTag: nil)` for backward compat tests
+- Mock NFCService: `writeSpoolTag(spool:)` method for write flow tests
+- Integration tests: Verify highlight behavior, error handling, reload on success
 
 ---

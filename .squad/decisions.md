@@ -424,3 +424,30 @@ GET /api/spoolman/spools
 - **Dallas:** Orchestration, architecture review, test validation
 
 ---
+
+---
+
+## Spool NFC Tag Dual-Record NDEF Format (Ripley, 2026-03-08)
+
+**Status:** Implemented
+
+### Context
+Spool NFC tags need to work both for in-app deep linking and for universal NFC readers (e.g., OpenSpool-compatible printers).
+
+### Decision
+Spool NFC tags use the same dual-record NDEF pattern as printer tags:
+1. **URI record:** `printfarmer://spool/{spoolmanId}` — triggers deep link navigation to spool in inventory
+2. **Text record:** OpenSpool JSON (`material`, `color_hex`, `brand`, `weight_g`, `spoolman_id`) — readable by any NFC reader
+
+Both records are written via `NFCMessageWriteDelegate` (full NDEF message writer), not `NFCWriteDelegate` (raw bytes).
+
+### Key Implementation Details
+- DeepLinkHandler now supports `printfarmer://spool/{id}` URLs
+- AppRouter navigates to inventory tab and highlights spool via `pendingSpoolHighlightId`
+- `writeSpoolTag()` reuses the same delegate as `writePrinterTag()` — no new delegate classes
+- Legacy `writeTag(spool:)` preserved for backward compat but should be deprecated in future
+
+### Team Notes
+- Backend `hasNfcTag: Bool?` field supported by SpoolmanSpoolDto (Jeff's WI-1)
+- Test fixtures need `hasNfcTag: nil` parameter in all SpoolmanSpool initializers going forward
+- Feature restricted to iPhone devices only (Core NFC not available on iPad)
