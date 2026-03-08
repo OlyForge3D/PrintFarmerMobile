@@ -140,3 +140,8 @@ For full details on previous work, see git history and .squad/decisions.md. Summ
 - **File length:** Suppressed file_length for Models.swift with swiftlint:disable comment (structural, not worth splitting)
 - **NFC wiring:** Added `viewModel.configureNFCScanner(services.nfcService)` in SpoolPickerView .task block (was missing vs SpoolInventoryView pattern)
 - Build verified: BUILD SUCCEEDED, zero SwiftLint warnings in app source (remaining warnings are pre-existing test file issues)
+
+## Learnings
+- **Filter chips must stay visible in empty-state branches:** When an if/else chain hides filter chips behind the "has results" else branch, users get trapped — they can't reset filters when results are empty. Always show filter controls above empty states so users can self-recover.
+- **Contextual empty state descriptions beat generic ones:** Using `activeFilterDescription` computed property to show which specific filters are active (material, status, search) gives the user actionable info vs. the generic `ContentUnavailableView.search`.
+- **clearFilters() belongs on the ViewModel:** Centralizing filter reset in a single method prevents views from having to know all the filter properties to reset. Both SpoolInventoryViewModel and SpoolPickerViewModel share this pattern.

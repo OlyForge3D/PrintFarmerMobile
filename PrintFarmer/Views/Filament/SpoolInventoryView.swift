@@ -32,7 +32,25 @@ struct SpoolInventoryView: View {
                         .tint(Color.pfAccent)
                     }
                 } else if viewModel.hasActiveSearch && viewModel.filteredSpools.isEmpty {
-                    ContentUnavailableView.search(text: viewModel.searchText)
+                    VStack(spacing: 0) {
+                        materialFilterChips
+                        statusFilterChips
+                        Spacer()
+                        ContentUnavailableView {
+                            Label("No Matching Spools", systemImage: "line.3.horizontal.decrease.circle")
+                        } description: {
+                            Text(viewModel.activeFilterDescription)
+                        } actions: {
+                            Button("Clear Filters") {
+                                withAnimation {
+                                    viewModel.clearFilters()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.pfAccent)
+                        }
+                        Spacer()
+                    }
                 } else {
                     VStack(spacing: 0) {
                         materialFilterChips

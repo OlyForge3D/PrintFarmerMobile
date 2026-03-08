@@ -91,6 +91,20 @@ final class SpoolInventoryViewModel {
         !searchText.isEmpty || selectedMaterial != nil || selectedStatus != nil
     }
 
+    var activeFilterDescription: String {
+        var parts: [String] = []
+        if let material = selectedMaterial { parts.append("material: \(material)") }
+        if let status = selectedStatus { parts.append("status: \(status.rawValue)") }
+        if !searchText.isEmpty { parts.append("search: \"\(searchText)\"") }
+        return "No spools match your current filters (\(parts.joined(separator: ", ")))."
+    }
+
+    func clearFilters() {
+        selectedMaterial = nil
+        selectedStatus = nil
+        searchText = ""
+    }
+
     func loadSpools() async {
         guard let spoolService else {
             errorMessage = "Spool service not available"
