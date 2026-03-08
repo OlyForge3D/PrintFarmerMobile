@@ -1,5 +1,6 @@
-# Squad AI team files (kept on development branch only)
-.squad/
+# Squad: ignore generated logs
+.squad/orchestration-log/
+.squad/log/
 
 # Xcode
 *.xcodeproj/project.xcworkspace/
