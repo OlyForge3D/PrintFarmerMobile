@@ -1,5 +1,19 @@
 import Foundation
 
+// MARK: - Optional Type Detection
+
+/// Protocol to detect Optional types at runtime.
+/// Any Optional<Wrapped> conforms to this, allowing us to check if a type is Optional.
+private protocol OptionalProtocol {
+    static func wrappedNone() -> Any
+}
+
+extension Optional: OptionalProtocol {
+    static func wrappedNone() -> Any {
+        return Self.none as Any
+    }
+}
+
 // MARK: - API Client
 
 actor APIClient {
@@ -172,6 +186,25 @@ actor APIClient {
         try await checkTokenExpiry()
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
+        
+        // Handle empty response body for Optional types (e.g., 204 No Content, 200 with empty body)
+        if data.isEmpty {
+            // Check if T is Optional by testing conformance to OptionalProtocol
+            if let optionalType = T.self as? OptionalProtocol.Type {
+                // T is Optional, return nil (wrapped as T)
+                return optionalType.wrappedNone() as! T
+            }
+            // Non-optional type with empty body is an error
+            throw NetworkError.decodingFailed(
+                DecodingError.dataCorrupted(
+                    DecodingError.Context(
+                        codingPath: [],
+                        debugDescription: "Empty response body for non-optional type \(T.self)"
+                    )
+                )
+            )
+        }
+        
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
