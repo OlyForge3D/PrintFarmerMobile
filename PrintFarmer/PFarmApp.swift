@@ -39,6 +39,15 @@ struct PFarmApp: App {
                         router.navigate(to: destination)
                     }
                 }
+                #if canImport(UIKit)
+                .onReceive(NotificationCenter.default.publisher(for: .pushNotificationTapped)) { notification in
+                    guard let userInfo = notification.userInfo,
+                          let urlString = userInfo["link"] as? String,
+                          let url = URL(string: urlString),
+                          let destination = DeepLinkHandler.parse(url: url) else { return }
+                    router.navigate(to: destination)
+                }
+                #endif
                 .task {
                     await authViewModel.restoreSession()
                     #if canImport(UIKit)
