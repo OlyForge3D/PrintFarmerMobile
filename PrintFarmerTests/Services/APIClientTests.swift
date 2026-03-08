@@ -1,0 +1,308 @@
+import XCTest
+@testable import PrintFarmer
+
+/// Tests for the APIClient actor: request building, token injection,
+/// error mapping, and base URL configuration.
+final class APIClientTests: XCTestCase {
+
+    private var apiClient: APIClient!
+
+    override func setUp() {
+        super.setUp()
+        MockURLProtocol.reset()
+        apiClient = MockAPIClient.makeAPIClient()
+    }
+
+    override func tearDown() {
+        MockURLProtocol.reset()
+        apiClient = nil
+        super.tearDown()
+    }
+
+    // MARK: - Base URL Configuration
+
+    func testBaseURLIsSetOnInit() async {
+        let url = await apiClient.currentBaseURL()
+        XCTAssertEqual(url, TestData.testBaseURL)
+    }
+
+    func testUpdateBaseURL() async {
+        let newURL = URL(string: "https://new.example.com")!
+        await apiClient.updateBaseURL(newURL)
+        let current = await apiClient.currentBaseURL()
+        XCTAssertEqual(current, newURL)
+    }
+
+    func testSavedBaseURLPersistsToUserDefaults() async {
+        let newURL = URL(string: "https://saved.example.com")!
+        await apiClient.updateBaseURL(newURL)
+        let saved = UserDefaults.standard.string(forKey: APIClient.serverURLKey)
+        XCTAssertEqual(saved, "https://saved.example.com")
+        // Cleanup
+        UserDefaults.standard.removeObject(forKey: APIClient.serverURLKey)
+    }
+
+    // MARK: - JWT Token Injection
+
+    func testRequestIncludesAuthorizationHeader() async throws {
+        let token = "test-jwt-token-123"
+        await apiClient.setAccessToken(token)
+        MockAPIClient.stubResponse(json: TestJSON.printerArray)
+
+        let _: [Printer] = try await apiClient.get("/api/printers")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertNotNil(captured)
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "Authorization"), "Bearer \(token)")
+    }
+
+    func testRequestOmitsAuthorizationWhenNoToken() async throws {
+        await apiClient.setAccessToken(nil)
+        MockAPIClient.stubResponse(json: TestJSON.printerArray)
+
+        let _: [Printer] = try await apiClient.get("/api/printers")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertNil(captured?.value(forHTTPHeaderField: "Authorization"))
+    }
+
+    func testRequestIncludesAcceptHeader() async throws {
+        MockAPIClient.stubResponse(json: TestJSON.printerArray)
+
+        let _: [Printer] = try await apiClient.get("/api/printers")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "Accept"), "application/json")
+    }
+
+    // MARK: - Request Building (HTTP Methods)
+
+    func testGetRequestUsesCorrectMethod() async throws {
+        MockAPIClient.stubResponse(json: TestJSON.printerArray)
+
+        let _: [Printer] = try await apiClient.get("/api/printers")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.httpMethod, "GET")
+        XCTAssertTrue(captured?.url?.path.contains("/api/printers") ?? false)
+    }
+
+    func testPostRequestUsesCorrectMethodAndBody() async throws {
+        MockAPIClient.stubResponse(json: TestJSON.authResponseSuccess)
+
+        let loginRequest = LoginRequest(usernameOrEmail: "admin", password: "pass", rememberMe: true)
+        let _: AuthResponse = try await apiClient.post("/api/auth/login", body: loginRequest)
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.httpMethod, "POST")
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertNotNil(captured?.httpBody)
+    }
+
+    func testPostVoidRequestUsesCorrectMethod() async throws {
+        MockAPIClient.stubEmptySuccess()
+
+        try await apiClient.postVoid("/api/printers/\(TestData.testUUID)/pause")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.httpMethod, "POST")
+    }
+
+    func testPutRequestUsesCorrectMethodAndBody() async throws {
+        MockAPIClient.stubResponse(json: TestJSON.printer)
+
+        let update = UpdatePrinterRequest(name: "Renamed")
+        let _: Printer = try await apiClient.put("/api/printers/\(TestData.testUUID)", body: update)
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.httpMethod, "PUT")
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "Content-Type"), "application/json")
+    }
+
+    func testDeleteRequestUsesCorrectMethod() async throws {
+        MockAPIClient.stubEmptySuccess()
+
+        try await apiClient.delete("/api/printers/\(TestData.testUUID)")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        XCTAssertEqual(captured?.httpMethod, "DELETE")
+    }
+
+    // MARK: - Error Response Parsing
+
+    func testUnauthorizedResponseThrows401() async {
+        MockAPIClient.stubResponse(json: "{}", statusCode: 401)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.unauthorized")
+        } catch let error as NetworkError {
+            if case .unauthorized = error {
+                // Expected
+            } else {
+                XCTFail("Expected .unauthorized, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testForbiddenResponseThrows403() async {
+        MockAPIClient.stubResponse(json: "{}", statusCode: 403)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.forbidden")
+        } catch let error as NetworkError {
+            if case .forbidden = error {
+                // Expected
+            } else {
+                XCTFail("Expected .forbidden, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testNotFoundResponseThrows404() async {
+        MockAPIClient.stubResponse(json: "{}", statusCode: 404)
+
+        do {
+            let _: Printer = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+            XCTFail("Expected NetworkError.notFound")
+        } catch let error as NetworkError {
+            if case .notFound = error {
+                // Expected
+            } else {
+                XCTFail("Expected .notFound, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testServerErrorResponseThrows500() async {
+        MockAPIClient.stubResponse(json: "{}", statusCode: 500)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.serverError")
+        } catch let error as NetworkError {
+            if case .serverError(let code) = error {
+                XCTAssertEqual(code, 500)
+            } else {
+                XCTFail("Expected .serverError, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testConflictResponseThrows409() async {
+        MockAPIClient.stubResponse(json: "{}", statusCode: 409)
+
+        do {
+            let _: Printer = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+            XCTFail("Expected NetworkError.conflict")
+        } catch let error as NetworkError {
+            if case .conflict = error {
+                // Expected
+            } else {
+                XCTFail("Expected .conflict, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testClientErrorParseAPIError() async {
+        MockAPIClient.stubResponse(json: TestJSON.apiError, statusCode: 400)
+
+        do {
+            let _: Printer = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+            XCTFail("Expected NetworkError.clientError")
+        } catch let error as NetworkError {
+            if case .clientError(let code, let apiError) = error {
+                XCTAssertEqual(code, 400)
+                XCTAssertEqual(apiError?.title, "Validation Error")
+                XCTAssertEqual(apiError?.detail, "The printer name is required.")
+            } else {
+                XCTFail("Expected .clientError, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    // MARK: - Network Errors
+
+    func testNoConnectionThrowsNetworkError() async {
+        MockAPIClient.stubError(.notConnectedToInternet)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.noConnection")
+        } catch let error as NetworkError {
+            if case .noConnection = error {
+                // Expected
+            } else {
+                XCTFail("Expected .noConnection, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testTimeoutThrowsNetworkError() async {
+        MockAPIClient.stubError(.timedOut)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.timeout")
+        } catch let error as NetworkError {
+            if case .timeout = error {
+                // Expected
+            } else {
+                XCTFail("Expected .timeout, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testCannotFindHostThrowsServerUnreachable() async {
+        MockAPIClient.stubError(.cannotFindHost)
+
+        do {
+            let _: [Printer] = try await apiClient.get("/api/printers")
+            XCTFail("Expected NetworkError.serverUnreachable")
+        } catch let error as NetworkError {
+            if case .serverUnreachable = error {
+                // Expected
+            } else {
+                XCTFail("Expected .serverUnreachable, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    // MARK: - Decoding
+
+    func testDecodingFailureThrowsDecodingError() async {
+        MockAPIClient.stubResponse(json: "{ \"invalid\": true }")
+
+        do {
+            let _: Printer = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+            XCTFail("Expected NetworkError.decodingFailed")
+        } catch let error as NetworkError {
+            if case .decodingFailed = error {
+                // Expected
+            } else {
+                XCTFail("Expected .decodingFailed, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+}
