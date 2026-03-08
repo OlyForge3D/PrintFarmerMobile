@@ -55,6 +55,9 @@ struct PrinterDetailView: View {
         }
         .task {
             viewModel.configure(printerService: services.printerService)
+            #if canImport(UIKit)
+            viewModel.configureNFCScanner(services.nfcService)
+            #endif
             await viewModel.loadPrinter()
         }
         .sheet(isPresented: $viewModel.showSpoolPicker) {

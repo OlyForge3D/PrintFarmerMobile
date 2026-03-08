@@ -98,6 +98,7 @@ struct SettingsView: View {
                     let trimmed = newServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmed.isEmpty {
                         UserDefaults.standard.set(trimmed, forKey: APIClient.serverURLKey)
+                        Task { await authViewModel.logout() }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
