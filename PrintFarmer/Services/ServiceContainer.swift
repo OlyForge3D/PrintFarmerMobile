@@ -13,6 +13,11 @@ final class ServiceContainer: @unchecked Sendable {
     let notificationService: NotificationService
     let signalRService: SignalRService
     let spoolService: SpoolService
+    let maintenanceService: MaintenanceService
+    let autoPrintService: AutoPrintService
+    let jobAnalyticsService: JobAnalyticsService
+    let predictiveService: PredictiveService
+    let dispatchService: DispatchService
     #if canImport(UIKit)
     let qrScannerService: QRSpoolScannerService
     let nfcService: NFCService
@@ -30,6 +35,11 @@ final class ServiceContainer: @unchecked Sendable {
         self.statisticsService = StatisticsService(apiClient: apiClient)
         self.notificationService = NotificationService(apiClient: apiClient)
         self.spoolService = SpoolService(apiClient: apiClient)
+        self.maintenanceService = MaintenanceService(apiClient: apiClient)
+        self.autoPrintService = AutoPrintService(apiClient: apiClient)
+        self.jobAnalyticsService = JobAnalyticsService(apiClient: apiClient)
+        self.predictiveService = PredictiveService(apiClient: apiClient)
+        self.dispatchService = DispatchService(apiClient: apiClient)
         #if canImport(UIKit)
         self.qrScannerService = QRSpoolScannerService()
         self.nfcService = NFCService()

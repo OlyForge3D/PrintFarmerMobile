@@ -2,11 +2,22 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppRouter.self) private var router
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        if sizeClass == .regular {
+            iPadLayout
+        } else {
+            compactLayout
+        }
+    }
+
+    // MARK: - Compact (iPhone)
+
+    private var compactLayout: some View {
         @Bindable var router = router
 
-        TabView(selection: $router.selectedTab) {
+        return TabView(selection: $router.selectedTab) {
             DashboardView()
                 .tabItem { Label("Dashboard", systemImage: "square.grid.2x2") }
                 .tag(AppTab.dashboard)
@@ -28,9 +39,86 @@ struct ContentView: View {
                 .tag(AppTab.notifications)
                 .badge(router.notificationBadgeCount)
 
+            MaintenanceView()
+                .tabItem { Label("Maintenance", systemImage: "wrench.adjustable") }
+                .tag(AppTab.maintenance)
+
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(AppTab.settings)
+        }
+    }
+
+    // MARK: - Regular (iPad)
+
+    private var iPadLayout: some View {
+        @Bindable var router = router
+
+        return NavigationSplitView(columnVisibility: $router.sidebarVisibility) {
+            List {
+                sidebarButton(tab: .dashboard, title: "Dashboard", icon: "square.grid.2x2")
+                sidebarButton(tab: .printers, title: "Printers", icon: "printer")
+                sidebarButton(tab: .jobs, title: "Jobs", icon: "list.bullet.rectangle")
+                sidebarButton(tab: .inventory, title: "Inventory", icon: "cylinder.fill")
+                sidebarAlertButton
+                sidebarButton(tab: .maintenance, title: "Maintenance", icon: "wrench.adjustable")
+                sidebarButton(tab: .settings, title: "Settings", icon: "gear")
+            }
+            .navigationTitle("PrintFarmer")
+        } detail: {
+            tabContentView(for: router.selectedTab)
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private func sidebarButton(tab: AppTab, title: String, icon: String) -> some View {
+        Button {
+            router.selectedTab = tab
+        } label: {
+            Label(title, systemImage: icon)
+        }
+        .listRowBackground(router.selectedTab == tab ? Color.accentColor.opacity(0.15) : nil)
+        .foregroundStyle(router.selectedTab == tab ? Color.accentColor : .primary)
+    }
+
+    private var sidebarAlertButton: some View {
+        Button {
+            router.selectedTab = .notifications
+        } label: {
+            HStack {
+                Label("Alerts", systemImage: "bell")
+                Spacer()
+                if router.notificationBadgeCount > 0 {
+                    Text("\(router.notificationBadgeCount)")
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.red, in: Capsule())
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .listRowBackground(router.selectedTab == .notifications ? Color.accentColor.opacity(0.15) : nil)
+        .foregroundStyle(router.selectedTab == .notifications ? Color.accentColor : .primary)
+    }
+
+    @ViewBuilder
+    private func tabContentView(for tab: AppTab) -> some View {
+        switch tab {
+        case .dashboard:
+            DashboardView()
+        case .printers:
+            PrinterListView()
+        case .jobs:
+            JobListView()
+        case .inventory:
+            SpoolInventoryView()
+        case .notifications:
+            NotificationsView()
+        case .maintenance:
+            MaintenanceView()
+        case .settings:
+            SettingsView()
         }
     }
 }

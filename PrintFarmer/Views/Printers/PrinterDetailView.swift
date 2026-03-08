@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PrinterDetailView: View {
     @Environment(ServiceContainer.self) private var services
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: PrinterDetailViewModel
 
     init(printerId: UUID) {
@@ -226,33 +227,96 @@ struct PrinterDetailView: View {
 
     private func printerContent(_ printer: Printer) -> some View {
         ScrollView {
+            if sizeClass == .regular {
+                iPadPrinterContent(printer)
+            } else {
+                VStack(alignment: .leading, spacing: 20) {
+                    headerSection(printer)
+                    temperatureSection(printer)
+
+                    if let jobName = printer.jobName,
+                       let state = printer.state?.lowercased(),
+                       state == "printing" || state == "paused" {
+                        currentJobSection(jobName: jobName, progress: printer.progress)
+                    }
+
+                    cameraSection(printer)
+                    filamentSection(printer)
+                    AutoPrintSection(printerId: printer.id)
+
+                    NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
+                        HStack {
+                            Label("Predictive Insights", systemImage: "gauge.with.dots.needle.33percent")
+                                .font(.subheadline.weight(.medium))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(Color.pfBorder, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if printer.isOnline {
+                        actionSection(printer)
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    private func iPadPrinterContent(_ printer: Printer) -> some View {
+        HStack(alignment: .top, spacing: 20) {
+            // Left column: header, temps, actions
             VStack(alignment: .leading, spacing: 20) {
-                // Header
                 headerSection(printer)
-
-                // Temperatures
                 temperatureSection(printer)
+                filamentSection(printer)
+                AutoPrintSection(printerId: printer.id)
 
-                // Current Job (only when printing or paused)
+                NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
+                    HStack {
+                        Label("Predictive Insights", systemImage: "gauge.with.dots.needle.33percent")
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                    .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color.pfBorder, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                if printer.isOnline {
+                    actionSection(printer)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            // Right column: camera, current job
+            VStack(alignment: .leading, spacing: 20) {
+                cameraSection(printer)
+
                 if let jobName = printer.jobName,
                    let state = printer.state?.lowercased(),
                    state == "printing" || state == "paused" {
                     currentJobSection(jobName: jobName, progress: printer.progress)
                 }
-
-                // Camera Snapshot
-                cameraSection(printer)
-
-                // Filament
-                filamentSection(printer)
-
-                // Actions
-                if printer.isOnline {
-                    actionSection(printer)
-                }
             }
-            .padding()
+            .frame(maxWidth: .infinity)
         }
+        .padding()
     }
 
     // MARK: - Header

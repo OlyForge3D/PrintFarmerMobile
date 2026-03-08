@@ -6,4 +6,11 @@ enum AppDestination: Hashable {
     case locationDetail(id: UUID)
     case createJob
     case createPrinter
+    case maintenanceAnalytics
+    case uptimeReliability
+    case predictiveInsights(printerId: UUID)
+    case jobAnalytics
+    case jobHistory
+    case jobTimeline
+    case dispatchDashboard
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct PrinterListView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = PrinterListViewModel()
 
     var body: some View {
@@ -66,6 +67,22 @@ struct PrinterListView: View {
                 if viewModel.filteredPrinters.isEmpty {
                     ContentUnavailableView.search(text: viewModel.searchText)
                         .padding(.top, 40)
+                } else if sizeClass == .regular {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: 12
+                    ) {
+                        ForEach(viewModel.filteredPrinters) { printer in
+                            NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
+                                PrinterCardView(printer: printer)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(
+                                "\(printer.name), \(printer.state ?? "unknown") status"
+                                + "\(printer.isOnline ? ", online" : ", offline")"
+                            )
+                        }
+                    }
                 } else {
                     ForEach(viewModel.filteredPrinters) { printer in
                         NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {

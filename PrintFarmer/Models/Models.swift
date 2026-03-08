@@ -535,13 +535,6 @@ struct QueueGcodeFileMeta: Codable, Sendable {
     let thumbnailUrl: String?
 }
 
-struct QueueStats: Codable, Sendable {
-    let totalQueued: Int
-    let totalPrinting: Int
-    let totalPaused: Int
-    let averageWaitTimeMinutes: Int
-}
-
 // MARK: - Statistics Summary (matches StatisticsSummaryDto)
 
 struct StatisticsSummary: Codable, Sendable {

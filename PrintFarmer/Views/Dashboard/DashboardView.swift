@@ -3,6 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = DashboardViewModel()
 
     var body: some View {
@@ -34,6 +35,9 @@ struct DashboardView: View {
 
                             // Active jobs
                             activeJobsSection
+
+                            // Dispatch link
+                            dispatchLink
                         }
                     }
                 }
@@ -60,15 +64,14 @@ struct DashboardView: View {
     // MARK: - Summary Cards
 
     private var summarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let columnCount = sizeClass == .regular ? 6 : 3
+        let columns = Array(repeating: GridItem(.flexible()), count: columnCount)
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Fleet Overview")
                 .font(.title2.bold())
 
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-            ], spacing: 12) {
+            LazyVGrid(columns: columns, spacing: 12) {
                 SummaryCard(title: "Total", count: viewModel.printers.count, icon: "printer", color: .pfTextPrimary)
                 SummaryCard(title: "Online", count: viewModel.onlineCount, icon: "wifi", color: .pfSuccess)
                 SummaryCard(title: "Printing", count: viewModel.printingCount, icon: "printer.fill", color: .pfSecondaryAccent)
@@ -128,6 +131,15 @@ struct DashboardView: View {
                     .padding(.vertical, 24)
                     Spacer()
                 }
+            } else if sizeClass == .regular {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(topPrinters) { printer in
+                        NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
+                            ActiveJobRow(printer: printer)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             } else {
                 ForEach(topPrinters) { printer in
                     NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
@@ -148,6 +160,39 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
             }
         }
+    }
+
+    // MARK: - Dispatch Link
+
+    private var dispatchLink: some View {
+        NavigationLink(value: AppDestination.dispatchDashboard) {
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.title3)
+                    .foregroundStyle(Color.pfAccent)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Dispatch Dashboard")
+                        .font(.subheadline.weight(.medium))
+                    Text("View queue status and dispatch history")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(12)
+            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.pfBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Maintenance Alert
@@ -254,6 +299,20 @@ func destinationView(for destination: AppDestination) -> some View {
         } description: {
             Text("Printer setup will be available in a future update.")
         }
+    case .maintenanceAnalytics:
+        MaintenanceAnalyticsView()
+    case .uptimeReliability:
+        UptimeView()
+    case .predictiveInsights(let printerId):
+        PredictiveInsightsView(printerId: printerId)
+    case .jobAnalytics:
+        JobAnalyticsView()
+    case .jobHistory:
+        JobHistoryView()
+    case .jobTimeline:
+        JobTimelineView()
+    case .dispatchDashboard:
+        DispatchDashboardView()
     }
 }
 

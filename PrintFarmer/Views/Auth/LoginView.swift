@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = LoginViewModel()
     @FocusState private var focusedField: LoginField?
 
@@ -32,6 +33,7 @@ struct LoginView: View {
                 Spacer(minLength: 60)
             }
             .padding(.horizontal, 32)
+            .frame(maxWidth: sizeClass == .regular ? 500 : .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
         .contentShape(Rectangle())
