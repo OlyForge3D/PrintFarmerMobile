@@ -64,7 +64,7 @@
 - **Dallas (Architecture):** ServiceContainer DI, AppRouter with NavigationStack pattern, routing contracts
 - **Ash (Testing):** MockSpoolService, MockScannerService, ViewModel test infrastructure
 
-## Recent Work (2026-03-07)
+## Recent Work (2026-03-07, 2026-03-08)
 
 ### Material Type Filter Chips + Expanded Search (2026-03-07)
 - Added material type filter chips to both SpoolInventoryView and SpoolPickerView (FilterChip-based segmented control)
@@ -116,18 +116,6 @@
 - Both @Sendable closures now safely capture binding references
 - Pattern: Move nonisolated(unsafe) rebinding to method entry, then closures reference safely
 
-## Archived Entries (2025-07-16 → 2025-07-22)
-
-For full details on previous work, see git history and .squad/decisions.md. Summary:
-
-- **MVP implementation:** Dashboard, PrinterList, PrinterDetail, JobList, JobDetail, Notifications, Settings screens with MVVM + Repository pattern
-- **Theme system:** 3 new files (Color+Hex, ThemeColors, ThemeManager), 17 hardcoded colors replaced
-- **Filament UI:** Inventory tab, SpoolPickerView, SpoolInventoryView, AddSpoolView with load/eject actions
-- **QA audit:** @MainActor annotations, error handling, accessibility labels, placeholder navigation
-- **Blank screen fix:** RootView extraction + hasCheckedAuth flag pattern
-- **Camera enhancement:** Service-based snapshot + AsyncImage fallback
-- **Phase 2 scanning:** QRScannerView, NFCScanButton, NFCWriteView with pre-fill from scans
-
 ### SwiftLint Cleanup & NFC Wiring (2026-03-08)
 - Fixed 28 SwiftLint violations across 10 source files
 - **Trailing whitespace:** Cleaned SpoolPickerViewModel, SpoolInventoryViewModel, SpoolPickerView, SpoolInventoryView
@@ -141,9 +129,10 @@ For full details on previous work, see git history and .squad/decisions.md. Summ
 - **NFC wiring:** Added `viewModel.configureNFCScanner(services.nfcService)` in SpoolPickerView .task block (was missing vs SpoolInventoryView pattern)
 - Build verified: BUILD SUCCEEDED, zero SwiftLint warnings in app source (remaining warnings are pre-existing test file issues)
 
-## Learnings
-- **Filter chips must stay visible in empty-state branches:** When an if/else chain hides filter chips behind the "has results" else branch, users get trapped — they can't reset filters when results are empty. Always show filter controls above empty states so users can self-recover.
-- **Contextual empty state descriptions beat generic ones:** Using `activeFilterDescription` computed property to show which specific filters are active (material, status, search) gives the user actionable info vs. the generic `ContentUnavailableView.search`.
-- **clearFilters() belongs on the ViewModel:** Centralizing filter reset in a single method prevents views from having to know all the filter properties to reset. Both SpoolInventoryViewModel and SpoolPickerViewModel share this pattern.
-- **Every view using NFC must call configureNFCScanner in .task:** PrinterDetailView was missing this call (fixed in #2). Pattern: `viewModel.configure(...)` then `#if canImport(UIKit) viewModel.configureNFCScanner(services.nfcService) #endif` — matches SpoolPickerView and SpoolInventoryView.
-- **Settings URL change must force logout:** Writing a new server URL to UserDefaults without clearing auth state leaves the app connected to the old server's token. Always call `authViewModel.logout()` after URL change (fixed in #3).
+### Launch Screen (2026-03-08)
+- Created `LaunchScreen.storyboard` with centered 🌾 emoji + "PrintFarmer" bold text in a vertical stack
+- Added 3 color sets to Assets.xcassets: `LaunchBackground` (white/#0b1020), `LaunchText` (#1e293b/#e5e7eb), `LaunchAccent` (#10b981) — matching pfBackground/pfTextPrimary/pfAccent theme colors
+- Storyboard uses `targetRuntime="iOS.CocoaTouch"` (not `AppleSDK`) — critical for Xcode 26.2 compatibility
+- Updated project.pbxproj: replaced `INFOPLIST_KEY_UILaunchScreen_Generation = YES` with `INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen` in both Debug and Release configs
+- Added LaunchScreen.storyboard to PBXFileReference, PBXGroup, and PBXResourcesBuildPhase
+- Key files: `PrintFarmer/LaunchScreen.storyboard`, `PrintFarmer/Assets.xcassets/LaunchBackground.colorset`, `PrintFarmer/Assets.xcassets/LaunchText.colorset`, `PrintFarmer/Assets.xcassets/LaunchAccent.colorset`

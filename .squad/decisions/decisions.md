@@ -347,6 +347,38 @@ Added status-based filtering and visual weight indicators to both SpoolInventory
 
 ---
 
+## Launch & Onboarding
+
+### 18. Launch Screen Implementation (Ripley, 2026-03-08)
+**Status:** Implemented
+
+Created a professional launch screen using `LaunchScreen.storyboard` (not Info.plist UILaunchScreen or SwiftUI).
+
+**Decision**
+- Storyboard provides layout control impossible with Info.plist approach (centered stack with emoji + text)
+- iOS doesn't support SwiftUI for launch screens (must be static)
+- Storyboard is standard for App Store submissions
+
+**Implementation**
+- Visual: 🌾 emoji centered above "PrintFarmer" bold text in vertical stack
+- Colors: Three new adaptive color sets in Assets.xcassets (LaunchBackground, LaunchText, LaunchAccent) matching theme tokens (pfBackground, pfTextPrimary, pfAccent)
+- Storyboard XML uses `targetRuntime="iOS.CocoaTouch"` (critical for Xcode 26.2)
+- Build setting: `INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen` (removed auto-generation)
+
+**Files**
+- `PrintFarmer/LaunchScreen.storyboard` (new)
+- `PrintFarmer/Assets.xcassets/LaunchBackground.colorset/Contents.json` (new)
+- `PrintFarmer/Assets.xcassets/LaunchText.colorset/Contents.json` (new)
+- `PrintFarmer/Assets.xcassets/LaunchAccent.colorset/Contents.json` (new)
+- `PrintFarmer.xcodeproj/project.pbxproj` (updated)
+
+**Impact**
+- App startup now displays branded launch screen with wheat emoji + green accent
+- Seamless light/dark mode support via adaptive colors
+- Professional first impression before app loads main UI
+
+---
+
 ## Cross-References
 
 **Backend Contract Docs:** `~/s/PFarm1/src/api/` (Controllers, DTOs, Startup/ControllerStartup.cs)  
