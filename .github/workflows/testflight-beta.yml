@@ -38,7 +38,12 @@ jobs:
 
       - name: Select Xcode version
         run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          XCODE_PATH=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH="/Applications/Xcode.app"
+          fi
+          echo "Using Xcode at: $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           xcodebuild -version
 
       - name: Install fastlane
@@ -72,6 +77,7 @@ jobs:
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="match AppStore com.olyforge3d.printfarmer.ios" \
             DEVELOPMENT_TEAM=ZPKA84F3TY \
+            SWIFT_STRICT_CONCURRENCY=minimal \
             archive
 
       - name: Export IPA
