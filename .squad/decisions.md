@@ -796,10 +796,46 @@ re-render, causing a blank screen. Moving the check into a `View` body
 - All `.environment()` values provided at the App level
 - New `hasCheckedAuth` flag on `AuthViewModel` enables a launch screen
   during session restore (eliminates LoginView flash on cold start)
-- Three-state auth flow: checking → authenticated → unauthenticated
 
 ---
 
+### Copilot Directive: Zero Warnings Before Commit (Jeff Papiez)
+**Date:** 2026-03-08  
+**Status:** Adopted
+**By:** User directive via Copilot
+
+#### Rule
+Never commit code without running lint. Code should be free of any lint errors or warnings when we commit.
+
+#### Rationale
+User request — captured for team memory and enforcement in CI/CD if needed.
+
+#### Impact
+- All agents must run `swiftlint` before submitting code
+- Ripley's orchestration log includes "Build Status: Verified clean"
+- CI/CD should fail commits with warnings
 
 ---
+
+### Decision: SwiftLint Cleanup Patterns (Ripley)
+**Date:** 2026-03-08  
+**Status:** Applied
+**By:** Ripley
+
+#### Context
+Cleaned 28 SwiftLint violations across 18 files. Established patterns for the team:
+
+#### Decisions
+1. **Models.swift file_length**: Suppressed with `// swiftlint:disable file_length` rather than splitting — the file is a coherent domain model collection and splitting would harm discoverability.
+2. **SpoolmanSpool+ColorName refactor**: Extracted `achromaticNames` and `dominantChannelNames` helpers to reduce cyclomatic complexity. This pattern (extract branches into focused helpers) should be used for future complexity violations.
+3. **PrinterDetailView extraction**: Extracted `activeSpoolContent(_:)` as a `@ViewBuilder` helper to keep `filamentSection` under 100 lines. Same pattern applies to other long view builders.
+4. **NFC wiring consistency**: Both SpoolPickerView and SpoolInventoryView now configure NFC scanner in `.task` block using `#if canImport(UIKit)` guard.
+
+#### Impact
+- Zero SwiftLint warnings in production build
+- Extraction patterns reusable for future violations
+- NFC implementation pattern established for team
+
+---
+
 
