@@ -81,7 +81,7 @@ final class PushNotificationManager: NSObject, @unchecked Sendable {
 
     /// Check current authorization status without prompting.
     func refreshPermissionStatus() async {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        nonisolated(unsafe) let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
         case .authorized: permissionStatus = .authorized
         case .denied: permissionStatus = .denied
