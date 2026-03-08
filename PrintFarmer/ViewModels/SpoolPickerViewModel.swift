@@ -40,6 +40,13 @@ final class SpoolPickerViewModel {
     var filteredSpools: [SpoolmanSpool] {
         var result = spools
 
+        // Always exclude archived and empty spools from the picker
+        result = result.filter { spool in
+            if spool.archived ?? false { return false }
+            if let remaining = spool.remainingWeightG, remaining <= 0 { return false }
+            return true
+        }
+
         // Apply material filter first
         if let material = selectedMaterial {
             result = result.filter { $0.material == material }
@@ -50,9 +57,9 @@ final class SpoolPickerViewModel {
             result = result.filter { spool in
                 switch status {
                 case .available:
-                    return !spool.inUse && !(spool.archived ?? false)
+                    return !(spool.inUse ?? false) && !(spool.archived ?? false)
                 case .inUse:
-                    return spool.inUse
+                    return (spool.inUse ?? false)
                 case .low:
                     guard let remaining = spool.remainingWeightG,
                           let initial = spool.initialWeightG,

@@ -282,7 +282,7 @@ struct SpoolRowView: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.pfTextPrimary)
 
-                    if spool.inUse {
+                    if spool.inUse ?? false {
                         Image(systemName: "printer.fill")
                             .font(.caption2)
                             .foregroundStyle(Color.pfAccent)

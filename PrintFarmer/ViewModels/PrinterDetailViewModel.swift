@@ -97,13 +97,19 @@ final class PrinterDetailViewModel {
     }
 
     private func loadSpoolById(_ id: Int) async {
-        guard let printerService else { return }
+        guard let printerService else {
+            print("⚠️ loadSpoolById: printerService is nil")
+            return
+        }
         isPerformingAction = true
         actionError = nil
         do {
+            print("📡 loadSpoolById: printer=\(printerId) spool=\(id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: id)
+            print("✅ loadSpoolById: success")
             await loadPrinter()
         } catch {
+            print("❌ loadSpoolById failed: \(error)")
             actionError = error.localizedDescription
         }
         isPerformingAction = false
@@ -124,13 +130,19 @@ final class PrinterDetailViewModel {
     }
 
     func setActiveSpool(_ spool: SpoolmanSpool) async {
-        guard let printerService else { return }
+        guard let printerService else {
+            print("⚠️ setActiveSpool: printerService is nil")
+            return
+        }
         isPerformingAction = true
         actionError = nil
         do {
+            print("📡 setActiveSpool: printer=\(printerId) spool=\(spool.id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: spool.id)
+            print("✅ setActiveSpool: success")
             await loadPrinter()
         } catch {
+            print("❌ setActiveSpool failed: \(error)")
             actionError = error.localizedDescription
         }
         isPerformingAction = false

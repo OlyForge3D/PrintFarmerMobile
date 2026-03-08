@@ -54,9 +54,9 @@ final class SpoolInventoryViewModel {
             result = result.filter { spool in
                 switch status {
                 case .available:
-                    return !spool.inUse && !(spool.archived ?? false)
+                    return !(spool.inUse ?? false) && !(spool.archived ?? false)
                 case .inUse:
-                    return spool.inUse
+                    return (spool.inUse ?? false)
                 case .low:
                     guard let remaining = spool.remainingWeightG,
                           let initial = spool.initialWeightG,
