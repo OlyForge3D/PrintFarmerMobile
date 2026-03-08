@@ -149,3 +149,57 @@ For full details on earlier work (JSON decoding, resilient decoders, QA audit fi
 - **Root cause:** `SpoolmanJsonParser.cs` in `~/s/PFarm1` had a fallback where absent `in_use` field defaulted to `!archived`. Since most spools have `archived: false`, this set `inUse = true` for ALL non-archived spools, making the iOS "Available" filter (`!spool.inUse && !archived`) return zero results.
 - **Fix:** Removed the `!archived` fallback entirely. When `in_use` is absent from Spoolman JSON, the parser now falls through to the existing `?? false` default on the DTO constructor (line 145). "Archived" and "in use" are independent concepts.
 - **Scope:** Backend-only change in `~/s/PFarm1/src/infra/Parsing/SpoolmanJsonParser.cs`. No iOS code changes needed — the iOS filter logic was correct all along.
+
+## Learnings
+
+### MockAPIServer for XCUITest Support (2026-07-18)
+- **Key files:** `PrintFarmerTests/Helpers/MockAPIServer.swift`, `PrintFarmerTests/Helpers/TestFixtures.swift`
+- **Architecture:** Real TCP server using `NWListener` (Network framework) — no external deps. Needed because XCUITests run app in a separate process, so `MockURLProtocol` (in-process) won't work.
+- **Route matching:** Supports exact paths (`/api/printers`) and wildcard (`/api/printers/*`) for ID-parameterized endpoints. First match wins.
+- **Launch environment:** App checks `PFARM_MOCK_SERVER_URL` env var in `PFarmApp.init()` — XCUITests set this to `http://localhost:{port}` to redirect all API calls to the mock server.
+- **Concurrency pattern:** Used `ErrorBox` class wrapper (not var capture) to satisfy Swift 6 strict sendability in `NWListener.stateUpdateHandler`.
+- **Spoolman fixtures added:** `TestJSON.spoolmanSpool`, `spoolmanSpoolMinimal`, `spoolmanSpoolArray`, `spoolmanPagedResult`, `spoolmanPagedResultEmpty` — match `SpoolmanPagedResult<SpoolmanSpool>` structure.
+- **MockResponses enum:** Standalone canned JSON for mock server (auth, printers, jobs, spools, commands). Separate from TestJSON to allow independent evolution.
+- **No UI test target yet:** Only `PrintFarmerTests` (unit test bundle) exists. XCUITest target creation deferred to when Ripley builds the first UI test.
+
+## 2026-03-08 — MockAPIServer & Spool Fixtures
+
+### XCUITest Infrastructure Delivery
+- **MockAPIServer.swift** — real TCP server using NWListener (Network framework)
+  - Wildcard route matching (/api/printers/*)
+  - Random port selection to avoid parallel test conflicts
+  - Environment variable injection (PFARM_MOCK_SERVER_URL)
+  - Canned JSON responses via MockResponses enum
+- **Environment variable contract** — PFarmApp.init() checks PFARM_MOCK_SERVER_URL before APIClient.savedBaseURL()
+- **Spoolman test fixtures** — added to TestFixtures.swift (spoolmanSpool, spoolmanPagedResult, etc.)
+
+### Key Pattern: ErrorBox for Sendable NWListener
+- Used nonisolated(unsafe) rebinding pattern in stateUpdateHandler to satisfy strict concurrency
+- Both @Sendable closures now safely capture binding references
+
+### Cross-Team Impact
+- **Ash (Tester):** Can now integrate XCUITests with MockAPIServer for deterministic UI test scenarios
+- **Ripley (UI):** Can pass PFARM_MOCK_SERVER_URL to XCUITests via launchEnvironment
+- **Dallas (Architecture):** No startup pattern changes; env var check is non-breaking
+
+### Learnings
+- XCUITest process isolation requires real TCP server (MockURLProtocol won't work across process boundaries)
+- Wildcard routes are essential for ID-parameterized endpoints
+- Spoolman test fixture structure matches paginated API response format (items + totalCount)
+
+---
+
+## 2026-03-08 — Spoolman Parser Bug Fix
+
+### Issue Resolution: "Available" Filter Returns Zero Results
+- **Root cause:** `SpoolmanJsonParser.cs` line 112–119 had a fallback: when Spoolman API doesn't return `in_use`, the parser set `inUse = !archived`
+- **Effect:** Since most spools are `archived: false`, they all got `inUse = true`, making "Available" filter (`!inUse && !archived`) return nothing
+- **Fix:** Removed the `!archived` fallback entirely. When `in_use` is absent, defaults to `false`. `archived` and `inUse` are now independent concepts.
+- **Scope:** Backend change only (~/s/PFarm1); no iOS model changes needed — DTO contract unchanged
+
+### Impact
+- iOS filter logic was correct all along; no iOS code changes needed
+- Spoolman spool association now works as intended in UI
+- Ripley's filament/spool features now fully functional with correct filter behavior
+
+---

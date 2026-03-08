@@ -160,3 +160,49 @@ _Ash ready to implement feature screens and navigation flows._
 - **Empty filter false positive:** Nil `remainingWeightG` with non-nil `initialWeightG` treated as "empty" — wrong assumption. Exists in both SpoolInventory and SpoolPicker ViewModels.
 - **3 GitHub issues filed:** #1 (Available filter, squad:lambert), #2 (NFC scanner, squad:ripley), #3 (Settings URL, squad:ripley)
 - **Report at:** `.squad/agents/ash/ui-audit-bugs.md`
+
+### Test Coverage Gap Fill (2025-07-20)
+- **68 new test cases** across 2 new ViewModel test suites:
+  - AddSpoolViewModelTests (25 cases): initial state, form validation (material+weight), loadReferenceData success/error/unconfigured, saveSpool success/error/invalid/unconfigured/zero-spool-weight, filament matching (exact/case-insensitive/no-match), prefill from scan data (all fields/nil/empty/zero/negative), color swatches
+  - SpoolInventoryViewModelTests (43 cases): initial state, loadSpools success/empty/error/clears-error/unconfigured/args, availableMaterials (sorted/deduped), status filters (available/inUse/low/empty with nil/Bool? edge cases), material filter, search (material/vendor/name/case-insensitive/no-match/empty), combined filters (2-way and 3-way), hasActiveSearch, activeFilterDescription, clearFilters, findSpool/clearHighlight, deleteSpool success/error/unconfigured, NFC scan not-available/unconfigured
+- **XCUITest scaffolding created** in `PrintFarmerUITests/`:
+  - PrintFarmerUITests.swift: Base test class with `--uitesting` launch arg, helper methods
+  - LoginFlowUITests.swift: Login screen presence, form interaction, login→dashboard transition
+  - PrinterListUITests.swift: Printer list display, navigation to detail, search field
+  - UI test target NOT yet added to .xcodeproj (requires manual Xcode target creation — see decision doc)
+- **SpoolmanSpool.inUse is Bool?** — tests cover nil, true, false for all status filters that depend on it
+- **SpoolInventoryViewModel "empty" filter treats nil remainingWeightG with non-nil initialWeightG as empty** — this is the documented false positive from the UI audit, tests confirm actual behavior
+- **UUID prefix F2** used for pbxproj entries to avoid conflicts with F1 (Phase 2 scanning tests)
+- **Test simulator:** iPhone 16 not available on this machine; use `iPhone 17` for test runs
+- **All 68 tests pass**, build clean, zero lint warnings
+
+## 2026-03-08 — ViewModel Tests & UI Test Scaffolding
+
+### Test Suite Expansion
+- **AddSpoolViewModelTests** — 25 test cases covering form validation, loadReferenceData, saveSpool, filament matching, scan data prefill
+- **SpoolInventoryViewModelTests** — 43 test cases covering load, material/status/search filters, combined filters, delete, NFC scanner paths
+- **Total new tests:** 68 cases, all passing
+
+### XCUITest Scaffolding
+- **PrintFarmerUITests.swift** — base test class with `--uitesting` launch argument
+- **LoginFlowUITests.swift** — login screen presence, form interaction, login → dashboard transition
+- **PrinterListUITests.swift** — printer list display, navigation to detail, search field
+- **Note:** XCUITest target creation is a manual Xcode step (File → New → Target → UI Testing Bundle) — files are ready, target creation deferred
+
+### Key Test Patterns
+- **Status filters:** Tests cover all Bool? edge cases (nil, true, false) for Available/InUse/Low/Empty filters
+- **Empty filter behavior:** Tests confirm actual behavior where `remainingWeightG == nil` with non-nil `initialWeightG` is treated as empty
+- **Combined filters:** Tests verify intersection logic (material AND status AND search)
+- **MockSpoolService:** Available for ViewModel testing; already registered in pbxproj
+
+### Cross-Team Learnings
+- XCUITest architecture requires real mock server (Lambert's MockAPIServer), not in-process URLSession interception
+- UI test files ready for Ripley to adopt once XCUITest target is created in Xcode
+- SpoolmanSpool.inUse is Bool? — filter tests properly validate nil/true/false cases
+
+### Build & Validation
+- ✅ All 68 tests pass
+- ✅ Build clean, zero lint warnings
+- ✅ MockAPIServer integration ready for UI test scenarios
+
+---

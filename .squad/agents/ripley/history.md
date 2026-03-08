@@ -136,3 +136,97 @@
 - Updated project.pbxproj: replaced `INFOPLIST_KEY_UILaunchScreen_Generation = YES` with `INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen` in both Debug and Release configs
 - Added LaunchScreen.storyboard to PBXFileReference, PBXGroup, and PBXResourcesBuildPhase
 - Key files: `PrintFarmer/LaunchScreen.storyboard`, `PrintFarmer/Assets.xcassets/LaunchBackground.colorset`, `PrintFarmer/Assets.xcassets/LaunchText.colorset`, `PrintFarmer/Assets.xcassets/LaunchAccent.colorset`
+
+### iPad Layout Pass (2026-03-07)
+- **ContentView.swift:** Added `@Environment(\.horizontalSizeClass)` to switch between TabView (compact/iPhone) and NavigationSplitView (regular/iPad). iPad gets a sidebar with tab icons + detail pane. iPhone layout unchanged.
+- **AppRouter.swift:** Added `sidebarVisibility: NavigationSplitViewVisibility = .automatic` property for NavigationSplitView column management.
+- **DashboardView.swift:** Adaptive grid columns — 6 columns on iPad (all summary cards in one row) vs 3 on iPhone. Active jobs section uses 2-column LazyVGrid on iPad.
+- **PrinterListView.swift:** Printer cards display in a 2-column LazyVGrid on iPad vs single-column LazyVStack on iPhone.
+- **PrinterDetailView.swift:** Two-column layout on iPad — left column (header, temps, filament, actions), right column (camera, current job). Single column on iPhone.
+- **LoginView.swift:** Form constrained to 500pt max width on iPad to prevent overly wide text fields.
+- **Pattern:** `@Environment(\.horizontalSizeClass)` is the standard mechanism for adaptive layouts. Check `sizeClass == .regular` for iPad-width logic.
+- **Gotcha:** `List(selection:)` with binding is unavailable on iOS — use explicit Button-based sidebar rows with manual highlight instead.
+- **iPad device target:** Already configured (TARGETED_DEVICE_FAMILY = "1,2"), no project changes needed.
+- Key files modified: `ContentView.swift`, `AppRouter.swift`, `DashboardView.swift`, `PrinterListView.swift`, `PrinterDetailView.swift`, `LoginView.swift`
+
+## 2026-03-08 — iPad Layout Pass
+
+### Adaptive Layout Implementation
+- **ContentView.swift** — switched to `NavigationSplitView` on iPad (regular horizontalSizeClass), TabView on iPhone (compact)
+  - iPad sidebar lists 6 tabs with SF Symbol icons
+  - Manual Button-based highlight (List(selection:) unavailable on iOS)
+  - sidebarVisibility controlled by AppRouter
+- **DashboardView.swift** — 6-column grid on iPad (all summary cards in one row), 3-column on iPhone
+- **PrinterListView.swift** — 2-column LazyVGrid on iPad, single-column LazyVStack on iPhone
+- **PrinterDetailView.swift** — two-column layout on iPad (info left, camera/job right), single column on iPhone
+- **LoginView.swift** — form constrained to 500pt max width on iPad
+
+### Architecture Pattern
+- Standard: `@Environment(\.horizontalSizeClass)` check throughout
+- iPad device target already configured (TARGETED_DEVICE_FAMILY = "1,2")
+- No new dependencies; pure SwiftUI adaptativity
+- iPhone layouts completely unchanged (guarded by `sizeClass == .regular` conditions)
+
+### Cross-Team Dependencies
+- **Lambert (MockAPIServer):** Works seamlessly with adaptive layouts; no changes needed
+- **Ash (Tests):** ViewModels + tests are platform-agnostic; no changes needed
+- **Dallas (Architecture):** AppRouter gained additive `sidebarVisibility` property (non-breaking)
+
+### Build Verification
+- ✅ Zero errors, zero warnings
+- ✅ All views render correctly on iPhone + iPad simulators
+- ✅ horizontalSizeClass checks guard all iPad-specific logic
+
+### Learnings for Future Passes
+- NavigationSplitView sidebar is the expected iPad UX pattern
+- List(selection:) binding unavailable on iOS — use explicit Button rows for sidebar highlight
+- horizontalSizeClass is more reliable than device detection
+- iPad device target requires only TARGETED_DEVICE_FAMILY setting (no other project config)
+
+---
+
+## 2026-03-08 — Spool Filtering, NFC Wiring, SwiftLint Cleanup
+
+### Spool Filtering Enhancements
+- **Material type filter chips** — added segmented control filtering by material (plastic/resin/etc.)
+- **Status filter chips** — Available, In Use, Low, Empty states with proper Bool? edge case handling
+- **Expanded search** — now includes color (hex-to-name heuristic), location, comment fields
+- **Color matching** — created `SpoolmanSpool+ColorName.swift` extension for lightweight color palette matching
+- **hasActiveSearch property** — computed property for empty-state gating when filters/search are active
+- **ContentUnavailableView.search** — new empty state shown when filtered results yield nothing
+- **Clear Filters button** — centralized `clearFilters()` method on both ViewModels
+
+### NFC Scanner Wiring
+- **PrinterDetailView** — added missing `configureNFCScanner()` call in `.task` block
+- Now consistent with SpoolPickerView and SpoolInventoryView patterns
+- All NFC-using views follow `#if canImport(UIKit)` guard
+
+### SwiftLint Cleanup
+- Fixed 28 violations across 10 files
+- **Patterns established:**
+  - Models.swift: file_length suppression (coherent domain collection)
+  - SpoolmanSpool+ColorName: extracted `achromaticNames` + `dominantChannelNames` helpers for complexity reduction
+  - PrinterDetailView: extracted `activeSpoolContent(_:)` as @ViewBuilder helper
+  - NFC wiring: both views now configure scanner consistently in `.task` block
+- ✅ Build verified: zero SwiftLint warnings in app source
+
+### Spool Association Semantics
+- **Decision:** Spool association is tracking-only, not physical
+- **Removed:** `loadFilament()` calls from `setActiveSpool(_:)` and `loadSpoolById(_:)` in PrinterDetailViewModel
+- **UI labels:** Changed "Load Filament" → "Set Filament" to reflect association-only semantics
+- **Preserved:** "Change Filament" label (still accurate for swapping) and "Eject" (includes physical unload)
+
+### Launch Screen
+- **LaunchScreen.storyboard** — centered 🌾 emoji + "PrintFarmer" text in vertical stack
+- **Color sets** — LaunchBackground, LaunchText, LaunchAccent (matching theme colors pfBackground/pfTextPrimary/pfAccent)
+- **pbxproj update** — replaced UILaunchScreen_Generation with UILaunchStoryboardName in both Debug and Release configs
+
+### Cross-Team Updates Received
+- **Lambert:** Spoolman parser bug fix (inUse fallback removal) — iOS filter now works correctly
+- **Ash:** 68 new ViewModel tests ready for validation; XCUITest files awaiting target creation
+
+### Build Status
+- ✅ All features compiled, integrated, ready for QA
+- ✅ Zero warnings, zero lint violations
+
+---
