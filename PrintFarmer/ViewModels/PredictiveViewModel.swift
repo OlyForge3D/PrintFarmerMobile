@@ -29,7 +29,9 @@ final class PredictiveViewModel {
             )
             prediction = try await predictiveService.predictJobFailure(request: request)
         } catch {
-            self.error = error.localizedDescription
+            logger.warning("Failed to predict failure: \(error.localizedDescription)")
+            // Don't show error for network/decode failures — show empty state instead
+            prediction = nil
         }
 
         isLoading = false

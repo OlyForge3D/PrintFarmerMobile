@@ -483,3 +483,65 @@ For `@Observable` ViewModels controlling sheet presentation via boolean properti
 ## Applies To
 All sheet-presenting flows using `@Observable` ViewModels with `@State` ownership.
 
+---
+
+### Decision: Fall Back to StatusDetail for Temperature Display (Ripley)
+**Date:** 2026-03-08  
+**Status:** Applied
+
+## Context
+PrusaLink printers showed "--" for hotend and bed temperatures in the iOS app, despite the web UI displaying them correctly. The backend's `PrusaLinkClient.CreatePrinterDtoAsync()` omits temperature fields from the `PrinterDto` response (used by `GET /api/printers/{id}`), but the `/status` endpoint returns them in `PrinterStatusDto`.
+
+## Decision
+`PrinterDetailView.temperatureSection()` uses nil-coalescing to fall back from `printer.hotendTemp` (etc.) to `viewModel.statusDetail?.hotendTemp`. This is backend-agnostic and works for all printer types without conditional logic per backend.
+
+## Alternatives Considered
+1. **Fix the backend** — Add temps to `PrusaLinkClient.CreatePrinterDtoAsync()`. Correct long-term fix, but requires backend deploy. Filed as known gap.
+2. **Use only statusDetail** — Would work but loses the benefit of printer data that already has temps (Moonraker/Bambu).
+
+## Applies To
+`PrinterDetailView.swift` — `temperatureSection()` method.
+
+## Team Notes
+- The backend `PrusaLinkClient.CreatePrinterDtoAsync()` should also be fixed to include temp fields (backend team item).
+- The `PrinterCardView` (list view) is not affected because the list endpoint uses `CompletePrinterDto` which includes temps from SignalR cache.
+
+---
+
+### Decision: APIClient Empty Response Handling for Optional Types (Ripley)
+**Date:** 2026-03-08  
+**Status:** Implemented
+
+## Context
+The PrintFarmer API returns empty response bodies (HTTP 204 No Content or 200 with empty body) when certain resources don't exist. For example, `/api/printers/{id}/printjob` returns an empty body when no print job is active.
+
+Previously, `APIClient.execute<T: Decodable>()` always attempted to JSON-decode the response body, which failed with "dataCorrupted" errors on empty data, even when the method signature indicated an Optional return type (e.g., `PrintJobStatusInfo?`).
+
+## Decision
+Modified `APIClient.execute<T: Decodable>()` to handle empty response bodies intelligently:
+
+1. **Before attempting decode**, check if `data.isEmpty`
+2. **If empty and T is Optional**: Return `nil` (tested via `Optional<Any>.none as? T`)
+3. **If empty and T is non-Optional**: Throw `NetworkError.decodingFailed` with descriptive message
+4. **If non-empty**: Proceed with normal JSON decode
+
+## Rationale
+- **Type-safe handling**: Uses Swift's type system to distinguish Optional vs non-Optional at runtime
+- **Contract enforcement**: Empty bodies for non-Optional types still error (catches API bugs)
+- **Better error messages**: Non-Optional empty responses get a clear error ("Empty response body for non-optional type X")
+- **Minimal change**: Single check before decode, doesn't affect existing decode paths
+
+## Alternatives Considered
+1. **Add `getOptional<T>()` method**: Rejected — duplicates logic, requires callsite changes
+2. **Return nil for all empty responses**: Rejected — hides API contract violations for non-Optional types
+3. **Check HTTP status code (204)**: Rejected — some 200 responses also have empty bodies
+
+## Impact
+- **Affected endpoints**: Currently only `PrinterService.getCurrentJob()`, but pattern now works for any future Optional-returning endpoints
+- **Backward compatible**: No changes to method signatures or callsites
+- **Build status**: Clean build, no regressions
+
+## Follow-up
+- Consider documenting this pattern in API client usage guidelines
+- Monitor for other endpoints that might benefit from Optional returns
+
