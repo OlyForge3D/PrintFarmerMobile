@@ -258,6 +258,12 @@
 - **DeepLinkHandler URL parsing:** `url.host` gives first path segment of custom URL schemes (`printfarmer://spool/42` → host = "spool"). Path components after host in `url.pathComponents`.
 - **Filter chip pattern:** Single-purpose toggle chip with capsule background, placed in HStack with Spacer() for left-alignment, below status filter chips.
 
+#### TestFlight Beta Release Pipeline
+- **Workflow file:** `.github/workflows/testflight-beta.yml` — triggers on `v*-beta*` / `v*-rc*` tags or manual dispatch. Archives with xcodebuild, exports IPA via `.github/ExportOptions.plist`, uploads to TestFlight via fastlane pilot.
+- **Export options:** `.github/ExportOptions.plist` — app-store method, team ID `ZPKA84F3TY`, automatic signing, symbols uploaded, bitcode disabled.
+- **Key improvements over initial spec:** Removed invalid `-archiveForDistribution` flag; replaced deprecated `actions/create-release@v1` with `softprops/action-gh-release@v2`; added `MATCH_GIT_URL` secret for fastlane match certificates repo; ExportOptions.plist path set to `.github/ExportOptions.plist` for consistency.
+- **Required secrets:** `FASTLANE_USER`, `FASTLANE_PASSWORD`, `MATCH_PASSWORD`, `MATCH_GIT_URL`, `SLACK_WEBHOOK_URL` (optional).
+
 ### Ready for Testing (Ash — WI-8)
 - All MockSpoolService fixtures should include `hasNfcTag: nil` parameter
 - Test scenarios: HasNFC state, NoNFC state, FilterActive state
