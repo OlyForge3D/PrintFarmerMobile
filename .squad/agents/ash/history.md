@@ -150,3 +150,13 @@ _Ash ready to implement feature screens and navigation flows._
 - Run tests in Xcode (SPM limitation)
 - Device QA validation
 - Phase 3: Snapshot tests for UI views
+
+### Full UI Code Audit (2025-07-18)
+- **10 bugs found** across all SwiftUI views, ViewModels, and related logic. 3 High, 5 Medium, 2 Low severity.
+- **Root cause of "Available" filter bug:** Backend `SpoolmanJsonParser.cs` fallback logic treats `archived: false` as `inUse: true`. When Spoolman API doesn't return `in_use`, all non-archived spools appear as "in use," making the Available filter return nothing. This is a backend bug, not iOS.
+- **PrinterDetailView NFC never configured:** `.task` block missing `configureNFCScanner()` call. 1-line fix. SpoolInventory and SpoolPicker do it correctly — pattern exists, just wasn't applied here.
+- **SettingsView URL change is a no-op:** Writes to UserDefaults but doesn't update APIClient or force logout. Potential security issue (token sent to wrong server).
+- **`.constant()` binding anti-pattern:** Used in 5 alert presentations across the app. Works but is fragile. Should be refactored to proper `Binding` eventually.
+- **Empty filter false positive:** Nil `remainingWeightG` with non-nil `initialWeightG` treated as "empty" — wrong assumption. Exists in both SpoolInventory and SpoolPicker ViewModels.
+- **3 GitHub issues filed:** #1 (Available filter, squad:lambert), #2 (NFC scanner, squad:ripley), #3 (Settings URL, squad:ripley)
+- **Report at:** `.squad/agents/ash/ui-audit-bugs.md`

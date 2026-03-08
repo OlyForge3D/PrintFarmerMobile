@@ -863,4 +863,56 @@ When filter chips + search produced zero results, the `if/else` branch structure
 
 ---
 
+### Decision: UI Audit Findings and Owner Assignments (Ash)
+**Date:** 2026-03-08  
+**Status:** Filed (3 GitHub issues)
+**By:** Ash (Tester/QA)
+
+#### Context
+Full UI code audit of all SwiftUI views, ViewModels, models, services, and extensions.
+
+#### Findings Summary
+- **Total bugs identified:** 10
+- **Severity breakdown:** 3 High, 5 Medium, 2 Low
+- **GitHub issues filed:** 3 top-priority items
+- **Full report:** `.squad/agents/ash/ui-audit-bugs.md`
+
+#### High-Priority Issues (Quality Gate)
+
+| Issue | Description | Owner | Effort |
+|-------|-------------|-------|--------|
+| **#1 (squad:lambert)** | "Available" spool filter always returns zero results — backend `inUse` fallback logic inverted in `SpoolmanJsonParser.cs` | Lambert | Backend fix in `~/s/PFarm1/src/infra/Parsing/SpoolmanJsonParser.cs` (lines 112-119) |
+| **#2 (squad:ripley)** | PrinterDetailView NFC scanner never configured — `configureNFCScanner()` call missing in `.task` block | Ripley | 1-line addition to `.task` block in `PrinterDetailView.swift` |
+| **#3 (squad:ripley)** | SettingsView URL change doesn't update APIClient or force re-login — only writes to UserDefaults | Ripley | Add `await authViewModel.logout()` after URL save in `SettingsView.swift` (lines 97–101) |
+
+#### Medium-Priority Issues
+
+| Issue | Description | Owner | Effort |
+|-------|-------------|-------|--------|
+| **BUG-4** | "Empty" spool filter false positive when `remainingWeightG == nil` | Ripley | Remove `else if` fallback in `SpoolInventoryViewModel.swift` and `SpoolPickerViewModel.swift` |
+| **BUG-5** | AddSpool color picker selection never sent to backend | Ripley | Design decision: add `colorHex` to request model or remove picker; prevent false UX expectations |
+| **BUG-6** | Multiple delete Tasks create race condition on spool array | Ripley | Use sequential Task loop instead of concurrent `onDelete` spawning |
+| **BUG-7** | NFCWriteView always reports failure (hardcoded `false` callback) | Lambert | Wire up `NFCService.writeTag()` or hide button until implemented |
+| **BUG-8** | NotificationRow `onTapGesture` conflicts with List swipe actions | Ripley | Replace with `Button` wrapping row content or `NavigationLink` |
+
+#### Low-Priority Issues
+
+| Issue | Description | Owner | Effort |
+|-------|-------------|-------|--------|
+| **BUG-9** | JobDetailView progress shows 100% with "0m remaining" while job still printing | Ripley | Add overtime indicator when `elapsed > eta` |
+| **BUG-10** | `.constant()` binding anti-pattern for alert dismissal (5 instances) | Ripley | Use computed `Binding(get:set:)` instead of `.constant()` |
+
+#### Quality Gate
+**Before merging new feature work, BUG-1 through BUG-3 must be fixed.** They represent broken user-facing functionality critical to filament and printer management workflows.
+
+#### Impact
+- **Lambert:** Investigate and fix backend `inUse` logic in Spoolman parser; assess NFC tag write service implementation
+- **Ripley:** Address 3 high-priority issues (NFC configuration, URL change, logout). Then tackle medium and low issues systematically.
+- **Team:** Prioritize audit findings over new feature work until high-priority items are resolved
+
+#### Full Report
+See `.squad/agents/ash/ui-audit-bugs.md` for complete bug details, line numbers, code locations, and suggested fixes.
+
+---
+
 

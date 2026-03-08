@@ -144,3 +144,8 @@ For full details on earlier work (JSON decoding, resilient decoders, QA audit fi
 - Token expiry pre-check
 - Silent error suppression pattern
 - Test fixture updates
+
+### Issue #1: "Available" Spool Filter Fix (2026-07-18)
+- **Root cause:** `SpoolmanJsonParser.cs` in `~/s/PFarm1` had a fallback where absent `in_use` field defaulted to `!archived`. Since most spools have `archived: false`, this set `inUse = true` for ALL non-archived spools, making the iOS "Available" filter (`!spool.inUse && !archived`) return zero results.
+- **Fix:** Removed the `!archived` fallback entirely. When `in_use` is absent from Spoolman JSON, the parser now falls through to the existing `?? false` default on the DTO constructor (line 145). "Archived" and "in use" are independent concepts.
+- **Scope:** Backend-only change in `~/s/PFarm1/src/infra/Parsing/SpoolmanJsonParser.cs`. No iOS code changes needed — the iOS filter logic was correct all along.
