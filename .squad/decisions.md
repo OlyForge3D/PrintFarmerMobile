@@ -451,3 +451,35 @@ Both records are written via `NFCMessageWriteDelegate` (full NDEF message writer
 - Backend `hasNfcTag: Bool?` field supported by SpoolmanSpoolDto (Jeff's WI-1)
 - Test fixtures need `hasNfcTag: nil` parameter in all SpoolmanSpool initializers going forward
 - Feature restricted to iPhone devices only (Core NFC not available on iPad)
+
+### Decision: Swift 6 Concurrency Fixes with @preconcurrency (Ripley)
+**Date:** 2026-03-08  
+**Status:** Applied
+
+## Context
+Swift 6 strict concurrency mode treats Apple framework types like `UNNotificationSettings` as non-Sendable. These types cross actor boundaries (e.g., nonisolated methods returning to @MainActor), causing compiler errors that break TestFlight archive builds.
+
+## Decision
+Use `@preconcurrency import` for Apple frameworks with non-Sendable types. This is Apple's recommended migration path for Swift 6. Do NOT use `nonisolated(unsafe)` on local variables — that modifier is for stored properties only.
+
+## Applies To
+- UserNotifications
+- CoreLocation
+- CoreNFC
+- UIKit types crossing actor boundaries
+
+**Key File:** `PrintFarmer/Services/PushNotificationManager.swift`
+
+### Decision: Observable ViewModel Sheet Dismissal (Ripley)
+**Date:** 2025-07  
+**Status:** Applied
+
+## Context
+SpoolPickerView sheet failed to dismiss reliably after selection. The environment `dismiss()` action didn't propagate `showSpoolPicker = false` through `@State`/`@Observable` bindings when async state mutations ran concurrently on the same observable.
+
+## Decision
+For `@Observable` ViewModels controlling sheet presentation via boolean properties, explicitly reset the property in the action method (e.g., `showSpoolPicker = false`) rather than relying solely on `dismiss()` from the presented view.
+
+## Applies To
+All sheet-presenting flows using `@Observable` ViewModels with `@State` ownership.
+

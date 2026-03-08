@@ -271,3 +271,45 @@
 - Highlight behavior test: spoolId set/cleared after 0.5s delay
 
 ---
+
+### CI Fix: Swift 6 UNNotificationSettings Sendable Error (2026-03-08)
+
+**Root cause:** `PushNotificationManager.refreshPermissionStatus()` calls `UNUserNotificationCenter.current().notificationSettings()` which returns `UNNotificationSettings` — a non-Sendable Apple framework type. In Swift 6 strict concurrency mode, this can't cross from nonisolated async context into the `@MainActor`-isolated method.
+
+**Fix:** Changed `import UserNotifications` → `@preconcurrency import UserNotifications`. This tells the compiler to treat Apple's UserNotifications types as retroactively Sendable, which is the recommended pattern for Apple frameworks not yet annotated for Swift 6.
+
+**What didn't work:** `nonisolated(unsafe) let settings = ...` on the local variable — this modifier is for stored properties, not local variables, and doesn't suppress the isolation boundary crossing error.
+
+**Key files:** `PrintFarmer/Services/PushNotificationManager.swift`
+
+## Learnings
+
+### CI Debugging Patterns (2026-03-08)
+- **`@preconcurrency import` is the fix for Apple framework Sendable gaps:** When Apple types like `UNNotificationSettings`, `CLLocation`, etc. aren't Sendable yet, use `@preconcurrency import` to suppress the error. Don't use `nonisolated(unsafe)` on local variables — that's for stored properties only.
+- **CI error vs local build:** The release archive uses `-O` optimization (not `-Onone`), which can trigger stricter checking. Always verify with `xcodebuild archive` or at minimum `generic/platform=iOS` destination.
+- **Parse CI logs for ALL error patterns:** Search for `: error:`, `ARCHIVE FAILED`, `signal`, `Segmentation fault`, `FAILED`, `fatal:`. The Swift compiler sometimes crashes without clear error messages — look at the "build commands failed" section at the end.
+- **Tag retag workflow:** `git push release :refs/tags/TAG && git tag -d TAG && git tag TAG main && git push release TAG` — must delete remote first, then local, then recreate on current main.
+
+---
+
+### Set Filament Dismiss Bug Fix (2025-07)
+- **Bug:** SpoolPickerView sheet didn't dismiss after selecting a filament from PrinterDetailView
+- **Root cause:** SpoolPickerView calls `dismiss()` after `onSelect`, but with `@Observable` + `@State` bindings, the environment dismiss can fail to propagate `showSpoolPicker = false` when concurrent async mutations (from `setActiveSpool`'s Task) occur on the same observable object
+- **Fix:** Added `showSpoolPicker = false` at the top of `PrinterDetailViewModel.setActiveSpool()` for explicit, reliable dismissal
+- **Pattern:** For `@Observable` ViewModels with sheet-controlling booleans, always explicitly reset the presentation flag in the action method rather than relying solely on `dismiss()` from the presented view
+
+## Session: 2026-03-08T23:41 — APIClient Empty Response Fix (Background)
+
+**Mission:** Fix APIClient.execute() to handle empty response bodies for Optional<T> return types
+
+**Problem:** Endpoints returning HTTP 204 or empty bodies cause JSON decode errors instead of returning nil for Optional types.
+
+**Approach:**
+1. Locate APIClient.execute() method
+2. Add guard for empty response body before JSON decode
+3. Return nil when response is empty and type is Optional
+4. Maintain error handling for non-optional types
+5. Add/update tests for empty response handling
+6. Validate no regressions
+
+**Status:** In Progress (agent-51)
