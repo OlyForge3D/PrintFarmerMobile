@@ -31,6 +31,7 @@ struct SpoolPickerView: View {
                 } else {
                     VStack(spacing: 0) {
                         materialFilterChips
+                        statusFilterChips
                         spoolList
                     }
                 }
@@ -163,6 +164,54 @@ struct SpoolPickerView: View {
         .padding(.vertical, 8)
     }
     
+    private var statusFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                // "All" chip
+                Button {
+                    withAnimation {
+                        viewModel.selectedStatus = nil
+                    }
+                } label: {
+                    Text("All")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(viewModel.selectedStatus == nil ? .white : Color.pfTextSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            viewModel.selectedStatus == nil ? Color.pfAccent : Color.pfBackgroundTertiary,
+                            in: Capsule()
+                        )
+                }
+                
+                // Status chips
+                ForEach(SpoolStatus.allCases, id: \.self) { status in
+                    Button {
+                        withAnimation {
+                            if viewModel.selectedStatus == status {
+                                viewModel.selectedStatus = nil
+                            } else {
+                                viewModel.selectedStatus = status
+                            }
+                        }
+                    } label: {
+                        Text(status.rawValue)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(viewModel.selectedStatus == status ? .white : Color.pfTextSecondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                viewModel.selectedStatus == status ? Color.pfAccent : Color.pfBackgroundTertiary,
+                                in: Capsule()
+                            )
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
+    }
+    
     private var spoolList: some View {
         List(viewModel.filteredSpools) { spool in
             Button {
@@ -180,6 +229,20 @@ struct SpoolPickerView: View {
 
 struct SpoolRowView: View {
     let spool: SpoolmanSpool
+    
+    private var weightPercent: Double? {
+        guard let remaining = spool.remainingWeightG,
+              let initial = spool.initialWeightG,
+              initial > 0 else { return nil }
+        return remaining / initial
+    }
+    
+    private var weightColor: Color {
+        guard let percent = weightPercent else { return .gray }
+        if percent > 0.5 { return .green }
+        if percent > 0.2 { return .yellow }
+        return .red
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -193,9 +256,17 @@ struct SpoolRowView: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(spool.filamentName ?? spool.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.pfTextPrimary)
+                HStack(spacing: 6) {
+                    Text(spool.filamentName ?? spool.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.pfTextPrimary)
+                    
+                    if spool.inUse {
+                        Image(systemName: "printer.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Color.pfAccent)
+                    }
+                }
 
                 HStack(spacing: 6) {
                     Text(spool.material)
@@ -215,10 +286,27 @@ struct SpoolRowView: View {
 
             Spacer()
 
-            if let remaining = spool.remainingWeightG {
-                Text("\(Int(remaining))g")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Color.pfTextSecondary)
+            VStack(alignment: .trailing, spacing: 4) {
+                if let remaining = spool.remainingWeightG {
+                    Text("\(Int(remaining))g")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.pfTextSecondary)
+                }
+                
+                if let initial = spool.initialWeightG, let remaining = spool.remainingWeightG, initial > 0 {
+                    // Weight progress bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.pfBackgroundTertiary)
+                            
+                            Capsule()
+                                .fill(weightColor)
+                                .frame(width: geo.size.width * (weightPercent ?? 0))
+                        }
+                    }
+                    .frame(width: 50, height: 3)
+                }
             }
         }
         .padding(.vertical, 4)

@@ -1,11 +1,19 @@
 import Foundation
 import os
 
+enum SpoolStatus: String, CaseIterable {
+    case available = "Available"
+    case inUse = "In Use"
+    case low = "Low"
+    case empty = "Empty"
+}
+
 @MainActor @Observable
 final class SpoolInventoryViewModel {
     var spools: [SpoolmanSpool] = []
     var searchText = ""
     var selectedMaterial: String?
+    var selectedStatus: SpoolStatus?
     var isLoading = false
     var errorMessage: String?
 
@@ -41,6 +49,30 @@ final class SpoolInventoryViewModel {
             result = result.filter { $0.material == material }
         }
         
+        // Apply status filter
+        if let status = selectedStatus {
+            result = result.filter { spool in
+                switch status {
+                case .available:
+                    return !spool.inUse && !(spool.archived ?? false)
+                case .inUse:
+                    return spool.inUse
+                case .low:
+                    guard let remaining = spool.remainingWeightG,
+                          let initial = spool.initialWeightG,
+                          initial > 0 else { return false }
+                    return (remaining / initial) < 0.2
+                case .empty:
+                    if let remaining = spool.remainingWeightG {
+                        return remaining == 0
+                    } else if spool.initialWeightG != nil {
+                        return true
+                    }
+                    return false
+                }
+            }
+        }
+        
         // Then apply search text filter
         guard !searchText.isEmpty else { return result }
         let query = searchText.lowercased()
@@ -56,7 +88,7 @@ final class SpoolInventoryViewModel {
     }
 
     var hasActiveSearch: Bool {
-        !searchText.isEmpty || selectedMaterial != nil
+        !searchText.isEmpty || selectedMaterial != nil || selectedStatus != nil
     }
 
     func loadSpools() async {
