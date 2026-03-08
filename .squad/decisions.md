@@ -916,3 +916,35 @@ See `.squad/agents/ash/ui-audit-bugs.md` for complete bug details, line numbers,
 ---
 
 
+### Decision: Remove `!archived` fallback for `inUse` in SpoolmanJsonParser (Lambert)
+
+**Date:** 2026-03-08  
+**Status:** Implemented (backend change; awaiting user review)  
+**Issue:** #1
+
+The backend's `SpoolmanJsonParser.cs` had fallback logic: when the Spoolman API's JSON didn't include an `in_use` field, it inferred `inUse = !archived`. Since most spools are not archived (`archived: false`), this made `inUse = true` for virtually every spool. The iOS "Available" filter (`!spool.inUse && !archived`) then correctly returned zero results — there were no spools marked as available.
+
+**Decision:** Remove the `!archived` → `inUse` fallback. When `in_use` is absent from the JSON, default to `false` (not in use). The concepts are independent:
+- **Archived** = spool is retired/hidden from active lists
+- **In use** = spool is currently loaded in a printer
+
+**Consequences:**
+- The "Available" spool filter in the iOS app will now work correctly without any iOS code changes.
+- Spools that are genuinely in use must have `in_use: true` set explicitly by Spoolman or by Printfarmer when assigning a spool to a printer.
+- No risk to archived spool handling — the `Archived` field is parsed independently (line 125) and passed through separately.
+
+---
+
+### Decision: NFC Scanner Wiring and URL-Change Logout Patterns (Ripley)
+
+**Date:** 2026-03-08  
+**Status:** Implemented  
+**Issues:** #2, #3
+
+#### NFC Scanner Wiring (Issue #2)
+All views that use NFC scanning must call `viewModel.configureNFCScanner(services.nfcService)` inside their `.task` block, wrapped in `#if canImport(UIKit)`. PrinterDetailView was missing this; now consistent with SpoolPickerView and SpoolInventoryView.
+
+#### Server URL Change Forces Logout (Issue #3)
+When the user changes the server URL in Settings, `authViewModel.logout()` is now called immediately after saving the new URL. This clears the stale JWT token and forces re-authentication against the new server. The AuthViewModel was already available in SettingsView's environment.
+
+---
