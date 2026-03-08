@@ -1,7 +1,7 @@
 #if canImport(UIKit)
 import Foundation
 import UIKit
-import UserNotifications
+@preconcurrency import UserNotifications
 import os
 
 // MARK: - Push Notification Manager
@@ -81,7 +81,7 @@ final class PushNotificationManager: NSObject, @unchecked Sendable {
 
     /// Check current authorization status without prompting.
     func refreshPermissionStatus() async {
-        nonisolated(unsafe) let settings = await UNUserNotificationCenter.current().notificationSettings()
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
         case .authorized: permissionStatus = .authorized
         case .denied: permissionStatus = .denied
