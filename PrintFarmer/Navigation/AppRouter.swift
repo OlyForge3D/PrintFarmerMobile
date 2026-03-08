@@ -12,18 +12,29 @@ final class AppRouter {
     var notificationBadgeCount: Int = 0
     var sidebarVisibility: NavigationSplitViewVisibility = .automatic
     var pendingNFCReadyPrinterId: UUID?
+    var pendingSpoolHighlightId: Int?
 
     func navigate(to destination: DeepLinkDestination) {
         switch destination {
         case .printerDetail(let id):
             selectedTab = .printers
             printersPath = NavigationPath()
-            printersPath.append(AppDestination.printerDetail(id: id))
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(50))
+                printersPath.append(AppDestination.printerDetail(id: id))
+            }
         case .printerReady(let id):
             selectedTab = .printers
             printersPath = NavigationPath()
             pendingNFCReadyPrinterId = id
-            printersPath.append(AppDestination.printerDetail(id: id))
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(50))
+                printersPath.append(AppDestination.printerDetail(id: id))
+            }
+        case .spoolDetail(let id):
+            selectedTab = .inventory
+            inventoryPath = NavigationPath()
+            pendingSpoolHighlightId = id
         }
     }
 

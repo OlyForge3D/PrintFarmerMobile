@@ -56,9 +56,42 @@ final class NFCService: SpoolScannerProtocol, @unchecked Sendable {
         }
     }
 
-    // MARK: - Spool Tag Writing
+    // MARK: - Spool Tag Writing (Dual-Record NDEF)
 
-    /// Writes OpenSpool-format NDEF data to an NFC tag from spool data.
+    /// Writes a spool NFC tag with two NDEF records:
+    /// 1. URI record: `printfarmer://spool/{id}` for deep-link navigation
+    /// 2. Text record: OpenSpool JSON for universal reader compatibility
+    func writeSpoolTag(spool: SpoolmanSpool) async throws {
+        guard isAvailable else {
+            throw SpoolScanError.notSupported
+        }
+
+        let urlString = "printfarmer://spool/\(spool.id)"
+        guard let uriPayload = NFCNDEFPayload.wellKnownTypeURIPayload(string: urlString) else {
+            throw SpoolScanError.invalidPayload("Could not create spool tag URL.")
+        }
+
+        guard let jsonData = NFCTagParser.createOpenSpoolPayload(from: spool),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw SpoolScanError.invalidPayload("Could not create spool tag payload.")
+        }
+
+        let textPayload = NFCNDEFPayload.wellKnownTypeTextPayload(string: jsonString, locale: .current)!
+        let message = NFCNDEFMessage(records: [uriPayload, textPayload])
+
+        let spoolName = spool.filamentName ?? spool.name
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let delegate = NFCMessageWriteDelegate(message: message, continuation: continuation)
+            let session = NFCTagReaderSession(pollingOption: .iso14443, delegate: delegate, queue: nil)
+            session?.alertMessage = "Hold your iPhone near the NFC tag to write spool data for \(spoolName)."
+            objc_setAssociatedObject(session as Any, &NFCMessageWriteDelegate.associatedKey, delegate, .OBJC_ASSOCIATION_RETAIN)
+            session?.begin()
+        }
+    }
+
+    // MARK: - Legacy Spool Tag Writing
+
+    /// Writes OpenSpool-format NDEF data to an NFC tag from spool data (single-record format).
     func writeTag(spool: SpoolmanSpool) async throws {
         guard isAvailable else {
             throw SpoolScanError.notSupported
@@ -220,7 +253,7 @@ private final class NFCMessageWriteDelegate: NSObject, NFCTagReaderSessionDelega
                     session.invalidate(errorMessage: "Write failed.")
                     self.resume(throwing: SpoolScanError.invalidPayload(writeError.localizedDescription))
                 } else {
-                    session.alertMessage = "Printer tag written successfully!"
+                    session.alertMessage = "Tag written successfully!"
                     session.invalidate()
                     self.resume(returning: ())
                 }

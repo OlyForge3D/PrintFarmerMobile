@@ -513,7 +513,7 @@ final class SpoolInventoryViewModelTests: XCTestCase {
             initialWeightG: initialWeightG, usedWeightG: nil,
             spoolWeightG: nil, remainingLengthMm: nil, usedLengthMm: nil,
             location: nil, lotNumber: nil, archived: archived,
-            price: nil, comment: nil, usedPercent: nil,
+            price: nil, comment: nil, hasNfcTag: nil, usedPercent: nil,
             remainingPercent: nil
         )
     }

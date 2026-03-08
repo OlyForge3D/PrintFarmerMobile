@@ -14,6 +14,7 @@ final class SpoolInventoryViewModel {
     var searchText = ""
     var selectedMaterial: String?
     var selectedStatus: SpoolStatus?
+    var showOnlyMissingNFC = false
     var isLoading = false
     var errorMessage: String?
 
@@ -23,6 +24,10 @@ final class SpoolInventoryViewModel {
     var scannedSpoolData: ScannedSpoolData?
     var showScannedDataSheet = false
     var highlightedSpoolId: Int?
+
+    // NFC writing state
+    var isWritingNFC = false
+    var writeNFCError: String?
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "SpoolInventory")
     private var spoolService: (any SpoolServiceProtocol)?
@@ -73,6 +78,11 @@ final class SpoolInventoryViewModel {
             }
         }
 
+        // Apply "No NFC Tag" filter
+        if showOnlyMissingNFC {
+            result = result.filter { ($0.hasNfcTag ?? false) == false }
+        }
+
         // Then apply search text filter
         guard !searchText.isEmpty else { return result }
         let query = searchText.lowercased()
@@ -88,13 +98,14 @@ final class SpoolInventoryViewModel {
     }
 
     var hasActiveSearch: Bool {
-        !searchText.isEmpty || selectedMaterial != nil || selectedStatus != nil
+        !searchText.isEmpty || selectedMaterial != nil || selectedStatus != nil || showOnlyMissingNFC
     }
 
     var activeFilterDescription: String {
         var parts: [String] = []
         if let material = selectedMaterial { parts.append("material: \(material)") }
         if let status = selectedStatus { parts.append("status: \(status.rawValue)") }
+        if showOnlyMissingNFC { parts.append("missing NFC tag") }
         if !searchText.isEmpty { parts.append("search: \"\(searchText)\"") }
         return "No spools match your current filters (\(parts.joined(separator: ", ")))."
     }
@@ -102,6 +113,7 @@ final class SpoolInventoryViewModel {
     func clearFilters() {
         selectedMaterial = nil
         selectedStatus = nil
+        showOnlyMissingNFC = false
         searchText = ""
     }
 
@@ -188,5 +200,58 @@ final class SpoolInventoryViewModel {
             logger.warning("Failed to delete spool: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - NFC Tag Writing
+
+    /// Writes a dual-record NFC tag for the given spool using NFCService.
+    func writeNFCTag(for spool: SpoolmanSpool) async -> Bool {
+        #if canImport(UIKit)
+        guard let nfcService = nfcScanner as? NFCService else {
+            writeNFCError = "NFC writing is not available on this device."
+            return false
+        }
+
+        isWritingNFC = true
+        writeNFCError = nil
+
+        do {
+            try await nfcService.writeSpoolTag(spool: spool)
+            markSpoolNFCWritten(id: spool.id)
+            isWritingNFC = false
+            return true
+        } catch {
+            if let scanError = error as? SpoolScanError, case .cancelled = scanError {
+                // User cancelled — not an error
+            } else {
+                writeNFCError = error.localizedDescription
+            }
+            isWritingNFC = false
+            return false
+        }
+        #else
+        writeNFCError = "NFC is not available on this platform."
+        return false
+        #endif
+    }
+
+    /// Updates local state after successful NFC write.
+    private func markSpoolNFCWritten(id: Int) {
+        guard let index = spools.firstIndex(where: { $0.id == id }) else { return }
+        let old = spools[index]
+        spools[index] = SpoolmanSpool(
+            id: old.id, name: old.name, material: old.material,
+            colorHex: old.colorHex, inUse: old.inUse,
+            filamentName: old.filamentName, vendor: old.vendor,
+            registeredAt: old.registeredAt, firstUsedAt: old.firstUsedAt,
+            lastUsedAt: old.lastUsedAt,
+            remainingWeightG: old.remainingWeightG, initialWeightG: old.initialWeightG,
+            usedWeightG: old.usedWeightG, spoolWeightG: old.spoolWeightG,
+            remainingLengthMm: old.remainingLengthMm, usedLengthMm: old.usedLengthMm,
+            location: old.location, lotNumber: old.lotNumber,
+            archived: old.archived, price: old.price, comment: old.comment,
+            hasNfcTag: true,
+            usedPercent: old.usedPercent, remainingPercent: old.remainingPercent
+        )
     }
 }

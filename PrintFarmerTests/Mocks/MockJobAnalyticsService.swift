@@ -15,7 +15,7 @@ final class MockJobAnalyticsService: JobAnalyticsServiceProtocol, @unchecked Sen
     var getQueuedJobsCalledWith: (filterStatus: String?, filterModel: String?, filterMaterial: String?, limit: Int?, offset: Int?)?
     var getStatsCalled = false
     var getModelStatsCalled = false
-    var getHistoryCalledWith: (limit: Int, offset: Int, sortBy: String?, statuses: [String]?, dateStart: Date?, dateEnd: Date?)?
+    var getHistoryCalledWith: (limit: Int?, offset: Int?, sortBy: String?, statuses: String?, dateStart: Date?, dateEnd: Date?)?
     var getTimelineCalledWith: (dateFrom: Date?, dateTo: Date?, printerId: UUID?, filterStatus: String?, limit: Int?)?
     var getJobStateHistoryCalledWith: String?
     var getDurationAnalyticsCalledWith: (printerId: UUID?, dateFrom: Date?, dateTo: Date?)?

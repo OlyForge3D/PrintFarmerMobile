@@ -29,6 +29,9 @@ struct SpoolmanSpool: Codable, Identifiable, Sendable {
     let price: Double?
     let comment: String?
 
+    // NFC
+    let hasNfcTag: Bool?
+
     // Computed by backend
     let usedPercent: Double?
     let remainingPercent: Double?

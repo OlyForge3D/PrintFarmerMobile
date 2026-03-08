@@ -370,7 +370,7 @@ final class AddSpoolViewModelTests: XCTestCase {
             usedWeightG: 0, spoolWeightG: 200, remainingLengthMm: nil,
             usedLengthMm: nil, location: nil, lotNumber: nil,
             archived: false, price: nil, comment: nil,
-            usedPercent: 0, remainingPercent: 100
+            hasNfcTag: nil, usedPercent: 0, remainingPercent: 100
         )
     }
 }

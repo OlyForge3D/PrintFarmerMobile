@@ -50,6 +50,7 @@ final class SpoolPickerViewModelScanTests: XCTestCase {
             archived: false,
             price: nil,
             comment: nil,
+            hasNfcTag: nil,
             usedPercent: nil,
             remainingPercent: nil
         )
