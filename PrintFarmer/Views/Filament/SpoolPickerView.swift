@@ -314,7 +314,7 @@ struct SpoolRowView: View {
                         .foregroundStyle(Color.pfTextSecondary)
                 }
 
-                if let initial = spool.initialWeightG, let remaining = spool.remainingWeightG, initial > 0 {
+                if let initial = spool.initialWeightG, spool.remainingWeightG != nil, initial > 0 {
                     // Weight progress bar
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
