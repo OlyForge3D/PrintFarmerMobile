@@ -305,4 +305,59 @@ final class APIClientTests: XCTestCase {
             XCTFail("Unexpected error type: \(error)")
         }
     }
+    
+    // MARK: - Empty Response Handling
+    
+    func testEmptyResponseWithOptionalTypeReturnsNil() async throws {
+        MockAPIClient.stubEmptySuccess()
+        
+        let result: Printer? = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+        
+        XCTAssertNil(result, "Empty response should return nil for Optional type")
+    }
+    
+    func testEmptyResponseWithNonOptionalTypeThrows() async {
+        MockAPIClient.stubEmptySuccess()
+        
+        do {
+            let _: Printer = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+            XCTFail("Expected NetworkError.decodingFailed for non-optional type with empty body")
+        } catch let error as NetworkError {
+            if case .decodingFailed = error {
+                // Expected
+            } else {
+                XCTFail("Expected .decodingFailed, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+    
+    func testEmptyResponseWith204StatusReturnsNilForOptional() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = TestData.httpResponse(url: request.url, statusCode: 204)
+            return (response, Data())
+        }
+        
+        let result: Printer? = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+        
+        XCTAssertNil(result, "204 No Content should return nil for Optional type")
+    }
+    
+    func testEmptyResponseWithOptionalArrayReturnsNil() async throws {
+        MockAPIClient.stubEmptySuccess()
+        
+        let result: [Printer]? = try await apiClient.get("/api/printers")
+        
+        XCTAssertNil(result, "Empty response should return nil for Optional array type")
+    }
+    
+    func testNonEmptyResponseWithOptionalTypeDecodesProperly() async throws {
+        MockAPIClient.stubResponse(json: TestJSON.printer)
+        
+        let result: Printer? = try await apiClient.get("/api/printers/\(TestData.testUUID)")
+        
+        XCTAssertNotNil(result, "Non-empty response should decode the value")
+        XCTAssertEqual(result?.name, "Prusa MK4")
+    }
 }
