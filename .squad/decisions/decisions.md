@@ -307,6 +307,44 @@ Enhanced SpoolInventoryView and SpoolPickerView with expanded search and materia
 - MVVM pattern maintained; filter logic in ViewModels
 - `hasActiveSearch` computed property gates empty-state display
 
+### 17. Status Filters & Weight Progress for Spool Views (Ripley, 2026-03-08)
+**Status:** Implemented
+
+Added status-based filtering and visual weight indicators to both SpoolInventoryView and SpoolPickerView.
+
+**Implementation:**
+1. **SpoolStatus Enum** — Four cases in SpoolInventoryViewModel:
+   - **Available:** `!inUse && !archived` — ready to assign
+   - **In Use:** `inUse == true` — currently loaded on a printer
+   - **Low:** remaining < 20% of initial — needs attention
+   - **Empty:** remaining == 0 or nil with initial present — replace soon
+
+2. **Status Filter Chips** — Second row of horizontal scrolling capsule buttons:
+   - Same visual style as material chips (pfAccent selected, pfBackgroundTertiary unselected)
+   - Enum-driven UI via `ForEach(SpoolStatus.allCases)`
+   - Filters applied in sequence: material → status → search text
+
+3. **Weight Progress Bars** — Horizontal capsule showing remaining/initial percentage:
+   - Color-coded: green (>50%), yellow (20-50%), red (<20%)
+   - Only shown when both `remainingWeightG` and `initialWeightG` available
+   - Positioned below weight text on right side of row
+
+4. **In-Use Badge** — Small `printer.fill` SF Symbol next to spool name:
+   - Colored with pfAccent for visibility
+   - Only shown when `inUse == true`
+
+**Files Changed:**
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift`
+- `PrintFarmer/ViewModels/SpoolPickerViewModel.swift`
+- `PrintFarmer/Views/Filament/SpoolInventoryView.swift`
+- `PrintFarmer/Views/Filament/SpoolPickerView.swift`
+
+**Impact:**
+- No new dependencies
+- No breaking changes — filters are optional, default to "All"
+- Backward compatible and dark-mode compliant
+- Two-row filter layout avoids UI crowding; consistent with existing material filter pattern
+
 ---
 
 ## Cross-References

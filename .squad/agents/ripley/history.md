@@ -91,7 +91,7 @@
 - Updated search bar prompts to "Search by name, material, color…" for discoverability
 - Key files: `PrintFarmer/Extensions/SpoolmanSpool+ColorName.swift`, both ViewModels, both Views
 
-### Status Filter Chips & Weight Progress Indicators (2026-03-07)
+### Status Filter Chips & Weight Progress Indicators (2026-03-08T00:36Z)
 - **Status filters:** Added second row of filter chips (Available, In Use, Low, Empty) below material chips on both SpoolInventoryView and SpoolPickerView
 - **SpoolStatus enum:** Created in SpoolInventoryViewModel.swift with cases: available, inUse, low, empty
   - Available: `!inUse && !archived`
@@ -107,6 +107,8 @@
 - **Updated hasActiveSearch:** Now includes `selectedStatus != nil` check for proper empty state handling
 - Key files: `SpoolInventoryViewModel.swift`, `SpoolPickerViewModel.swift`, `SpoolInventoryView.swift`, `SpoolPickerView.swift`
 - Design pattern: Same capsule chip style as material filters (pfAccent when selected, pfBackgroundTertiary when not)
+- **Build verified:** All features compiled, integrated, and ready for QA testing
+- **Cross-agent impact:** None — self-contained spool view enhancement
 
 ### NFCService Sendable Pattern (Lambert)
 - NFCService implements Sendable protocol for safe concurrent use in ViewModels
