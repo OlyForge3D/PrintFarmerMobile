@@ -115,3 +115,81 @@
 - **Fix pattern:** Insert `Task.sleep(for: .milliseconds(50))` between NavigationPath reset and append, wrapped in `Task { @MainActor in }`. This forces SwiftUI to process the pop (empty path) in one render pass before the push (new destination) in the next.
 - **Push notification observer gap** — `PushNotificationManager` posts `.pushNotificationTapped` but PFarmApp.swift had no `.onReceive` for it. Added `#if canImport(UIKit)` guarded `.onReceive` handler that extracts the `"link"` URL from userInfo, parses it via `DeepLinkHandler`, and calls `router.navigate(to:)`.
 - **Lesson:** When SwiftUI NavigationPath changes need to pop-then-push, always separate the mutations across render cycles with an async delay.
+
+---
+
+## Upcoming Work: Spool NFC Tag Writing Feature (2026-03-08)
+
+**Status:** Scoped by Dallas, ready for dev  
+**Owned by:** Dallas (lead), WI-3/4/6 assigned to Ripley  
+**Effort:** 4.5 hours (badge + filter + write flow)  
+**Blocking on:** Backend WI-1 (Jeff, 1h) → Model WI-2 (Lambert, 15m)
+
+### Your Responsibilities (WI-3, WI-4, WI-6)
+
+**WI-3: NFC Indicator Badge (1.5h)**
+- Edit SpoolInventoryView to add visual badge next to each spool:
+  - Green checkmark (✓) if `hasNfcTag == true`
+  - Gray dash (−) if `hasNfcTag == false`
+  - Accessibility labels: "NFC tag present" / "NFC tag not written"
+  - Position: Next to spool name or right-aligned column
+- Snapshot test both states
+
+**WI-4: "No NFC Tag" Filter Chip (1h)**
+- Edit SpoolInventoryViewModel: add `showOnlyMissingNFC: Bool = false`
+- Update `filteredSpools` to filter by hasNfcTag:
+  ```swift
+  if showOnlyMissingNFC {
+      result = result.filter { ($0.hasNfcTag ?? true) == false }
+  }
+  ```
+- Edit SpoolInventoryView: add filter chip that toggles `showOnlyMissingNFC`
+- Default OFF (show all); tap toggles on
+
+**WI-6: Write Button & Flow (2h)**
+- Edit SpoolInventoryView to add "Write NFC" button (context menu 3-dot recommended)
+- Show loading state while writing: `.disabled(viewModel.isWritingNFC)`
+- Show error alert if `viewModel.writeNFCError != nil`
+- Show success highlight for 0.5s after write (optional)
+- UX flow:
+  1. User taps "Write NFC" → "Hold your iPhone near the NFC tag" modal
+  2. User holds near tag
+  3. Either success/reload OR error + retry option
+
+### Parallel Work (While Waiting for WI-1)
+- Review SpoolInventoryView structure (line layout, context menu patterns)
+- Plan badge positioning and colors
+- Sketch filter chip placement (existing material chips as reference)
+- Prepare snapshot test cases (HasNFC, NoNFC, FilterActive states)
+
+### Key Architecture Notes
+- Filter logic uses optional coalescing: `($0.hasNfcTag ?? true) == false` (treats missing field as "has NFC")
+- No new data sources; only filtering existing `spools` array
+- Badge colors: `.secondary` tint for missing tags (consistent with existing design)
+- Write button goes in context menu, not as trailing button (less clutter)
+
+### What Lambert Will Deliver (Needed for Your WI-3/4)
+- **WI-2 (15m):** `hasNfcTag: Bool?` field added to SpoolmanSpool model
+- **WI-5 (1.5h):** `writeNFCTag(for spool:)` method in SpoolInventoryViewModel + state props (`isWritingNFC`, `writeNFCError`)
+
+### Coordination Notes
+- Lambert finishes WI-2/5 in parallel with your WI-3/4; you can start implementation once he confirms the model/viewmodel changes
+- Write button (WI-6) depends on WI-5 complete — don't start until ViewModel method exists
+- Ash's tests (WI-8) will use MockSpoolService with varying `hasNfcTag` values — coordinate on mock spool fixtures
+
+### Success Criteria
+- Spool list shows badge (green ✓ / gray −) for each spool
+- Filter works: tap chip, list shows only `hasNfcTag == false`
+- Write button launches NFC session (uses existing NFCService infra)
+- After successful write, `hasNfcTag` refreshes from backend
+- All snapshot tests pass
+- No regression in existing spool/filament features
+
+### Next Steps
+1. **Await:** Jeff's backend WI-1 API contract confirmation
+2. **Await:** Lambert's WI-2 model changes (15m)
+3. **Start:** WI-3 (badge) — can parallelize with WI-4
+4. **Gate:** WI-6 (write flow) blocked until WI-5 viewmodel complete
+5. **Coordinate:** Ash's test fixtures during WI-6 development
+
+---

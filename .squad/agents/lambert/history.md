@@ -100,3 +100,110 @@
 - Root cause #2: Missing `.pushNotificationTapped` observer in PFarmApp — server push deep links were silently dropped
 - Files changed: `AppRouter.swift`, `PFarmApp.swift`
 - Decision logged: `.squad/decisions.md` — NFC/Deep Link Navigation Race Condition Fix (Ripley)
+
+---
+
+## Upcoming Work: Spool NFC Tag Writing Feature (2026-03-08)
+
+**Status:** Scoped by Dallas, ready for dev  
+**Owned by:** Dallas (lead), WI-2/5/7 assigned to Lambert  
+**Effort:** 2 hours total (model + viewmodel + integration)  
+**Blocking on:** Backend WI-1 (Jeff, 1h)
+
+### Your Responsibilities (WI-2, WI-5, WI-7)
+
+**WI-2: iOS Model — Add `hasNfcTag` Field (15m)**
+- Edit `PrintFarmer/Models/FilamentModels.swift`
+- Add field to `SpoolmanSpool` struct:
+  ```swift
+  let hasNfcTag: Bool?
+  ```
+- Mark as optional (`Bool?`) for backward compat with old backend responses
+- Unit test: Decode JSON with/without `hasNfcTag` field
+
+**WI-5: iOS ViewModel — Add Write Action (1.5h)**
+- Edit `SpoolInventoryViewModel`
+- Add state:
+  ```swift
+  var isWritingNFC: Bool = false
+  var writeNFCError: String?
+  var highlightedSpoolId: Int?
+  ```
+- Add method:
+  ```swift
+  func writeNFCTag(for spool: SpoolmanSpool) async {
+      guard let nfcScanner = nfcScanner as? NFCService else {
+          writeNFCError = "NFC not available"
+          return
+      }
+      
+      isWritingNFC = true
+      writeNFCError = nil
+      
+      do {
+          try await nfcScanner.writeTag(spool: spool)
+          highlightedSpoolId = spool.id
+          try await Task.sleep(nanoseconds: 500_000_000) // 0.5s highlight
+          await loadSpools() // Reload to get updated hasNfcTag
+      } catch {
+          writeNFCError = error.localizedDescription
+      }
+      
+      isWritingNFC = false
+  }
+  ```
+- Unit tests: Success path (calls NFCService.writeTag, reloads spools), error path (sets writeNFCError, user can retry), highlight behavior
+
+**WI-7: Integration — Wire Services (30m)**
+- Ensure `SpoolInventoryViewModel.configureNFC(scanner:)` is called:
+  ```swift
+  // In SpoolInventoryView.onAppear or .task
+  viewModel.configureNFC(scanner: services.spoolScanner)
+  ```
+- Verify `ServiceContainer.spoolScanner` is initialized as `NFCService` (already is)
+- Cross-check: `#if canImport(UIKit)` guards in NFCService (already present)
+- Integration test: Verify scanner injection works
+
+### Parallel Work (While Waiting for WI-1)
+- Review SpoolInventoryViewModel structure (existing filters, refresh logic)
+- Plan `writeNFCTag` method error handling (network timeouts, tag write failures, etc.)
+- Check existing `NFCService.writeTag(spool:)` method signature (is it already there? needs wrapping?)
+- Prepare mock implementations for unit tests
+
+### Key Architecture Notes
+- `hasNfcTag: Bool?` — optional to handle old backend without field
+- `nfcScanner as? NFCService` cast is acceptable (printer tag writing is NFC-specific)
+- Post-write refresh via `loadSpools()` will fetch updated `hasNfcTag` from backend
+- `highlightedSpoolId` stored, auto-clears after 0.5s highlight (Ripley uses this in view)
+- Error messages should be user-friendly (reuse existing localization patterns)
+
+### What Backend Provides (WI-1, Jeff)
+- New field: `hasNfcTag: bool` on SpoolmanSpoolDto
+- Endpoint: GET /api/spoolman/spools returns items with `hasNfcTag: true/false`
+- DB backing: Recommend `Spool.HasNfcTag` boolean column (vs querying NfcScanEvents count)
+
+### What Ripley Will Deliver (Needed for Your WI-5)
+- **WI-3/4 (2.5h):** Badge indicator + "No NFC Tag" filter chip in SpoolInventoryView
+- **WI-6 (2h):** Write button + error/success flows in SpoolInventoryView (depends on your WI-5)
+
+### Coordination Notes
+- You deliver WI-2/5 in parallel with Ripley's WI-3/4; she gates WI-6 on your WI-5 completion
+- WI-7 (integration) touches both ViewModels, so coordinate with Ripley before/after WI-6 completion
+- Ash's tests (WI-8) will mock NFCService.writeTag — provide clear method signature for her test stubs
+
+### Success Criteria
+- SpoolmanSpool decodes `hasNfcTag` field (JSON with/without field both work)
+- ViewModel method `writeNFCTag(for:)` calls NFCService.writeTag, reloads spools
+- Error handling is graceful (user-friendly messages, retry option)
+- Highlight behavior works (sets/clears spoolId after delay)
+- All unit tests pass (success + error paths)
+- No regression in existing spool filtering/loading
+
+### Next Steps
+1. **Await:** Jeff's backend WI-1 API contract confirmation
+2. **Start:** WI-2 (model) — no blocker, start immediately (15m)
+3. **Start:** WI-5 (viewmodel) — can parallelize with WI-2
+4. **Coordinate:** Ripley's WI-3/4 in parallel (they gate on WI-2 completion)
+5. **After:** WI-7 (integration) once WI-6 nears completion
+
+---

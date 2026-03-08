@@ -291,3 +291,136 @@ When a user had Printer A open and tapped an NFC notification for Printer B, the
 ## Files Changed
 - `PrintFarmer/Navigation/AppRouter.swift` — navigate(to:) uses async delay
 - `PrintFarmer/PFarmApp.swift` — added .onReceive for .pushNotificationTapped
+
+---
+
+### Feature Scope: Spool NFC Tag Writing for Inventory (Dallas)
+**Date:** 2026-03-08  
+**Requested by:** Jeff Papiez  
+**Status:** Scoped (Ready for dev)  
+**Estimated Effort:** ~10.5 hours across team
+
+## Executive Summary
+
+Jeff wants to add NFC tag **writing** capability for filament spools in inventory. Users should be able to:
+1. See which spools in inventory have NFC tags (visual indicator)
+2. Filter spools to show only those without NFC tags
+3. Write NFC tags for spool data so spools can be linked to printers via NFC scan
+
+This builds on existing **NFC read + printer tag write** infrastructure (NFCService.swift already handles both). The feature plugs into the **Inventory tab** (added Phase 1) and **SpoolInventoryView**.
+
+## Current State & Gaps
+
+**Existing:**
+- ✅ NFCService.swift — reads NFC tags, writes printer tags (`writePrinterTag()`)
+- ✅ NFCTagParser.swift — converts spool ↔ OpenSpool JSON
+- ✅ SpoolInventoryView/ViewModel — displays all spools, supports filters
+- ✅ SpoolPickerView + AddSpoolView with NFC scan buttons
+- ✅ NFCWriteDelegate — infrastructure for NDEF writes
+
+**Missing:**
+- ❌ Backend `hasNfcTag` field on SpoolmanSpool
+- ❌ UI indicator badge (green ✓ / gray −)
+- ❌ "No NFC Tag" filter chip
+- ❌ Write button + action flow in inventory
+
+## Work Breakdown (8 Items, ~10.5h)
+
+| WI | Title | Owner | Effort | Depends |
+|----|-------|-------|--------|---------|
+| 1 | Backend: Add `hasNfcTag` field | Jeff | 1h | — |
+| 2 | iOS Model: Add `hasNfcTag` | Lambert | 15m | WI-1 |
+| 3 | iOS View: NFC Indicator Badge | Ripley | 1.5h | WI-2 |
+| 4 | iOS View: "No NFC Tag" Filter | Ripley | 1h | WI-2 |
+| 5 | iOS ViewModel: Write Action | Lambert | 1.5h | WI-2 |
+| 6 | iOS View: Write Button & Flow | Ripley | 2h | WI-5 |
+| 7 | Integration: Wire Services | Lambert+Ripley | 30m | WI-6 |
+| 8 | Tests: Full Coverage | Ash | 2.5h | All |
+
+**Critical Path:** WI-1 → WI-2 → (WI-3,4 ∥ WI-5) → WI-6 → WI-7 → WI-8
+
+## Key Architectural Decisions
+
+1. **`hasNfcTag` field:** Add as `Bool?` to SpoolmanSpool (optional for backward compat)
+2. **Backend tracking:** Recommend DB column `Spool.HasNfcTag` (simpler than querying NfcScanEvents)
+3. **No new URL scheme:** Spool tags use existing OpenSpool JSON (unlike printer tags which use `printfarmer://printer/{UUID}`)
+4. **Post-write refresh:** Reload full spool list to update `hasNfcTag` from backend
+5. **Write button placement:** Context menu (3-dot) to reduce list clutter
+
+## NFC Payload Design (Existing)
+
+**Format:** OpenSpool JSON  
+```json
+{
+  "material": "PLA",
+  "color_hex": "#0000FF",
+  "brand": "Prusament",
+  "weight_g": 250.0,
+  "spoolman_id": 42
+}
+```
+
+## API Contract (After WI-1)
+
+```json
+GET /api/spoolman/spools
+{
+  "items": [
+    {
+      "id": 42,
+      "name": "Blue PLA",
+      "material": "PLA",
+      "colorHex": "#0000FF",
+      "vendor": "Prusament",
+      "hasNfcTag": false,
+      ...
+    }
+  ],
+  "totalCount": 5
+}
+```
+
+## Risk Mitigation
+
+| Risk | Mitigation |
+|------|-----------|
+| Backend `hasNfcTag` missing | Jeff confirms WI-1 before iOS dev starts |
+| NFC write failure on tag already written | Show error + retry button |
+| Stale cache after write | Reload full spool list (WI-5) |
+| Backend never sees write (phone-only) | Acceptable — user can scan to verify; printer reader will detect on auto-load |
+
+## Questions for Jeff (Pending Confirmation)
+
+1. **`hasNfcTag` logic:** DB column vs NfcScanEvents query count?
+2. **Spool tag URL scheme:** Keep JSON or add `printfarmer://spool/{id}` URI?
+3. **Write button placement:** Context menu (rec.) vs inline vs detail sheet?
+
+## Timeline
+
+| Phase | Work Items | Owner | Duration |
+|-------|-----------|-------|----------|
+| Prep | WI-1 | Jeff | 1 day |
+| Backend Ready | WI-2, WI-5, WI-7 | Lambert | 2h |
+| UI Dev | WI-3, WI-4, WI-6 | Ripley | 4.5h |
+| Testing | WI-8 | Ash | 2.5h |
+| QA/Polish | — | Dallas | 1h |
+| **TOTAL** | — | — | **~2 days, 10.5h** |
+
+## Success Criteria
+
+- ✅ Spool list shows `hasNfcTag` badge for each spool
+- ✅ "No NFC Tag" filter works (shows only `hasNfcTag == false`)
+- ✅ Write button launches NFC session
+- ✅ After successful write, `hasNfcTag` updates in UI
+- ✅ Error handling for write failures (user-friendly messages, retry option)
+- ✅ All tests pass (unit + snapshot)
+- ✅ No regression in existing filament/spool features
+
+## Cross-Team Impact
+
+- **Lambert:** WI-2 (model), WI-5 (viewmodel), WI-7 (services)
+- **Ripley:** WI-3/4 (badge + filter), WI-6 (write button + flow)
+- **Ash:** WI-8 full coverage (unit + snapshot tests)
+- **Dallas:** Orchestration, architecture review, test validation
+
+---

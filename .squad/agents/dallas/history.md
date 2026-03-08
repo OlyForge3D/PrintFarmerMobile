@@ -140,3 +140,22 @@
 - Root causes: NavigationPath race condition + missing notification observer
 - Files changed: `AppRouter.swift`, `PFarmApp.swift`
 - Architecture document: `.squad/decisions.md` — NFC/Deep Link Navigation Race Condition Fix (Ripley)
+
+### Spool NFC Tag Writing Feature Scope (2026-03-08)
+- **Request:** Jeff wants to add NFC tag **writing** for filament spools in inventory (not just reading)
+- **Status:** ✅ Scope delivered (8 work items, ~10.5 hours total)
+- **What exists:** NFCService.swift already handles both read + printer tag write. SpoolInventoryView has NFC scan button. NFCTagParser converts spool↔OpenSpool JSON.
+- **What's missing:** Backend `hasNfcTag` field, UI badge/indicator, "No NFC Tag" filter chip, write button + action
+- **Critical path:** Backend WI-1 (Jeff, 1h) → Model WI-2 (Lambert, 15m) → Views WI-3/4 (Ripley, 2.5h parallel) & ViewModel WI-5 (Lambert, 1.5h) → Write Flow WI-6 (Ripley, 2h) → Integration WI-7 (30m) → Tests WI-8 (Ash, 2.5h)
+- **Key architectural decisions:**
+  1. Add `hasNfcTag: Bool?` to iOS SpoolmanSpool model (optional for backward compat)
+  2. Backend tracks via `Spool.HasNfcTag` boolean column (simpler than querying NfcScanEvents)
+  3. NFC write uses existing OpenSpool JSON payload format + NFCWriteDelegate
+  4. No new URL scheme needed for spool tags (unlike printer tags which use `printfarmer://printer/{UUID}`)
+  5. After write succeeds, reload full spool list to update UI (refresh hasNfcTag from backend)
+  6. Write button in context menu (3-dot) to reduce list clutter
+- **Risk mitigation:** Error handling for tag write failures, user-friendly messages, retry option. Offline write accepted (backend only learns of tag when reader scans)
+- **3 open questions for Jeff:** (1) hasNfcTag logic (DB column vs scan count)? (2) Spool tag URL scheme? (3) Post-write refresh strategy?
+- **Scope document:** Merged into `.squad/decisions.md` — fully detailed 8 WIs, data model changes, API contracts, test plan, timeline
+- **Cross-team impact:** Lambert (WI-2/5), Ripley (WI-3/4/6), Ash (WI-8 tests)
+- **Deliverables:** Orchestration log, session log, decisions.md updated
