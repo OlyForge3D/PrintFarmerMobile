@@ -99,3 +99,13 @@
 - Build verification as a separate agent catches integration issues early; prevents compile-time surprises
 - Maintaining consistent naming conventions across service models/protocols/ViewModels is critical for parallel team execution
 - Testing infrastructure (mocks, fixtures) should be pre-built for services before UIs consume them (Ash's responsibility)
+
+### NFC Printer Tag Deep Linking (2026-03-08)
+- `printfarmer://printer/{UUID}` URL scheme registered in Info.plist via CFBundleURLTypes
+- DeepLinkHandler.swift parses URLs where `url.host == "printer"` and first pathComponent is the UUID
+- NFCMessageWriteDelegate writes full NFCNDEFMessage (URI + text record) vs NFCWriteDelegate which writes raw OpenSpool payload bytes
+- `writePrinterTag` on NFCService is concrete (not on SpoolScannerProtocol) — accessed via `nfcScanner as? NFCService` cast in ViewModel
+- AppRouter.pendingNFCReadyPrinterId is the handoff mechanism for NFC "mark ready" deep links — checked in PrinterDetailView's .task
+- AutoPrintServiceProtocol.markReady(printerId:) is the existing API for marking printers ready
+- Adding files to Xcode project requires unique 24-char hex IDs in pbxproj; must verify against existing IDs to avoid collisions
+- Key files: DeepLinkHandler.swift (Navigation/), NFCService.swift (NFCMessageWriteDelegate), AppRouter.swift (navigate method), PFarmApp.swift (.onOpenURL)

@@ -167,3 +167,26 @@ PrintFarmerTests/ViewModels/
 - ✅ Build succeeds (App target), test target needs model corrections
 
 ---
+
+## 2026-03-08 — DeepLinkHandler Tests (NFC Printer Tag Deep Linking)
+
+**File:** `PrintFarmerTests/Navigation/DeepLinkHandlerTests.swift`
+**Tests:** 8 test cases covering DeepLinkHandler.parse(url:)
+**Status:** ✅ Written (source file may not exist yet — TDD style)
+
+### Test Cases
+1. testParseValidPrinterURL — `printfarmer://printer/{UUID}` → `.printerDetail(id:)`
+2. testParseValidPrinterReadyURL — `printfarmer://printer/{UUID}/ready` → `.printerReady(id:)`
+3. testParseInvalidScheme — `https://` scheme returns nil
+4. testParseUnknownHost — `printfarmer://unknown/` returns nil
+5. testParseInvalidUUID — non-UUID path component returns nil
+6. testParseEmptyPath — no path after host returns nil
+7. testParseReadyCaseInsensitive — `READY` (uppercase) still matches
+8. testParseExtraPathComponents — extra path segments ignored, still returns `.printerReady`
+
+### Learnings
+- DeepLinkHandler is a simple static struct — no mocks needed, pure input/output tests
+- Test UUID: `550e8400-e29b-41d4-a716-446655440000` (reused across test cases)
+- URL scheme: `printfarmer://` with host-based routing (`printer` host)
+- Navigation group added to PrintFarmerTests in Xcode project
+- pbxproj IDs: D1 prefix used for Navigation test entries
