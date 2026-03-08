@@ -191,3 +191,55 @@ Used `@Environment(\.horizontalSizeClass)` throughout to provide adaptive layout
 - No new dependencies or services introduced.
 
 ---
+
+---
+
+### Decision: 5 New Service Layers (Lambert)
+**Date:** 2026-03-08
+**Status:** Implemented
+
+## Context
+Built service layers for Maintenance, AutoPrint, JobAnalytics, Predictive, and Dispatch features.
+
+## Decisions
+
+1. **PredictionRequest uses optional fields** — Existing PredictiveViewModel passes `material: String?` and `estimatedDurationSeconds: Int?`. Model adapted to match rather than break the ViewModel.
+
+2. **JobFailurePrediction has dual probability fields** — Both `failureProbability` (used by ViewModel) and `predictedFailureLikelihood` (from API spec) are present as optionals. Backend can return either.
+
+3. **Date query parameters use ISO 8601 plain format** — `APIClient.iso8601Plain.string(from:)` for URL query string dates, consistent with backend expectations.
+
+4. **FleetPrinterStatistics uses computed Identifiable** — `var id: UUID { printerId }` with explicit CodingKeys since JSON has no `id` field.
+
+5. **Request models are Encodable only** — Request DTOs (AcknowledgeAlertRequest, ResolveAlertRequest, etc.) conform to `Encodable, Sendable` but not `Decodable`, since they're never decoded from responses.
+
+## Impact
+- **Ripley:** Can build UI against 5 new protocols (MaintenanceServiceProtocol, AutoPrintServiceProtocol, JobAnalyticsServiceProtocol, PredictiveServiceProtocol, DispatchServiceProtocol)
+- **Ash:** Needs mock implementations for all 5 new service protocols for testing
+- **Dallas:** ServiceContainer now has 5 new `let` properties; any DI routing should account for them
+
+---
+
+### Decision: New Features UI Architecture (Ripley)
+**Date:** 2026-03-08
+**Status:** Implemented
+
+## Context
+Built ViewModels and Views for 7 new features: Maintenance, AutoPrint, Job Analytics, Predictive Insights, Dispatch Dashboard, Job History/Timeline, and Uptime/Reliability.
+
+## Decisions
+
+1. **Maintenance tab added** — `AppTab.maintenance` with `wrench.adjustable` icon, inserted after Alerts in both TabView and NavigationSplitView sidebar. Tab order: Dashboard → Printers → Jobs → Inventory → Alerts → Maintenance → Settings.
+
+2. **6 new AppDestination cases** — `maintenanceAnalytics`, `uptimeReliability`, `predictiveInsights(printerId:)`, `jobAnalytics`, `jobHistory`, `jobTimeline`, `dispatchDashboard`. All handled in the shared `destinationView(for:)` helper.
+
+3. **AutoPrintSection is a standalone component** — Embedded directly in PrinterDetailView (both iPhone and iPad layouts) rather than being part of PrinterDetailViewModel. Has its own `AutoPrintViewModel` and loads its own data via `.task`.
+
+4. **Job Analytics and History accessible from Jobs tab toolbar** — NavigationLink toolbar buttons on JobListView navigate to JobAnalyticsView and JobHistoryView. Timeline accessible from within JobHistoryView.
+
+5. **Dispatch Dashboard accessible from Dashboard** — NavigationLink card at bottom of DashboardView content area.
+
+## Impact
+- **Lambert:** ServiceContainer needs 5 new service properties: `maintenanceService`, `autoPrintService`, `jobAnalyticsService`, `predictiveService`, `dispatchService`. All ViewModels use `configure()` pattern with these service protocols.
+- **Ash:** 7 new ViewModels need test coverage with mock services.
+- **Dallas:** AppRouter has new `maintenance` tab case and `maintenancePath` NavigationPath. AppDestination has 6 new cases.

@@ -203,3 +203,31 @@ For full details on earlier work (JSON decoding, resilient decoders, QA audit fi
 - Ripley's filament/spool features now fully functional with correct filter behavior
 
 ---
+
+## Learnings
+
+### New Service Layers (2026-03-08, Completed 2026-03-08T05:16Z)
+- Created 5 new service layers (15 files) for Maintenance, AutoPrint, JobAnalytics, Predictive, Dispatch
+- **Models:** 30+ new DTOs across 5 model files in PrintFarmer/Models/ServiceModels/
+- **Protocols:** 5 protocol files with default-parameter extensions (same pattern as StatisticsServiceProtocol)
+- **Services:** 5 actor-based service implementations using apiClient.get/post/put
+- **ServiceContainer:** Registered all 5 new services as `let` properties in init
+- **PredictionRequest adapted:** Existing PredictiveViewModel expected `material: String?` and `estimatedDurationSeconds: Int?` (not the task spec's non-optional String and Double). Added `failureProbability` field alongside `predictedFailureLikelihood` to match ViewModel usage.
+- **Date query params:** Used `APIClient.iso8601Plain.string(from:)` for date→string in URL query parameters
+- **FleetPrinterStatistics:** Used computed `id` property (backed by `printerId`) with explicit CodingKeys to satisfy Identifiable without a dedicated `id` JSON field
+- **Build verified:** Zero errors, zero new warnings
+
+### Cross-Agent Work: Ripley's 7-Feature UI Build (2026-03-08)
+- **Ripley (agent-33)** built 7 feature UIs (18 files: 7 ViewModels + 11 Views) in parallel
+- **Features delivered:** Maintenance Analytics, AutoPrint, Job Analytics, Predictive Insights, Dispatch Dashboard, Job History/Timeline, Uptime/Reliability
+- **Navigation:** New Maintenance tab added (6th tab after Inventory); 6 AppDestination cases for drill-down navigation
+- **Integration points:** PrinterDetailView has new AutoPrintSection + Predictive Insights link; DashboardView has Dispatch card; JobListView has Job Analytics/History toolbar buttons
+- **iPad-adaptive:** All new views use horizontalSizeClass for proper multi-column layouts on iPad
+- **Build verification:** Added 33 new files to Xcode, fixed ~10 source mismatches between Lambert's models/protocols and Ripley's ViewModels
+- **Dependency:** All 7 ViewModels reference this batch of 5 service layers; Ripley waiting for final ServiceContainer integration
+
+### Cross-Agent Work: Build Verification & Source Reconciliation (2026-03-08)
+- **Build verification agent** (sync mode) validated Lambert's 15 files + Ripley's 18 files
+- **Source mismatches fixed:** ~10 mismatches between Lambert's model names/protocol methods and Ripley's ViewModel references
+- **Files added:** All 33 new files properly registered in Xcode project.pbxproj with collision-free UUIDs
+- **Outcome:** All code compiled successfully; zero errors, zero new warnings

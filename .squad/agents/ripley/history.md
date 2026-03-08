@@ -230,3 +230,35 @@
 - ✅ Zero warnings, zero lint violations
 
 ---
+
+## Learnings
+
+### 7-Feature UI Build (2026-03-08, Completed 2026-03-08T05:16Z)
+- **Created 7 ViewModels + 11 Views** across Maintenance, AutoPrint, Job Analytics, Predictive Insights, Dispatch, Job History/Timeline, and Uptime/Reliability features
+- **Pattern consistency:** All ViewModels follow `@MainActor @Observable` + `configure(services:)` + `loadX() async` pattern
+- **Navigation integration:** Added `AppTab.maintenance` + `maintenancePath` to AppRouter; 6 new `AppDestination` cases for drill-down navigation
+- **Tab order updated:** Dashboard → Printers → Jobs → Inventory → Alerts → Maintenance → Settings (7 tabs, wrench.adjustable icon)
+- **ContentView:** Added Maintenance tab to both compact (TabView) and regular (NavigationSplitView sidebar) layouts
+- **PrinterDetailView:** Added AutoPrintSection component + Predictive Insights NavigationLink to both iPhone and iPad layouts
+- **DashboardView:** Added Dispatch Dashboard NavigationLink card at bottom
+- **JobListView:** Added toolbar buttons for Job Analytics and Job History navigation
+- **destinationView() helper:** Extended with 6 new cases for routing to all new views
+- **Service protocols referenced:** MaintenanceServiceProtocol, AutoPrintServiceProtocol, JobAnalyticsServiceProtocol, PredictiveServiceProtocol, DispatchServiceProtocol
+- **ServiceContainer expectations:** maintenanceService, autoPrintService, jobAnalyticsService, predictiveService, dispatchService properties (Lambert building these in parallel)
+- **iPad-adaptive:** All new views use `@Environment(\.horizontalSizeClass)` for adaptive grid layouts where applicable
+- **SF Symbols used:** wrench.adjustable, gauge.with.dots.needle.33percent, chart.bar, clock.arrow.circlepath, arrow.triangle.branch, chart.line.text.clipboard
+- **Build status:** 33 new files added to Xcode; ~10 source mismatches with Lambert's models/protocols fixed by build verification; all compiled successfully
+
+### Cross-Agent Work: Lambert's 5 Service Layers (2026-03-08)
+- **Lambert (agent-32)** built 5 service layers (15 files: 5 models, 5 protocols, 5 services) in parallel
+- **Services delivered:** MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService
+- **Models:** 30+ new DTOs covering maintenance issues, auto-print rules, job analytics metrics, failure predictions, dispatch routing
+- **Protocols:** All follow existing pattern (actor-based, with default-parameter extensions)
+- **ServiceContainer:** All 5 services registered and ready for dependency injection
+- **Key design decisions:** PredictionRequest adapted to match ViewModel expectations; FleetPrinterStatistics uses computed Identifiable; date query params use ISO 8601 plain format
+- **Dependency:** All 7 new ViewModels reference these 5 service protocols; ready to integrate once Lambert confirms ServiceContainer registration
+
+### Cross-Agent Work: Build Verification & Source Reconciliation (2026-03-08)
+- **Build verification agent** (sync mode) added 33 new files to Xcode.pbxproj
+- **Source mismatches fixed:** ~10 mismatches between Lambert's model names/protocol methods and Ripley's ViewModel references reconciled
+- **Outcome:** All code compiled; zero errors, zero new warnings across new files
