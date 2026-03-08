@@ -38,28 +38,44 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testLoadDataPopulatesAlertsAndTasks() async {
         let alert = MaintenanceAlert(
             id: UUID(),
-            alertType: "warning",
-            severity: "warning",
-            message: "Nozzle wear detected",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Nozzle wear detected",
+            severity: 2,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         let task = UpcomingMaintenanceTask(
-            id: UUID(),
+            id: UUID().uuidString,
+            taskId: UUID(),
             printerId: UUID(),
             printerName: "Prusa MK3",
             taskName: "Nozzle Replacement",
-            componentName: nil,
-            estimatedDueDate: Date().addingTimeInterval(86400 * 7),
+            component: nil,
+            description: nil,
+            priority: 2,
+            intervalType: "days",
+            intervalValue: 30,
+            dueDate: Date().addingTimeInterval(86400 * 7),
             daysUntilDue: 7,
+            hoursUntilDue: nil,
             isOverdue: false,
-            priority: "medium"
+            isDueToday: false,
+            lastPerformedAt: nil
         )
         mockMaintenanceService.alertsToReturn = [alert]
         mockMaintenanceService.upcomingTasksToReturn = [task]
@@ -147,33 +163,51 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testAcknowledgeAlertUpdatesAlert() async {
         let alert = MaintenanceAlert(
             id: UUID(),
-            alertType: "warning",
-            severity: "warning",
-            message: "Nozzle wear detected",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Nozzle wear detected",
+            severity: 2,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         viewModel.alerts = [alert]
         
         let acknowledged = MaintenanceAlert(
             id: alert.id,
-            alertType: "warning",
-            severity: "warning",
-            message: "Nozzle wear detected",
             printerId: alert.printerId,
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: alert.printerId, name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Nozzle wear detected",
+            severity: 2,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: alert.createdAt,
             acknowledgedAt: Date(),
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         mockMaintenanceService.alertToReturn = acknowledged
         
@@ -187,17 +221,26 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testAcknowledgeAlertHandlesError() async {
         let alert = MaintenanceAlert(
             id: UUID(),
-            alertType: "warning",
-            severity: "warning",
-            message: "Nozzle wear detected",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Nozzle wear detected",
+            severity: 2,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         viewModel.alerts = [alert]
         mockMaintenanceService.errorToThrow = TestError.generic
@@ -213,33 +256,51 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testDismissAlertUpdatesAlert() async {
         let alert = MaintenanceAlert(
             id: UUID(),
-            alertType: "info",
-            severity: "info",
-            message: "Maintenance reminder",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Maintenance reminder",
+            severity: 1,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         viewModel.alerts = [alert]
         
         let dismissed = MaintenanceAlert(
             id: alert.id,
-            alertType: "info",
-            severity: "info",
-            message: "Maintenance reminder",
             printerId: alert.printerId,
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: alert.printerId, name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Maintenance reminder",
+            severity: 1,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: alert.createdAt,
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: Date()
+            resolvedBy: nil,
+            dismissedAt: Date(),
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         mockMaintenanceService.alertToReturn = dismissed
         
@@ -253,17 +314,26 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testDismissAlertHandlesError() async {
         let alert = MaintenanceAlert(
             id: UUID(),
-            alertType: "info",
-            severity: "info",
-            message: "Maintenance reminder",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Maintenance reminder",
+            severity: 1,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         viewModel.alerts = [alert]
         mockMaintenanceService.errorToThrow = TestError.generic
@@ -279,45 +349,72 @@ final class MaintenanceViewModelTests: XCTestCase {
     func testActiveAlertsFiltersOutDismissedAndResolved() {
         let active = MaintenanceAlert(
             id: UUID(),
-            alertType: "warning",
-            severity: "warning",
-            message: "Active alert",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Active alert",
+            severity: 2,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         let dismissed = MaintenanceAlert(
             id: UUID(),
-            alertType: "info",
-            severity: "info",
-            message: "Dismissed alert",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Dismissed alert",
+            severity: 1,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: nil,
             acknowledgedBy: nil,
             resolvedAt: nil,
-            dismissedAt: Date()
+            resolvedBy: nil,
+            dismissedAt: Date(),
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         let resolved = MaintenanceAlert(
             id: UUID(),
-            alertType: "error",
-            severity: "error",
-            message: "Resolved alert",
             printerId: UUID(),
-            printerName: "Prusa MK3",
-            recommendedAction: nil,
+            printer: AlertPrinter(id: UUID(), name: "Prusa MK3"),
+            printerMaintenanceScheduleId: nil,
+            maintenanceTaskId: nil,
+            title: "Alert",
+            message: "Resolved alert",
+            severity: 3,
+            status: .active,
+            printerHoursAtTrigger: 0,
+            hoursSinceLastMaintenance: nil,
+            daysSinceLastMaintenance: nil,
             createdAt: Date(),
             acknowledgedAt: Date(),
             acknowledgedBy: nil,
             resolvedAt: Date(),
-            dismissedAt: nil
+            resolvedBy: nil,
+            dismissedAt: nil,
+            dismissedBy: nil,
+            dismissalReason: nil,
+            updatedAt: Date()
         )
         viewModel.alerts = [active, dismissed, resolved]
         
@@ -329,26 +426,40 @@ final class MaintenanceViewModelTests: XCTestCase {
     
     func testSortedUpcomingTasksSortsByDueDate() {
         let farFuture = UpcomingMaintenanceTask(
-            id: UUID(),
+            id: UUID().uuidString,
+            taskId: UUID(),
             printerId: UUID(),
             printerName: "Prusa MK3",
             taskName: "Belt Replacement",
-            componentName: nil,
-            estimatedDueDate: Date().addingTimeInterval(86400 * 30),
+            component: nil,
+            description: nil,
+            priority: 1,
+            intervalType: "days",
+            intervalValue: 30,
+            dueDate: Date().addingTimeInterval(86400 * 30),
             daysUntilDue: 30,
+            hoursUntilDue: nil,
             isOverdue: false,
-            priority: "low"
+            isDueToday: false,
+            lastPerformedAt: nil
         )
         let nearFuture = UpcomingMaintenanceTask(
-            id: UUID(),
+            id: UUID().uuidString,
+            taskId: UUID(),
             printerId: UUID(),
             printerName: "Prusa MK3",
             taskName: "Nozzle Check",
-            componentName: nil,
-            estimatedDueDate: Date().addingTimeInterval(86400 * 3),
+            component: nil,
+            description: nil,
+            priority: 3,
+            intervalType: "days",
+            intervalValue: 30,
+            dueDate: Date().addingTimeInterval(86400 * 3),
             daysUntilDue: 3,
+            hoursUntilDue: nil,
             isOverdue: false,
-            priority: "high"
+            isDueToday: false,
+            lastPerformedAt: nil
         )
         viewModel.upcomingTasks = [farFuture, nearFuture]
         

@@ -72,11 +72,11 @@ struct MaintenanceAlertRow: View {
 
     private var severityIcon: some View {
         Group {
-            switch alert.severity.lowercased() {
-            case "critical":
+            switch alert.severity {
+            case 4:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(Color.pfError)
-            case "warning":
+            case 3:
                 Image(systemName: "exclamationmark.circle.fill")
                     .foregroundStyle(Color.pfWarning)
             default:
@@ -87,17 +87,17 @@ struct MaintenanceAlertRow: View {
     }
 
     private var alertBackground: Color {
-        switch alert.severity.lowercased() {
-        case "critical": Color.pfError.opacity(0.05)
-        case "warning": Color.pfWarning.opacity(0.05)
+        switch alert.severity {
+        case 4: Color.pfError.opacity(0.05)
+        case 3: Color.pfWarning.opacity(0.05)
         default: Color.pfCard
         }
     }
 
     private var alertBorderColor: Color {
-        switch alert.severity.lowercased() {
-        case "critical": Color.pfError.opacity(0.3)
-        case "warning": Color.pfWarning.opacity(0.3)
+        switch alert.severity {
+        case 4: Color.pfError.opacity(0.3)
+        case 3: Color.pfWarning.opacity(0.3)
         default: Color.pfBorder
         }
     }

@@ -19,7 +19,7 @@ final class MockMaintenanceService: MaintenanceServiceProtocol, @unchecked Senda
     var acknowledgeAlertCalledWith: (id: UUID, request: AcknowledgeAlertRequest)?
     var resolveAlertCalledWith: (id: UUID, request: ResolveAlertRequest)?
     var dismissAlertCalledWith: (id: UUID, request: DismissAlertRequest)?
-    var getUpcomingCalledWith: (lookaheadDays: Int, includeOverdue: Bool, printerId: UUID?)?
+    var getUpcomingCalledWith: (lookaheadDays: Int?, includeOverdue: Bool?, printerId: UUID?)?
     var getTrendsCalled = false
     var getComponentLifespanCalled = false
     var getCostCalledWith: Int?

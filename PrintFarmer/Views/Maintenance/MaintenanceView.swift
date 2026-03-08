@@ -126,7 +126,7 @@ struct MaintenanceView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                if let dueDate = task.estimatedDueDate {
+                if let dueDate = task.dueDate {
                     Text(dueDate, style: .relative)
                         .font(.caption)
                         .foregroundStyle(task.isOverdue ? Color.pfError : .secondary)

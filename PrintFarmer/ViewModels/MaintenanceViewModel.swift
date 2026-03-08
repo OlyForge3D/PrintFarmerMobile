@@ -88,6 +88,6 @@ final class MaintenanceViewModel {
     }
 
     var sortedUpcomingTasks: [UpcomingMaintenanceTask] {
-        upcomingTasks.sorted { ($0.estimatedDueDate ?? .distantFuture) < ($1.estimatedDueDate ?? .distantFuture) }
+        upcomingTasks.sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
     }
 }
