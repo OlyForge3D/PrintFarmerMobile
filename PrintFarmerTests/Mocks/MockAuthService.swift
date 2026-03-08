@@ -8,13 +8,17 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var authenticated = false
 
     // Call tracking
-    var loginCalledWith: (serverURL: String, username: String, password: String)?
+    var loginCalledWithServerURL: String?
+    var loginCalledWithUsername: String?
+    var loginCalledWithPassword: String?
     var logoutCalled = false
     var restoreSessionCalled = false
     var currentUserCalled = false
 
     func login(serverURL: String, username: String, password: String) async throws -> AuthResponse {
-        loginCalledWith = (serverURL, username, password)
+        loginCalledWithServerURL = serverURL
+        loginCalledWithUsername = username
+        loginCalledWithPassword = password
         if let error = errorToThrow { throw error }
         guard let response = authResponseToReturn else {
             throw NetworkError.authFailed("No response configured")
@@ -49,7 +53,9 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         userToReturn = nil
         errorToThrow = nil
         authenticated = false
-        loginCalledWith = nil
+        loginCalledWithServerURL = nil
+        loginCalledWithUsername = nil
+        loginCalledWithPassword = nil
         logoutCalled = false
         restoreSessionCalled = false
         currentUserCalled = false

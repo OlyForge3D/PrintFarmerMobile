@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PrinterDetailView: View {
     @Environment(ServiceContainer.self) private var services
+    @Environment(AppRouter.self) private var router
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: PrinterDetailViewModel
 
     init(printerId: UUID) {
@@ -55,7 +57,17 @@ struct PrinterDetailView: View {
         }
         .task {
             viewModel.configure(printerService: services.printerService)
+            #if canImport(UIKit)
+            viewModel.configureNFCScanner(services.nfcService)
+            #endif
+            viewModel.configureAutoPrint(services.autoPrintService)
             await viewModel.loadPrinter()
+
+            // Handle NFC "mark ready" deep link
+            if let pendingId = router.pendingNFCReadyPrinterId, pendingId == viewModel.printerId {
+                viewModel.showNFCReadyConfirmation = true
+                router.pendingNFCReadyPrinterId = nil
+            }
         }
         .sheet(isPresented: $viewModel.showSpoolPicker) {
             SpoolPickerView { spool in
@@ -77,6 +89,14 @@ struct PrinterDetailView: View {
                 Text(error)
             }
         }
+        .alert("Mark Printer Ready?", isPresented: $viewModel.showNFCReadyConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Mark Ready") {
+                Task { await viewModel.markPrinterReady() }
+            }
+        } message: {
+            Text("Clear the bed and mark this printer as ready for the next print job?")
+        }
     }
 
     // MARK: - Filament Section
@@ -88,90 +108,7 @@ struct PrinterDetailView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 if let spool = printer.spoolInfo, spool.hasActiveSpool {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color(hex: spool.colorHex ?? "#808080"))
-                            .frame(width: 28, height: 28)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(Color.pfBorder, lineWidth: 1)
-                            )
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(spool.filamentName ?? spool.spoolName ?? "Unknown")
-                                .font(.subheadline.weight(.medium))
-
-                            HStack(spacing: 6) {
-                                if let material = spool.material {
-                                    Text(material)
-                                        .font(.caption.weight(.medium))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.pfBackgroundTertiary, in: Capsule())
-                                }
-                                if let vendor = spool.vendor {
-                                    Text(vendor)
-                                        .font(.caption)
-                                        .foregroundStyle(Color.pfTextSecondary)
-                                }
-                            }
-                        }
-
-                        Spacer()
-                    }
-
-                    // Remaining weight progress
-                    if let remaining = spool.remainingWeightG {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Remaining")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.pfTextSecondary)
-                                Spacer()
-                                Text("\(Int(remaining))g")
-                                    .font(.caption.weight(.medium))
-                            }
-
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.pfBackgroundTertiary)
-                                        .frame(height: 8)
-
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.pfAccent)
-                                        .frame(width: geo.size.width * filamentProgress(remaining: remaining), height: 8)
-                                }
-                            }
-                            .frame(height: 8)
-                        }
-                    }
-
-                    Divider()
-
-                    HStack(spacing: 12) {
-                        Button {
-                            viewModel.loadFilament()
-                        } label: {
-                            Label("Change Filament", systemImage: "arrow.triangle.2.circlepath")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-
-                        Button(role: .destructive) {
-                            Task { await viewModel.ejectFilament() }
-                        } label: {
-                            Label("Eject", systemImage: "eject.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(Color.pfError)
-                    }
-                    .disabled(viewModel.isPerformingAction)
-
-                    NFCScanButton(action: {
-                        viewModel.handleNFCScanToLoad()
-                    }, compact: true)
+                    activeSpoolContent(spool)
                 } else {
                     // No filament loaded
                     VStack(spacing: 12) {
@@ -188,7 +125,7 @@ struct PrinterDetailView: View {
                         Button {
                             viewModel.loadFilament()
                         } label: {
-                            Label("Load Filament", systemImage: "plus.circle.fill")
+                            Label("Set Filament", systemImage: "plus.circle.fill")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -209,6 +146,93 @@ struct PrinterDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private func activeSpoolContent(_ spool: PrinterSpoolInfo) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color(hex: spool.colorHex ?? "#808080"))
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.pfBorder, lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(spool.filamentName ?? spool.spoolName ?? "Unknown")
+                    .font(.subheadline.weight(.medium))
+
+                HStack(spacing: 6) {
+                    if let material = spool.material {
+                        Text(material)
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.pfBackgroundTertiary, in: Capsule())
+                    }
+                    if let vendor = spool.vendor {
+                        Text(vendor)
+                            .font(.caption)
+                            .foregroundStyle(Color.pfTextSecondary)
+                    }
+                }
+            }
+
+            Spacer()
+        }
+
+        if let remaining = spool.remainingWeightG {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Remaining")
+                        .font(.caption)
+                        .foregroundStyle(Color.pfTextSecondary)
+                    Spacer()
+                    Text("\(Int(remaining))g")
+                        .font(.caption.weight(.medium))
+                }
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.pfBackgroundTertiary)
+                            .frame(height: 8)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.pfAccent)
+                            .frame(width: geo.size.width * filamentProgress(remaining: remaining), height: 8)
+                    }
+                }
+                .frame(height: 8)
+            }
+        }
+
+        Divider()
+
+        HStack(spacing: 12) {
+            Button {
+                viewModel.loadFilament()
+            } label: {
+                Label("Change Filament", systemImage: "arrow.triangle.swap")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+
+            Button(role: .destructive) {
+                Task { await viewModel.ejectFilament() }
+            } label: {
+                Label("Eject", systemImage: "eject.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(Color.pfError)
+        }
+        .disabled(viewModel.isPerformingAction)
+
+        NFCScanButton(action: {
+            viewModel.handleNFCScanToLoad()
+        }, compact: true)
+    }
+
     /// Estimate progress assuming ~1000g full spool when no initial weight data is available
     private func filamentProgress(remaining: Double) -> CGFloat {
         let assumed = 1000.0
@@ -219,33 +243,96 @@ struct PrinterDetailView: View {
 
     private func printerContent(_ printer: Printer) -> some View {
         ScrollView {
+            if sizeClass == .regular {
+                iPadPrinterContent(printer)
+            } else {
+                VStack(alignment: .leading, spacing: 20) {
+                    headerSection(printer)
+                    temperatureSection(printer)
+
+                    if let jobName = printer.jobName,
+                       let state = printer.state?.lowercased(),
+                       state == "printing" || state == "paused" {
+                        currentJobSection(jobName: jobName, progress: printer.progress)
+                    }
+
+                    cameraSection(printer)
+                    filamentSection(printer)
+                    AutoPrintSection(printerId: printer.id)
+
+                    NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
+                        HStack {
+                            Label("Predictive Insights", systemImage: "gauge.with.dots.needle.33percent")
+                                .font(.subheadline.weight(.medium))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(Color.pfBorder, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if printer.isOnline {
+                        actionSection(printer)
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    private func iPadPrinterContent(_ printer: Printer) -> some View {
+        HStack(alignment: .top, spacing: 20) {
+            // Left column: header, temps, actions
             VStack(alignment: .leading, spacing: 20) {
-                // Header
                 headerSection(printer)
-
-                // Temperatures
                 temperatureSection(printer)
+                filamentSection(printer)
+                AutoPrintSection(printerId: printer.id)
 
-                // Current Job (only when printing or paused)
+                NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
+                    HStack {
+                        Label("Predictive Insights", systemImage: "gauge.with.dots.needle.33percent")
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                    .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color.pfBorder, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                if printer.isOnline {
+                    actionSection(printer)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            // Right column: camera, current job
+            VStack(alignment: .leading, spacing: 20) {
+                cameraSection(printer)
+
                 if let jobName = printer.jobName,
                    let state = printer.state?.lowercased(),
                    state == "printing" || state == "paused" {
                     currentJobSection(jobName: jobName, progress: printer.progress)
                 }
-
-                // Camera Snapshot
-                cameraSection(printer)
-
-                // Filament
-                filamentSection(printer)
-
-                // Actions
-                if printer.isOnline {
-                    actionSection(printer)
-                }
             }
-            .padding()
+            .frame(maxWidth: .infinity)
         }
+        .padding()
     }
 
     // MARK: - Header
@@ -505,6 +592,19 @@ struct PrinterDetailView: View {
                 }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
+
+                #if canImport(UIKit)
+                // Write NFC printer tag
+                Button {
+                    viewModel.writeNFCPrinterTag()
+                } label: {
+                    Label("Write NFC Tag", systemImage: "wave.3.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(Color.pfAccent)
+                .accessibilityLabel("Write NFC printer identification tag")
+                #endif
 
                 // Emergency Stop (always available when online)
                 Button(role: .destructive) {

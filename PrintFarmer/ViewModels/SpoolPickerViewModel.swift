@@ -36,23 +36,30 @@ final class SpoolPickerViewModel {
         let materials = Set(spools.map { $0.material })
         return materials.sorted()
     }
-    
+
     var filteredSpools: [SpoolmanSpool] {
         var result = spools
-        
+
+        // Always exclude archived and empty spools from the picker
+        result = result.filter { spool in
+            if spool.archived ?? false { return false }
+            if let remaining = spool.remainingWeightG, remaining <= 0 { return false }
+            return true
+        }
+
         // Apply material filter first
         if let material = selectedMaterial {
             result = result.filter { $0.material == material }
         }
-        
+
         // Apply status filter
         if let status = selectedStatus {
             result = result.filter { spool in
                 switch status {
                 case .available:
-                    return !spool.inUse && !(spool.archived ?? false)
+                    return !(spool.inUse ?? false) && !(spool.archived ?? false)
                 case .inUse:
-                    return spool.inUse
+                    return (spool.inUse ?? false)
                 case .low:
                     guard let remaining = spool.remainingWeightG,
                           let initial = spool.initialWeightG,
@@ -68,7 +75,7 @@ final class SpoolPickerViewModel {
                 }
             }
         }
-        
+
         // Then apply search text filter
         guard !searchText.isEmpty else { return result }
         let query = searchText.lowercased()
@@ -85,6 +92,20 @@ final class SpoolPickerViewModel {
 
     var hasActiveSearch: Bool {
         !searchText.isEmpty || selectedMaterial != nil || selectedStatus != nil
+    }
+
+    var activeFilterDescription: String {
+        var parts: [String] = []
+        if let material = selectedMaterial { parts.append("material: \(material)") }
+        if let status = selectedStatus { parts.append("status: \(status.rawValue)") }
+        if !searchText.isEmpty { parts.append("search: \"\(searchText)\"") }
+        return "No spools match your current filters (\(parts.joined(separator: ", ")))."
+    }
+
+    func clearFilters() {
+        selectedMaterial = nil
+        selectedStatus = nil
+        searchText = ""
     }
 
     func loadSpools() async {

@@ -35,7 +35,7 @@ final class LoginViewModel {
         let urlString = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
         guard let url = URL(string: urlString),
               let scheme = url.scheme,
-              (scheme == "http" || scheme == "https"),
+              scheme == "http" || scheme == "https",
               url.host != nil
         else { return nil }
 

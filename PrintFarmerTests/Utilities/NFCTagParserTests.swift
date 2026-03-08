@@ -209,6 +209,7 @@ final class NFCTagParserTests: XCTestCase {
             archived: false,
             price: nil,
             comment: nil,
+            hasNfcTag: nil,
             usedPercent: nil,
             remainingPercent: nil
         )
@@ -248,6 +249,7 @@ final class NFCTagParserTests: XCTestCase {
             archived: nil,
             price: nil,
             comment: nil,
+            hasNfcTag: nil,
             usedPercent: nil,
             remainingPercent: nil
         )
@@ -287,6 +289,7 @@ final class NFCTagParserTests: XCTestCase {
             archived: nil,
             price: nil,
             comment: nil,
+            hasNfcTag: nil,
             usedPercent: nil,
             remainingPercent: nil
         )

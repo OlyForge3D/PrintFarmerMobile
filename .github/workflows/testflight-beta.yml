@@ -1,0 +1,128 @@
+name: TestFlight Beta Build
+
+on:
+  push:
+    tags:
+      - 'v*-beta*'
+      - 'v*-rc*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Beta environment'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - external
+
+jobs:
+  build-and-upload:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION=$(echo "$TAG_NAME" | sed -E 's/^v(.+)-.*/\1/')
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "📦 Version: $VERSION | Build: $BUILD_NUMBER | Tag: $TAG_NAME"
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Install fastlane
+        run: |
+          sudo gem install fastlane -NV
+
+      - name: Setup code signing with fastlane match
+        env:
+          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: |
+          fastlane match appstore --readonly --git_url "$MATCH_GIT_URL"
+
+      - name: Update build version numbers
+        run: |
+          agvtool new-version -all ${{ steps.version.outputs.build_number }}
+          agvtool new-marketing-version ${{ steps.version.outputs.version }}
+
+      - name: Build for App Store
+        run: |
+          xcodebuild \
+            -project PrintFarmer.xcodeproj \
+            -scheme PrintFarmer \
+            -configuration Release \
+            -derivedDataPath build \
+            -archivePath "build/PrintFarmer.xcarchive" \
+            archive
+
+      - name: Export IPA
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath "build/PrintFarmer.xcarchive" \
+            -exportOptionsPlist .github/ExportOptions.plist \
+            -exportPath "build/IPA"
+
+      - name: Upload to TestFlight
+        env:
+          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+        run: |
+          fastlane pilot upload \
+            --ipa "build/IPA/PrintFarmer.ipa" \
+            --changelog "Beta build from tag: ${{ steps.version.outputs.tag_name }}" \
+            --skip_waiting_for_build_processing
+
+      - name: Notify Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ TestFlight Beta Build Uploaded",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*TestFlight Beta Uploaded*\n*Version:* ${{ steps.version.outputs.version }}\n*Build:* ${{ steps.version.outputs.build_number }}\n*Tag:* ${{ steps.version.outputs.tag_name }}\n*Repo:* <https://github.com/olyforge3d/PrintFarmerMobile|olyforge3d/PrintFarmerMobile>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: "PrintFarmer ${{ steps.version.outputs.version }}"
+          body: |
+            ## Beta Release: ${{ steps.version.outputs.version }}
+            - Build Number: ${{ steps.version.outputs.build_number }}
+            - Status: ✅ Uploaded to TestFlight
+            - Access: Check TestFlight app or email invite
+
+            **Release Notes:** Coming from commit history
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

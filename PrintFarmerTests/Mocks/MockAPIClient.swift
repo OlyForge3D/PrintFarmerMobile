@@ -37,10 +37,10 @@ final class MockAPIClient: @unchecked Sendable {
             let path = request.url?.path ?? ""
             if let match = responses.first(where: { path.contains($0.key) }) {
                 let response = TestData.httpResponse(url: request.url, statusCode: match.value.statusCode)
-                return (response, match.value.json.data(using: .utf8)!)
+                return (response, Data(match.value.json.utf8))
             }
             let response = TestData.httpResponse(url: request.url, statusCode: 404)
-            return (response, "{}".data(using: .utf8)!)
+            return (response, Data("{}".utf8))
         }
     }
 

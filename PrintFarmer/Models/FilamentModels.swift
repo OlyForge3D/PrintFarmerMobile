@@ -7,7 +7,7 @@ struct SpoolmanSpool: Codable, Identifiable, Sendable {
     let name: String
     let material: String
     let colorHex: String?
-    let inUse: Bool
+    let inUse: Bool?
     let filamentName: String?
     let vendor: String?
     let registeredAt: String?
@@ -28,6 +28,9 @@ struct SpoolmanSpool: Codable, Identifiable, Sendable {
     let archived: Bool?
     let price: Double?
     let comment: String?
+
+    // NFC
+    let hasNfcTag: Bool?
 
     // Computed by backend
     let usedPercent: Double?
@@ -98,5 +101,3 @@ struct SpoolmanSpoolRequest: Codable, Sendable {
 struct SetActiveSpoolRequest: Codable, Sendable {
     let spoolId: Int?
 }
-
-

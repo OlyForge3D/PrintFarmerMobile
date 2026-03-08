@@ -40,7 +40,10 @@ struct TemperatureView: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(current?.temperatureFormatted ?? "unknown")\(target != nil && target! > 0 ? ", target \(target!.temperatureFormatted)" : "")")
+        .accessibilityLabel(
+            "\(label): \(current?.temperatureFormatted ?? "unknown")" +
+            "\(target != nil && target! > 0 ? ", target \(target!.temperatureFormatted)" : "")"
+        )
     }
 
     private var temperatureColor: Color {

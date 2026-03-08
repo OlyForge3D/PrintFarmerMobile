@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SpoolInventoryView: View {
     @Environment(ServiceContainer.self) private var services
+    @Environment(AppRouter.self) private var router
     @State private var viewModel = SpoolInventoryViewModel()
     @State private var showAddSpool = false
     @State private var nfcWriteSpool: SpoolmanSpool?
@@ -32,11 +33,31 @@ struct SpoolInventoryView: View {
                         .tint(Color.pfAccent)
                     }
                 } else if viewModel.hasActiveSearch && viewModel.filteredSpools.isEmpty {
-                    ContentUnavailableView.search(text: viewModel.searchText)
+                    VStack(spacing: 0) {
+                        materialFilterChips
+                        statusFilterChips
+                        nfcFilterChip
+                        Spacer()
+                        ContentUnavailableView {
+                            Label("No Matching Spools", systemImage: "line.3.horizontal.decrease.circle")
+                        } description: {
+                            Text(viewModel.activeFilterDescription)
+                        } actions: {
+                            Button("Clear Filters") {
+                                withAnimation {
+                                    viewModel.clearFilters()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.pfAccent)
+                        }
+                        Spacer()
+                    }
                 } else {
                     VStack(spacing: 0) {
                         materialFilterChips
                         statusFilterChips
+                        nfcFilterChip
                         spoolList
                     }
                 }
@@ -103,9 +124,7 @@ struct SpoolInventoryView: View {
             }
             .sheet(item: $nfcWriteSpool) { spool in
                 NFCWriteView(spool: spool) {
-                    // Placeholder: Lambert's NFCService.writeTag() will be called here
-                    // For now, return false since the service isn't wired yet
-                    return false
+                    await viewModel.writeNFCTag(for: spool)
                 }
             }
             .task {
@@ -114,6 +133,10 @@ struct SpoolInventoryView: View {
                 viewModel.configureNFC(scanner: services.nfcService)
                 #endif
                 await viewModel.loadSpools()
+                if let spoolId = router.pendingSpoolHighlightId {
+                    router.pendingSpoolHighlightId = nil
+                    viewModel.highlightedSpoolId = spoolId
+                }
             }
         }
     }
@@ -137,7 +160,7 @@ struct SpoolInventoryView: View {
                             in: Capsule()
                         )
                 }
-                
+
                 // Material chips
                 ForEach(viewModel.availableMaterials, id: \.self) { material in
                     Button {
@@ -165,7 +188,7 @@ struct SpoolInventoryView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     private var statusFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -185,7 +208,7 @@ struct SpoolInventoryView: View {
                             in: Capsule()
                         )
                 }
-                
+
                 // Status chips
                 ForEach(SpoolStatus.allCases, id: \.self) { status in
                     Button {
@@ -213,7 +236,32 @@ struct SpoolInventoryView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
+    private var nfcFilterChip: some View {
+        HStack {
+            Button {
+                withAnimation {
+                    viewModel.showOnlyMissingNFC.toggle()
+                }
+            } label: {
+                Label("No NFC Tag", systemImage: "wave.3.right.circle")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(viewModel.showOnlyMissingNFC ? .white : Color.pfTextSecondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        viewModel.showOnlyMissingNFC ? Color.pfAccent : Color.pfBackgroundTertiary,
+                        in: Capsule()
+                    )
+            }
+            .accessibilityLabel(viewModel.showOnlyMissingNFC ? "Showing spools without NFC tags" : "Filter to spools without NFC tags")
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 4)
+    }
+
     private var spoolList: some View {
         ScrollViewReader { proxy in
             List {
@@ -226,12 +274,14 @@ struct SpoolInventoryView: View {
                         )
                         .id(spool.id)
                         .contextMenu {
-                        Button {
-                            nfcWriteSpool = spool
-                        } label: {
-                            Label("Write NFC Tag", systemImage: "wave.3.right")
+                            if spool.hasNfcTag != true {
+                                Button {
+                                    nfcWriteSpool = spool
+                                } label: {
+                                    Label("Write NFC Tag", systemImage: "wave.3.right")
+                                }
+                            }
                         }
-                    }
             }
             .onDelete { indexSet in
                 let spoolsToDelete = indexSet.map { viewModel.filteredSpools[$0] }
@@ -259,14 +309,14 @@ struct SpoolInventoryView: View {
 
 struct SpoolInventoryRowView: View {
     let spool: SpoolmanSpool
-    
+
     private var weightPercent: Double? {
         guard let remaining = spool.remainingWeightG,
               let initial = spool.initialWeightG,
               initial > 0 else { return nil }
         return remaining / initial
     }
-    
+
     private var weightColor: Color {
         guard let percent = weightPercent else { return .gray }
         if percent > 0.5 { return .green }
@@ -289,11 +339,23 @@ struct SpoolInventoryRowView: View {
                     Text(spool.filamentName ?? spool.name)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.pfTextPrimary)
-                    
-                    if spool.inUse {
+
+                    if spool.inUse ?? false {
                         Image(systemName: "printer.fill")
                             .font(.caption2)
                             .foregroundStyle(Color.pfAccent)
+                    }
+
+                    if spool.hasNfcTag == true {
+                        Image(systemName: "wave.3.right")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                            .accessibilityLabel("NFC tag present")
+                    } else {
+                        Image(systemName: "minus")
+                            .font(.caption2)
+                            .foregroundStyle(.gray)
+                            .accessibilityLabel("NFC tag not written")
                     }
                 }
 
@@ -324,13 +386,13 @@ struct SpoolInventoryRowView: View {
                     Text("\(Int(remaining))/\(Int(initial))g")
                         .font(.caption2)
                         .foregroundStyle(Color.pfTextTertiary)
-                    
+
                     // Weight progress bar
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(Color.pfBackgroundTertiary)
-                            
+
                             Capsule()
                                 .fill(weightColor)
                                 .frame(width: geo.size.width * (weightPercent ?? 0))

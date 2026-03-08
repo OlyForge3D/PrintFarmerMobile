@@ -34,6 +34,21 @@ struct JobListView: View {
                 }
             }
             .navigationTitle("Jobs")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink(value: AppDestination.jobAnalytics) {
+                        Image(systemName: "chart.bar")
+                    }
+                    .accessibilityLabel("Job Analytics")
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink(value: AppDestination.jobHistory) {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                    .accessibilityLabel("Job History")
+                }
+            }
             .refreshable {
                 await viewModel.loadJobs()
             }

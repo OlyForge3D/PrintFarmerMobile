@@ -1,5 +1,6 @@
 import Foundation
 
+// swiftlint:disable file_length
 // MARK: - Enums
 
 enum PrinterBackend: String, Codable, Sendable {
@@ -532,13 +533,6 @@ struct QueueGcodeFileMeta: Codable, Sendable {
     let estimatedPrintTimeSeconds: Int?
     let estimatedFilamentUsageGrams: Int?
     let thumbnailUrl: String?
-}
-
-struct QueueStats: Codable, Sendable {
-    let totalQueued: Int
-    let totalPrinting: Int
-    let totalPaused: Int
-    let averageWaitTimeMinutes: Int
 }
 
 // MARK: - Statistics Summary (matches StatisticsSummaryDto)

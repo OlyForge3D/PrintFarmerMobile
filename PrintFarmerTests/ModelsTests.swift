@@ -19,9 +19,10 @@ final class ModelsTests: XCTestCase {
             "inMaintenance": false,
             "isEnabled": true
         }
-        """.data(using: .utf8)!
+        """
+        let jsonData = Data(json.utf8)
 
-        let printer = try decoder.decode(Printer.self, from: json)
+        let printer = try decoder.decode(Printer.self, from: jsonData)
         XCTAssertEqual(printer.name, "Prusa MK4")
         XCTAssertEqual(printer.backend, .moonraker)
         XCTAssertTrue(printer.isOnline)
@@ -34,9 +35,10 @@ final class ModelsTests: XCTestCase {
             "id": "550e8400-e29b-41d4-a716-446655440000",
             "name": "Bare Printer"
         }
-        """.data(using: .utf8)!
+        """
+        let jsonData = Data(json.utf8)
 
-        let printer = try decoder.decode(Printer.self, from: json)
+        let printer = try decoder.decode(Printer.self, from: jsonData)
         XCTAssertEqual(printer.name, "Bare Printer")
         XCTAssertEqual(printer.backend, .unknown)
         XCTAssertEqual(printer.backendPort, 80)

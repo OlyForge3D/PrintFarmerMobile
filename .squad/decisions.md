@@ -99,707 +99,355 @@ Service-based snapshot fetch handles auth tokens automatically; direct URL provi
 - **Dallas:** Backend needs a device token registration endpoint
 - **Ash:** MockNotificationService updated with new protocol methods; existing tests unaffected
 
-**Files Changed:**
-- PrintFarmer/Services/PushNotificationManager.swift (new)
-- PrintFarmer/App/AppDelegate.swift (new)
-- PrintFarmer/Services/NotificationService.swift (extended)
-- PrintFarmer/Services/APIClient.swift (new postVoid overload)
-- PrintFarmer/Protocols/NotificationServiceProtocol.swift (extended)
-- PrintFarmer/Models/RequestModels.swift (new DeviceTokenRegistration DTO)
-- PrintFarmer/PFarmApp.swift (AppDelegate adaptor + push config)
-- PrintFarmer/Views/Settings/SettingsView.swift (notification toggle)
-- PrintFarmerTests/Mocks/MockNotificationService.swift (new mock methods)
+---
+
+### Decision: XCUITest Target Setup (Ash)
+**Date:** 2025-07-20  
+**Status:** Needs Action (manual Xcode step required)
+
+## Context
+Created XCUITest scaffolding files in `PrintFarmerUITests/` directory to support cross-process UI testing.
+
+## Decision
+XCUITest **files** (PrintFarmerUITests.swift, LoginFlowUITests.swift, PrinterListUITests.swift) are ready, but the **XCUITest target** must be added to `PrintFarmer.xcodeproj` manually in Xcode because:
+1. XCUITest targets require a specific target type (`com.apple.product-type.bundle.ui-testing`) with host app dependency
+2. Build settings (TEST_HOST, TEST_TARGET_NAME) are complex and error-prone to hand-edit in pbxproj
+3. Xcode's "Add Target → UI Testing Bundle" wizard handles all of this correctly
+
+## Required Steps
+1. Open `PrintFarmer.xcodeproj` in Xcode
+2. File → New → Target → "UI Testing Bundle"
+3. Name: `PrintFarmerUITests`, Language: Swift, Target to Test: `PrintFarmer`
+4. Delete the auto-generated test file (our files already exist in `PrintFarmerUITests/`)
+5. Add the 3 existing `.swift` files to the new target
+6. Verify the `--uitesting` launch argument is picked up by the app
+
+## Impact
+- **Ripley:** Should check for `--uitesting` in `ProcessInfo.processInfo.arguments` in `PFarmApp.swift` to enable mock mode
+- **Lambert:** Mock server URL will be passed via launch argument `--mock-server-url=<url>`
+- **All:** UI tests won't run until target is created in Xcode
+
+## Mock Mode Contract
+The UI tests pass `--uitesting` as a launch argument. The app should:
+1. Check `ProcessInfo.processInfo.arguments.contains("--uitesting")`
+2. If true, use stub/mock services instead of real network calls
+3. Optionally accept `--mock-server-url=<url>` for Lambert's mock server
 
 ---
 
-### Copilot Model Directive (Jeff Papiez)
-**Date:** 2026-03-06  
-**Status:** Accepted
-
-#### Recommended Model for Code-Writing Agents
-- Use **claude-opus-4.6** for Ripley (iOS Dev), Lambert (Networking), Ash (UI/Navigation)
-- Use cost-optimized models (Haiku) for Scribe and non-code tasks
-- **Rationale:** Code quality and architectural decisions benefit from stronger model reasoning
-
----
-
-### Login Screen Architecture (Ripley)
-**Date:** 2026-03-06  
+### Decision: MockAPIServer for XCUITest Support (Lambert)
+**Date:** 2026-07-18  
 **Status:** Implemented
 
-#### Form State Separation
-- **LoginViewModel** (`@MainActor @Observable`): Manages serverURL, username, password, validation
-- **AuthViewModel** (`@Observable @unchecked Sendable`): Manages isAuthenticated, currentUser
-- LoginViewModel delegates authentication to AuthViewModel, keeping form concerns isolated
+## Context
+XCUITests run the app in a separate process, so `MockURLProtocol` (in-process URLSession interception) cannot mock API responses for UI tests. We needed a cross-process solution.
 
-#### Server URL Flow
-- User enters server URL in LoginView → LoginViewModel normalizes → AuthViewModel passes to AuthService.login(serverURL:) → AuthService calls APIClient.updateBaseURL()
-- Server URL persisted in UserDefaults (`pf_server_url`)
-- On app launch, APIClient.savedBaseURL() restores last-used server
+## Decision
+Built a real localhost HTTP server (`MockAPIServer`) using Apple's `NWListener` (Network framework) — zero external dependencies. The app checks a `PFARM_MOCK_SERVER_URL` environment variable at launch to redirect API calls to the mock server.
 
-#### Session Restore Pattern
-- AuthViewModel created as `@State` in PFarmApp; AuthService injected via configure(with:) in .task
-- Dark Mode support confirmed working
-- Error handling with animated banner
+## Key Design Choices
+1. **NWListener over URLProtocol** — works across process boundaries for XCUITest
+2. **Random port** — avoids conflicts when tests run in parallel
+3. **Wildcard routes** (`/api/printers/*`) — one route handles all ID-parameterized endpoints
+4. **Environment variable injection** (`PFARM_MOCK_SERVER_URL`) — XCUITests set `app.launchEnvironment["PFARM_MOCK_SERVER_URL"]` to point at mock server
+5. **Configurable responses** — tests can `resetRoutes()` and register scenario-specific routes
 
-**Impact:** 
-- Lambert's AuthService.login(serverURL:) API is concrete
-- Dallas's PFarmApp wiring pattern established
-- Ash has clear dependency injection precedent
+## Impact on Other Agents
+- **Ripley (UI):** Can now build XCUITests that run against deterministic mock data. Use `MockAPIServer` in test setUp, pass `baseURL` via launch environment.
+- **Ash (Testing):** Unit tests still use `MockURLProtocol` — no change. `MockAPIServer` is additive for integration/UI tests.
+- **Dallas (Architecture):** `PFarmApp.init()` now checks `PFARM_MOCK_SERVER_URL` env var before `APIClient.savedBaseURL()`.
+
+## Files Changed
+- `PrintFarmerTests/Helpers/MockAPIServer.swift` — new (server + `MockResponses` enum)
+- `PrintFarmerTests/Helpers/TestFixtures.swift` — added Spoolman fixtures
+- `PrintFarmer/PFarmApp.swift` — added `PFARM_MOCK_SERVER_URL` env var check
+- `PrintFarmer.xcodeproj/project.pbxproj` — registered MockAPIServer.swift
 
 ---
 
-### Auth Response Contract: Single JWT Token (Lambert)
-**Date:** 2026-03-06  
+### Decision: iPad Layout Architecture (Ripley)
+**Date:** 2026-03-07
 **Status:** Implemented
 
-#### Token Model
-- Backend returns single `token` field in AuthenticationResult (not separate access/refresh)
-- iOS AuthResponse updated to match (verified against PFarm1 backend)
+## Context
+The app needed iPad-optimized layouts. All views were iPhone-only (single column, TabView navigation).
 
-#### Token Lifecycle
-- Single JWT stored in Keychain (key: `pf_jwt_token`)
-- No token refresh endpoint; re-authentication required if token expires
-- Session restore via `GET /api/auth/me` validates token; logs out if expired
+## Decision
+Used `@Environment(\.horizontalSizeClass)` throughout to provide adaptive layouts:
 
-#### Base URL Management
-- Server URL entered at login, stored in UserDefaults (`pf_server_url`)
-- APIClient.updateBaseURL() is single mutation point (actor-isolated)
-- Restored on app launch
+1. **ContentView** switches between TabView (compact) and NavigationSplitView with sidebar (regular).
+2. **Dashboard, PrinterList** use multi-column grids on iPad.
+3. **PrinterDetail** uses a two-column layout (info left, camera/job right) on iPad.
+4. **LoginView** caps form width at 500pt on iPad.
 
-**Impact:**
-- Ripley's LoginViewModel can safely call AuthService.login(serverURL:)
-- Dallas's DI pattern compatible with actor isolation
-- No refresh logic needed; simplifies token lifecycle
+## Rationale
+- `horizontalSizeClass` is the standard SwiftUI mechanism for device-adaptive layouts (iOS 17+).
+- NavigationSplitView gives iPad users the expected sidebar pattern without breaking iPhone.
+- `List(selection:)` binding is unavailable on iOS, so sidebar uses explicit Button-based rows with manual highlight.
 
----
-
-### iOS Project Structure (Dallas)
-**Date:** 2025-07-16  
-**Status:** Accepted
-
-#### Architecture: MVVM + Repository Pattern
-- **Views** (SwiftUI) → **ViewModels** (`@Observable`) → **Services** (actor-based) → **APIClient** (actor)
-- Services are actors for thread-safe network access under Swift 6 strict concurrency
-- ViewModels are `@Observable` (not ObservableObject) for modern SwiftUI
-
-#### Navigation: Router + TabView
-- `AppRouter` (`@Observable`) manages tab selection and per-tab `NavigationPath`
-- 5 tabs: Dashboard, Printers, Jobs, Locations, Settings
-- Deep navigation via `AppDestination` enum with associated values
-
-#### Dependency Injection: ServiceContainer
-- Single `ServiceContainer` created at app launch, passed via SwiftUI environment
-- No third-party DI framework — keep it simple
-
-#### Auth: Keychain + JWT
-- KeychainSwift for secure token storage
-- `AuthService` manages login/logout/session restore
-- `AuthViewModel` gates root view (login vs main app)
-
-#### Networking: Actor-based APIClient
-- `APIClient` is a Swift actor — all token and request state is isolated
-- ISO 8601 date decoding, typed `NetworkError` enum
-- Base URL configurable via `PRINTFARMER_API_URL` env var
-
-#### Models: Sendable Codable structs
-- All models conform to `Codable`, `Identifiable`, `Sendable`
-- Organized: `Models.swift` (core), `RequestModels.swift` (DTOs), `SignalRModels.swift` (real-time)
-- Property names match backend JSON (camelCase) — no custom CodingKeys needed
-
-#### SignalR: Deferred
-- Stub created. Client package selection deferred — candidates:
-  - microsoft/signalr-client-swift (official)
-  - moozzyk/SignalR-Client-Swift (community)
-
-#### Build: Dual SPM + Xcode
-- Package.swift for CLI validation (`swift build`)
-- .xcodeproj for full Xcode experience (previews, simulator, device)
-- iOS 17+, Swift 6.0, bundle ID: com.printfarmer.ios
+## Impact
+- All existing iPhone layouts are unchanged (guarded by `sizeClass == .regular` checks).
+- `AppRouter` gained a `sidebarVisibility` property for sidebar column management.
+- No new dependencies or services introduced.
 
 ---
 
-## MVP Build Batch Decisions (Consolidated 2026-03-06T19:11:00Z)
-
-### Phone-First Design Principle (Dallas)
-**Status:** Accepted
-
-- Every feature answers: *"Would someone pull out their phone to do this?"*
-- **Yes for phones:** Quick status glance, remote monitoring, alerts, quick actions, job dispatching
-- **No for phones:** Complex forms, file uploads, slicer workspace, admin tasks, detailed charts
-- **5 MVP Features:** Dashboard (P0), Printer List+Detail (P0), Quick Actions (P0), Job Queue (P1), Notifications (P1)
-- **Total MVP Surface:** 22 API endpoints
-
 ---
 
-### Service Architecture: Protocol-Based Dependency Injection (Ripley, Dallas)
+### Decision: 5 New Service Layers (Lambert)
+**Date:** 2026-03-08
 **Status:** Implemented
 
-#### ViewModel Pattern
-- All ViewModels: `@MainActor @Observable` with optional protocol-typed service properties
-- Services configured via `configure(with:)` method called in view's `.task` modifier
-- ViewModels depend on protocols, not concrete implementations — full testability
+## Context
+Built service layers for Maintenance, AutoPrint, JobAnalytics, Predictive, and Dispatch features.
 
-#### Service Protocols (5 total)
-- `PrinterServiceProtocol` (11 methods: list, get, status, snapshot, pause/resume/cancel/stop/emergency-stop, maintenance)
-- `JobServiceProtocol` (5 methods: list, get, dispatch, cancel, abort)
-- `NotificationServiceProtocol` (5 methods: list, get, mark-read, batch mark-read, unread count)
-- `StatisticsServiceProtocol` (1 method: summary KPIs)
-- `SignalRServiceProtocol` (4 methods: connect, disconnect, subscribe/unsubscribe)
+## Decisions
 
-#### Navigation Wiring
-- Each tab wraps NavigationStack(path:) bound to AppRouter
-- Detail views pushed via AppDestination enum + `.navigationDestination(for:)`
-- Global `destinationView(for:)` helper marked `@MainActor` — centralized resolution, satisfies Swift 6 actor isolation
+1. **PredictionRequest uses optional fields** — Existing PredictiveViewModel passes `material: String?` and `estimatedDurationSeconds: Int?`. Model adapted to match rather than break the ViewModel.
 
-#### Tab Structure Change
-- Replaced Locations tab with Notifications tab (Locations not phone-first; Notifications core value)
-- LocationListView preserved for post-MVP restoration
+2. **JobFailurePrediction has dual probability fields** — Both `failureProbability` (used by ViewModel) and `predictedFailureLikelihood` (from API spec) are present as optionals. Backend can return either.
+
+3. **Date query parameters use ISO 8601 plain format** — `APIClient.iso8601Plain.string(from:)` for URL query string dates, consistent with backend expectations.
+
+4. **FleetPrinterStatistics uses computed Identifiable** — `var id: UUID { printerId }` with explicit CodingKeys since JSON has no `id` field.
+
+5. **Request models are Encodable only** — Request DTOs (AcknowledgeAlertRequest, ResolveAlertRequest, etc.) conform to `Encodable, Sendable` but not `Decodable`, since they're never decoded from responses.
+
+## Impact
+- **Ripley:** Can build UI against 5 new protocols (MaintenanceServiceProtocol, AutoPrintServiceProtocol, JobAnalyticsServiceProtocol, PredictiveServiceProtocol, DispatchServiceProtocol)
+- **Ash:** Needs mock implementations for all 5 new service protocols for testing
+- **Dallas:** ServiceContainer now has 5 new `let` properties; any DI routing should account for them
 
 ---
 
-### SignalR: Native URLSessionWebSocketTask (Lambert)
+### Decision: New Features UI Architecture (Ripley)
+**Date:** 2026-03-08
 **Status:** Implemented
 
-#### Implementation Details
-- Custom client using URLSessionWebSocketTask directly — no third-party dependencies
-- ASP.NET Core SignalR JSON protocol: 0x1E framing, negotiate, handshake, ping/pong
-- Auto-reconnect with exponential backoff (1s → 30s cap, 10 attempts max)
-- Connection state machine with delegate callbacks
+## Context
+Built ViewModels and Views for 7 new features: Maintenance, AutoPrint, Job Analytics, Predictive Insights, Dispatch Dashboard, Job History/Timeline, and Uptime/Reliability.
 
-#### MVP Events
-- `printerupdated`: Composite status delta (state, temps, progress, job info)
-- `jobqueueupdate`: Live job status transitions
+## Decisions
 
-**Impact:** Real-time live updates without polling; critical phone app value
+1. **Maintenance tab added** — `AppTab.maintenance` with `wrench.adjustable` icon, inserted after Alerts in both TabView and NavigationSplitView sidebar. Tab order: Dashboard → Printers → Jobs → Inventory → Alerts → Maintenance → Settings.
+
+2. **6 new AppDestination cases** — `maintenanceAnalytics`, `uptimeReliability`, `predictiveInsights(printerId:)`, `jobAnalytics`, `jobHistory`, `jobTimeline`, `dispatchDashboard`. All handled in the shared `destinationView(for:)` helper.
+
+3. **AutoPrintSection is a standalone component** — Embedded directly in PrinterDetailView (both iPhone and iPad layouts) rather than being part of PrinterDetailViewModel. Has its own `AutoPrintViewModel` and loads its own data via `.task`.
+
+4. **Job Analytics and History accessible from Jobs tab toolbar** — NavigationLink toolbar buttons on JobListView navigate to JobAnalyticsView and JobHistoryView. Timeline accessible from within JobHistoryView.
+
+5. **Dispatch Dashboard accessible from Dashboard** — NavigationLink card at bottom of DashboardView content area.
+
+## Impact
+- **Lambert:** ServiceContainer needs 5 new service properties: `maintenanceService`, `autoPrintService`, `jobAnalyticsService`, `predictiveService`, `dispatchService`. All ViewModels use `configure()` pattern with these service protocols.
+- **Ash:** 7 new ViewModels need test coverage with mock services.
+- **Dallas:** AppRouter has new `maintenance` tab case and `maintenancePath` NavigationPath. AppDestination has 6 new cases.
 
 ---
 
-### Job Queue API: Printer-Centric Overview (Lambert)
+### Decision: NFC Printer Tag Write Delegate Architecture (Ripley)
+**Date:** 2026-03-08
 **Status:** Implemented
 
-#### Endpoint & Model Correction
-- **Path:** `/api/job-queue` (hyphenated)
-- **Response:** `[QueueOverview]` — per-printer queue view, not individual PrintJob collection
-- QueueOverview contains: printer ID, queue depth, current job
-- Individual job detail: `GET /api/job-queue/{id}`
+## Context
+The existing NFCWriteDelegate takes raw `Data` bytes and wraps them in an OpenSpool media-type NDEF record. Printer tags need a URI record (`printfarmer://printer/{UUID}`) plus a text record with the printer name.
 
-#### UI Impact
-- **JobListView:** Redesigned to show QueueOverview (printer queue status) with Active/Queued/Available sections
-- **DashboardView:** Shows printers with current jobs (from Printer.jobName/progress) not separate PrintJob collection
+## Decision
+Created a separate `NFCMessageWriteDelegate` that accepts a full `NFCNDEFMessage` rather than refactoring the existing delegate. The `writePrinterTag` method on `NFCService` is concrete (not added to `SpoolScannerProtocol`) since printer tag writing is NFC-specific and doesn't apply to QR scanner implementations.
+
+## Rationale
+- Keeps the existing spool writing path untouched and stable
+- `NFCMessageWriteDelegate` is more flexible — can write any NDEF message composition
+- Accessing via `nfcScanner as? NFCService` cast is acceptable since printer tag writing is inherently NFC-only
+- iOS handles URI record recognition automatically — no need to modify the read delegate for printer tags
+
+## Alternatives Considered
+- Refactoring NFCWriteDelegate to accept either Data or NFCNDEFMessage — rejected, adds complexity to working code
+- Adding `writePrinterTag` to SpoolScannerProtocol — rejected, QR scanners can't write NFC tags
 
 ---
 
-### Notification Model Specification (Lambert)
+### Decision: NFC/Deep Link Navigation Race Condition Fix (Ripley)
+**Date:** 2026-03-08
 **Status:** Implemented
 
-#### AppNotification Structure
-- `id: String` (not UUID; backend uses string IDs)
-- `type: NotificationType` enum (JobStarted, JobCompleted, JobFailed, JobPaused, JobResumed, QueueAlert, SystemAlert)
-- `subject: String`, `body: String` (not title/message)
-- `read: Bool`, `timestamp: Date`
-- `printerId: String?`, `jobId: String?` (context links)
+## Context
+When a user had Printer A open and tapped an NFC notification for Printer B, the app stayed on Printer A. Two issues:
+1. `AppRouter.navigate(to:)` reset NavigationPath and appended synchronously — SwiftUI batched this as a single update and did an in-place view update instead of pop-then-push.
+2. `PushNotificationManager` posted `.pushNotificationTapped` but no view observed it, so server push notification deep links were silently dropped.
 
-**Breaking Change:** Old placeholder values (info/warning/error/success) replaced with job event names
+## Decisions
 
----
+1. **Async delay between NavigationPath reset and append** — `navigate(to:)` now resets `printersPath` synchronously, then appends the new destination after a 50ms `Task.sleep` in a `@MainActor` Task. This ensures SwiftUI processes the pop before the push.
 
-### APIClient Type Disambiguation (Lambert)
-**Status:** Implemented
+2. **Added `.onReceive` for `.pushNotificationTapped`** — PFarmApp.swift now observes this notification, extracts the `"link"` URL from userInfo, parses via `DeepLinkHandler`, and calls `router.navigate(to:)`. Guarded with `#if canImport(UIKit)`.
 
-#### New Overloads
-- `postVoid(_:)` — POST with no response body
-- `putVoid(_:)` — PUT with no response body
-- `putVoid(_:body:)` — PUT with request body, no response
-- `getData(_:)` — GET returning raw Data (for snapshots)
+## Impact
+- **Lambert:** No changes needed — PushNotificationManager already posts the notification correctly.
+- **Ash:** AppRouter.navigate(to:) is now async internally — any tests calling it should account for the 50ms delay before asserting NavigationPath contents.
+- **Dallas:** No architectural changes — same deep link flow, just properly separated across render cycles.
 
-**Rationale:** Old single `post(_:)` was ambiguous when both void and decoded overloads existed
+## Files Changed
+- `PrintFarmer/Navigation/AppRouter.swift` — navigate(to:) uses async delay
+- `PrintFarmer/PFarmApp.swift` — added .onReceive for .pushNotificationTapped
 
 ---
 
-### Snapshot Handling: Data → UIImage (Ripley)
-**Status:** Implemented
+### Feature Scope: Spool NFC Tag Writing for Inventory (Dallas)
+**Date:** 2026-03-08  
+**Requested by:** Jeff Papiez  
+**Status:** Scoped (Ready for dev)  
+**Estimated Effort:** ~10.5 hours across team
 
-#### Pattern
-- `PrinterServiceProtocol.getSnapshot(id:) -> Data` returns raw image bytes
-- ViewModel loads Data, stores in @State
-- View converts Data → UIImage locally
-- No AsyncImage (no URL support)
-- Handled via `.task` modifier
+## Executive Summary
 
----
+Jeff wants to add NFC tag **writing** capability for filament spools in inventory. Users should be able to:
+1. See which spools in inventory have NFC tags (visual indicator)
+2. Filter spools to show only those without NFC tags
+3. Write NFC tags for spool data so spools can be linked to printers via NFC scan
 
-### Test Infrastructure: MockURLProtocol + Protocol Mocks (Ash)
-**Status:** Implemented
+This builds on existing **NFC read + printer tag write** infrastructure (NFCService.swift already handles both). The feature plugs into the **Inventory tab** (added Phase 1) and **SpoolInventoryView**.
 
-#### Testing Strategy
-- **Network Tests:** MockURLProtocol intercepts URLSession calls — validates full path through APIClient → Service
-- **ViewModel Tests:** Protocol-based mock services via `configure()` — fast, isolated
-- **Model Tests:** Realistic JSON fixtures from backend DTOs — decoder compatibility
+## Current State & Gaps
 
-#### Coverage
-- 145 test cases across 8 suites (APIClient, Auth, Printer, Job, Notification, Model Decoding, LoginViewModel, DashboardViewModel)
-- Full mock infrastructure: MockPrinterService, MockJobService, MockAuthService, MockNotificationService, MockStatisticsService, MockSignalRService
-- TestFixtures with realistic JSON from backend source
+**Existing:**
+- ✅ NFCService.swift — reads NFC tags, writes printer tags (`writePrinterTag()`)
+- ✅ NFCTagParser.swift — converts spool ↔ OpenSpool JSON
+- ✅ SpoolInventoryView/ViewModel — displays all spools, supports filters
+- ✅ SpoolPickerView + AddSpoolView with NFC scan buttons
+- ✅ NFCWriteDelegate — infrastructure for NDEF writes
 
-**Impact:** All team members can run tests to validate work; mocks ready for any new ViewModel or service
+**Missing:**
+- ❌ Backend `hasNfcTag` field on SpoolmanSpool
+- ❌ UI indicator badge (green ✓ / gray −)
+- ❌ "No NFC Tag" filter chip
+- ❌ Write button + action flow in inventory
 
----
+## Work Breakdown (8 Items, ~10.5h)
 
-### Tab Structure: Notifications MVP Priority (Ripley, Dallas)
-**Status:** Implemented
+| WI | Title | Owner | Effort | Depends |
+|----|-------|-------|--------|---------|
+| 1 | Backend: Add `hasNfcTag` field | Jeff | 1h | — |
+| 2 | iOS Model: Add `hasNfcTag` | Lambert | 15m | WI-1 |
+| 3 | iOS View: NFC Indicator Badge | Ripley | 1.5h | WI-2 |
+| 4 | iOS View: "No NFC Tag" Filter | Ripley | 1h | WI-2 |
+| 5 | iOS ViewModel: Write Action | Lambert | 1.5h | WI-2 |
+| 6 | iOS View: Write Button & Flow | Ripley | 2h | WI-5 |
+| 7 | Integration: Wire Services | Lambert+Ripley | 30m | WI-6 |
+| 8 | Tests: Full Coverage | Ash | 2.5h | All |
 
-#### Decision
-- Remove Locations tab (not phone-first)
-- Add Notifications tab (core phone value — print alerts, completions, failures)
-- LocationListView preserved in codebase for post-MVP restoration
+**Critical Path:** WI-1 → WI-2 → (WI-3,4 ∥ WI-5) → WI-6 → WI-7 → WI-8
 
----
+## Key Architectural Decisions
 
-### Swift 6 Strict Concurrency Compliance (Ripley, Dallas)
-**Status:** Implemented
+1. **`hasNfcTag` field:** Add as `Bool?` to SpoolmanSpool (optional for backward compat)
+2. **Backend tracking:** Recommend DB column `Spool.HasNfcTag` (simpler than querying NfcScanEvents)
+3. **No new URL scheme:** Spool tags use existing OpenSpool JSON (unlike printer tags which use `printfarmer://printer/{UUID}`)
+4. **Post-write refresh:** Reload full spool list to update `hasNfcTag` from backend
+5. **Write button placement:** Context menu (3-dot) to reduce list clutter
 
-#### Techniques
-- All ViewModels marked `@MainActor @Observable`
-- Global `destinationView(for:)` helper marked `@MainActor`
-- Platform guards for iOS-only APIs: `#if os(iOS)` / `#if canImport(UIKit)`
-- SPM macOS build compatible; Xcode iOS build retains all features
+## NFC Payload Design (Existing)
 
----
-
-### CRITICAL FINDING: PrinterDetailViewModel Method Mismatches (Ash)
-**Status:** ⚠️ Identified — Requires Ripley Fix
-
-#### 3 Mismatches Found
-| ViewModel Calls | Protocol Has | Mismatch Type |
-|-----------------|--------------|---------------|
-| `snapshotURL(for:)` | `getSnapshot(id:) -> Data` | Method name + return type (URL vs Data) |
-| `cancelPrint(id:)` | `cancel(id:) -> CommandResult` | Method name (cancelPrint vs cancel) |
-| `setMaintenance(id:enabled:)` | `setMaintenanceMode(id:enabled:) -> CommandResult` | Method name (setMaintenance vs setMaintenanceMode) |
-
-**Owner:** Ripley (iOS Dev)
-**Timeline:** URGENT — blocks test suite integration
-**Action:** Update PrinterDetailViewModel method calls to match actual protocol signatures
-
----
-
-### Deferred Features (Post-MVP)
-**Status:** Accepted
-
-- Printer Discovery (complex multi-step, SSE streaming)
-- File Management/Upload (large file handling, limited phone storage)
-- Slicer Integration (3D viewport, complex forms)
-- Camera Live Streams (bandwidth-heavy; snapshots sufficient)
-- Statistics Charts (phone screen not ideal)
-- Maintenance Plans/Schedules (complex forms)
-- User Management (admin-only)
-- System Settings (admin config)
-- Filament/Spool Management (inventory system)
-- NFC Device Management (niche)
-- Webhook Configuration (developer feature)
-- Printer Import/Export (bulk operations)
-- G-code Library (file browsing)
-- Print Projects (project management)
-- Catalog Management (admin)
-
----
-
-## Governance
-
-- All meaningful changes require team consensus
-- Document architectural decisions here
-- Keep history focused on work, decisions focused on direction
-
----
-
-## Phase 2: QR Code Scanning Design
-
-**Date:** 2026-03-07  
-**Owner:** Dallas (Lead/Architect)  
-**Status:** Approved for Phase 2  
-
-### Executive Summary
-
-User requested QR code scanning for Phase 2 to enable spool-to-printer linking via Spoolman QR codes. After backend analysis and iOS capability research, QR scanning is feasible and recommended as a Phase 2 enhancement.
-
-### Backend Analysis
-
-**Spoolman QR Code Format:**
-- Spoolman generates QR codes (not PrintFarmer backend)
-- QR encodes spool ID: `https://<spoolman-host>/spools/<spool-id>` or plain numeric ID
-- Existing backend endpoints already support this:
-  - `GET /api/spools/{id}` — retrieve spool by ID
-  - `POST /api/printers/{id}/active-spool` — link spool to printer
-- **Verdict:** No new backend work needed
-
-### iOS Framework Approach
-
-**Tier 1 (iOS 16+):** VisionKit `DataScannerViewController`
-- Beautiful live barcode UI, Apple ML-based accuracy
-- ~5 lines of integration code
-- Recommended for MVP Phase 2
-
-**Tier 2 (fallback):** AVFoundation (iOS 7+)
-- Works on all iPhones, mature API
-- Custom UI required
-- Deferred to Phase 2.5 if device coverage critical
-
-### Architecture: Shared SpoolScannerProtocol
-
-QR and NFC share the same result: a spool ID. Proposed abstraction:
-
-```swift
-protocol SpoolScannerProtocol {
-    func scan() async -> SpoolScanResult
-}
-
-enum SpoolScanResult {
-    case spoolId(Int)
-    case cancelled
-    case error(SpoolScanError)
-}
-
-// Implementations
-class QRSpoolScanner: SpoolScannerProtocol { ... }
-class NFCSpoolScanner: SpoolScannerProtocol { ... }
-```
-
-**Benefit:** SpoolPickerView doesn't need to know whether user scanned QR or NFC—just calls `scanner.scan()`.
-
-### Phase 2 Work Items
-
-1. **QRSpoolScannerService** (Lambert, 4h)
-   - Wrap VisionKit `DataScannerViewController`
-   - Parse QR payload (3 formats: URL, plain ID, JSON)
-   - Return `SpoolScanResult`
-   - Info.plist: add `NSCameraUsageDescription`
-
-2. **SpoolPickerView Enhancement** (Ripley, 3h)
-   - Add "Scan QR Code" button
-   - Present QR scanner sheet
-   - Auto-load successful spool
-
-3. **Test Coverage** (Ash, 2h)
-   - QRCodeParser tests
-   - SpoolPickerViewModel QR flow tests
-   - MockSpoolScannerService
-
-### QR Payload Parsing
-
-Supports three formats:
-
-**Format 1:** URL with spool ID in path
-```
-https://spoolman.example.com/spools/42
-```
-Extract: `42`
-
-**Format 2:** Plain spool ID
-```
-42
-```
-Extract: Direct parse
-
-**Format 3:** JSON
+**Format:** OpenSpool JSON  
 ```json
-{"spoolId": 42}
-```
-Extract: `spoolId` field
-
-### Permission & Entitlements
-
-**Info.plist:**
-```xml
-<key>NSCameraUsageDescription</key>
-<string>Camera access is needed to scan QR codes on filament spools.</string>
+{
+  "material": "PLA",
+  "color_hex": "#0000FF",
+  "brand": "Prusament",
+  "weight_g": 250.0,
+  "spoolman_id": 42
+}
 ```
 
-No special entitlements required (unlike NFC).
+## API Contract (After WI-1)
 
-### Edge Cases
+```json
+GET /api/spoolman/spools
+{
+  "items": [
+    {
+      "id": 42,
+      "name": "Blue PLA",
+      "material": "PLA",
+      "colorHex": "#0000FF",
+      "vendor": "Prusament",
+      "hasNfcTag": false,
+      ...
+    }
+  ],
+  "totalCount": 5
+}
+```
 
-| Scenario | Behavior |
-|----------|----------|
-| Camera permission denied | Alert: "Camera permission required. Grant in Settings." |
-| Invalid QR (not a spool code) | Scanner continues looking |
-| Spool ID not found on backend | Error: "Spool not found. Try a different label." |
-| User closes scanner | Dismiss sheet, return to SpoolPickerView |
+## Risk Mitigation
+
+| Risk | Mitigation |
+|------|-----------|
+| Backend `hasNfcTag` missing | Jeff confirms WI-1 before iOS dev starts |
+| NFC write failure on tag already written | Show error + retry button |
+| Stale cache after write | Reload full spool list (WI-5) |
+| Backend never sees write (phone-only) | Acceptable — user can scan to verify; printer reader will detect on auto-load |
+
+## Questions for Jeff (Pending Confirmation)
+
+1. **`hasNfcTag` logic:** DB column vs NfcScanEvents query count?
+2. **Spool tag URL scheme:** Keep JSON or add `printfarmer://spool/{id}` URI?
+3. **Write button placement:** Context menu (rec.) vs inline vs detail sheet?
+
+## Timeline
+
+| Phase | Work Items | Owner | Duration |
+|-------|-----------|-------|----------|
+| Prep | WI-1 | Jeff | 1 day |
+| Backend Ready | WI-2, WI-5, WI-7 | Lambert | 2h |
+| UI Dev | WI-3, WI-4, WI-6 | Ripley | 4.5h |
+| Testing | WI-8 | Ash | 2.5h |
+| QA/Polish | — | Dallas | 1h |
+| **TOTAL** | — | — | **~2 days, 10.5h** |
+
+## Success Criteria
+
+- ✅ Spool list shows `hasNfcTag` badge for each spool
+- ✅ "No NFC Tag" filter works (shows only `hasNfcTag == false`)
+- ✅ Write button launches NFC session
+- ✅ After successful write, `hasNfcTag` updates in UI
+- ✅ Error handling for write failures (user-friendly messages, retry option)
+- ✅ All tests pass (unit + snapshot)
+- ✅ No regression in existing filament/spool features
+
+## Cross-Team Impact
+
+- **Lambert:** WI-2 (model), WI-5 (viewmodel), WI-7 (services)
+- **Ripley:** WI-3/4 (badge + filter), WI-6 (write button + flow)
+- **Ash:** WI-8 full coverage (unit + snapshot tests)
+- **Dallas:** Orchestration, architecture review, test validation
+
+---
+
+---
+
+## Spool NFC Tag Dual-Record NDEF Format (Ripley, 2026-03-08)
+
+**Status:** Implemented
+
+### Context
+Spool NFC tags need to work both for in-app deep linking and for universal NFC readers (e.g., OpenSpool-compatible printers).
 
 ### Decision
-
-✅ Add QR code scanning to Phase 2  
-✅ Use VisionKit for iOS 16+ (primary)  
-✅ Design shared `SpoolScannerProtocol` abstraction  
-✅ Estimated effort: 9 hours total  
-⏸️ AVFoundation fallback deferred to Phase 2.5  
-
----
-
-## Phase 2: NFC Scanning Services (Lambert)
-
-**Date:** 2026-03-07  
-**Author:** Lambert  
-**Status:** Implemented
-
-### Decisions
-
-1. **No Info.plist File** — iOS 17+ projects don't generate standalone Info.plist by default. Camera and NFC usage descriptions must be added via Xcode target Info tab.
-
-2. **`#if canImport(UIKit)` Guards** — Scanner services wrapped for SPM macOS build compatibility. ServiceContainer conditionally registers them.
-
-3. **No Backend NFC Endpoint** — NFC scanning/writing is purely client-side. Tags encode spool data in OpenSpool/OpenPrintTag NDEF format. When tag contains `spoolman_id`, ViewModel fetches full data via `SpoolService.getSpool(id:)`.
-
-4. **OpenSpool as Write Format** — When writing NFC tags via `NFCService.writeTag(spool:)`, use OpenSpool format exclusively (community standard).
-
-5. **QRCodeParser Supports Three Formats** — URL paths (`/spools/{id}`), plain numeric (`{id}`), JSON (`{"spoolId": {id}}`). Also accepts `spool_id` and `id` as JSON keys.
-
-### Architecture
-
-- **SpoolScannerProtocol** — Abstract interface (QR + NFC both implement)
-- **QRSpoolScannerService** — Wraps VisionKit DataScannerViewController
-- **NFCService** — NDEF tag read/write
-- **QRCodeParser** — Extract spool ID from QR payload
-- **NFCTagParser** — Decode OpenSpool/OpenPrintTag NDEF records
-- **MockSpoolScannerService** — Test double for ViewModels
-
-### Files Created
-
-1. `PrintFarmer/Services/SpoolScannerProtocol.swift`
-2. `PrintFarmer/Services/QRSpoolScannerService.swift`
-3. `PrintFarmer/Services/NFCService.swift`
-4. `PrintFarmer/Utilities/QRCodeParser.swift`
-5. `PrintFarmer/Utilities/NFCTagParser.swift`
-6. `PrintFarmer/Mocks/MockSpoolScannerService.swift`
-7. `PrintFarmer/Services/ServiceContainer.swift` (updated)
-
----
-
-## Phase 2: Scanning UI (Ripley)
-
-**Date:** 2026-03-07  
-**Author:** Ripley  
-**Status:** Implemented
-
-### UI Components
-
-1. **QRScannerView** — VisionKit wrapper, single-scan mode, UIViewControllerRepresentable
-2. **NFCScanButton** — Reusable component with `compact` variant, checks `NFCNDEFReaderSession.readingAvailable`
-3. **NFCWriteView** — Tag write UI with status indicators
-
-### View Integrations
-
-1. **SpoolPickerView** — "Scan QR Code" button, presents scanner sheet
-2. **AddSpoolView** — Pre-fill from scanned data (`scannedData` parameter, `isPrefilledFromScan` flag)
-3. **SpoolInventoryView** — NFC write action in context menu
-4. **PrinterDetailView** — NFC scan button in filament section
-
-### ViewModel Enhancements
-
-- **SpoolPickerViewModel:** `parseSpoolId(from:)` parser, `configureNFCScanner(_:)` ready for DI
-- **AddSpoolViewModel:** `prefill(from:)` method, scanned data visibility management
-
-### Decisions
-
-- Single-scan mode for QR (stops after first barcode)
-- Permission denial shows alert + Settings link
-- NFC button disabled on unsupported devices
-- Pre-fill banner signals scanned data origin
-- Text parsing supports 3 formats (URL, plain int, JSON)
-
-### Known Limitations
-
-- Info.plist keys not added (requires Xcode target configuration)
-- NFCWriteView.onWrite not yet wired to Lambert's NFCService.writeTag()
-
----
-
-## User Directives (Quality Gates)
-
-**Date:** 2026-03-07  
-**Source:** Jeff Papiez (via Copilot)
-
-### Quality Gate for All Work
-
-All agent deliverables must pass before claiming "done":
-
-1. ✅ `swift build` — compile clean (zero errors)
-2. ✅ `swiftlint lint --quiet` — zero errors (warnings OK as baseline)
-3. ⚠️ `swift test` — has known `@main` linker conflict in SPM; tests validated in Xcode only
-
-**Why:** User requested build validation as part of all work
-
-### QR Code Feature Request
-
-Phase 2 should support reading QR codes (generated by Spoolman) to link spool with printer, in addition to NFC tag scanning/writing.
-
-**Why:** Spoolman generates QR codes; scanning is natural complement to NFC.
-
----
-
-## Phase 2: Test Coverage (Ash)
-
-**Date:** 2026-03-07  
-**Author:** Ash  
-**Status:** Implemented
-
-### Test Files (4 new)
-
-1. **QRCodeParserTests** — 15 cases
-   - URL format parsing (`/spools/{id}`, `/spool/{id}`)
-   - Plain numeric parsing
-   - JSON payloads (id, spoolId, spool_id keys)
-   - Invalid/malformed inputs
-   - Edge cases
-
-2. **NFCTagParserTests** — 18 cases
-   - OpenSpool NDEF record parsing
-   - OpenPrintTag NDEF record parsing
-   - Multi-record handling
-   - Invalid structures
-   - Missing fields
-
-3. **SpoolPickerViewModelScanTests** — 14 cases
-   - Successful QR/NFC scan flows
-   - Permission denial handling
-   - Invalid spool ID (backend lookup failure)
-   - Network errors
-   - User cancellation
-
-4. **MockScannerService** — Test double
-   - Spy: records all scan calls
-   - Stub: returns configured SpoolScanResult
-
-### Coverage Summary
-
-- **61 total test cases** across 4 files
-- **Parser tests:** 33 cases (QR + NFC format variants)
-- **ViewModel tests:** 14 cases (happy path + errors)
-- **Mock infrastructure:** MockScannerService for ViewModel testing
-
-### Limitations
-
-- Integration tests (scanner + network + ViewModel) deferred to Phase 3
-- Device-specific tests (permission flow on physical device) — manual QA
-- NFC tag write flow tests deferred pending NFCService validation
-
-### Recommendations
-
-1. Use MockScannerService for all ViewModel/UI tests
-2. Snapshot tests for QRScannerView/NFCWriteView (Phase 3)
-3. Manual device QA with real Spoolman QR labels + NFC tags
-
----
-# Decision: Job Queue UX — Pause/Resume API Routes
-
-**Date:** 2025-07-25
-**Author:** Ripley (iOS Dev)
-**Status:** Implemented
-
-## Context
-
-The backend has two separate controllers for job operations:
-- `JobQueueController` at `/api/job-queue` — CRUD, dispatch, cancel, abort
-- `JobQueueAnalyticsController` at `/api/job-queue-analytics` — listing with metadata, pause, resume
-
-## Decision
-
-Pause and resume call the analytics controller routes (`/api/job-queue-analytics/jobs/{id}/pause` and `/resume`) rather than the queue controller, because that's where the backend implements them.
-
-## Impact
-
-- Lambert: If the API client or service layer is refactored, note the split routes
-- Ash: MockJobService now has `pauseCalledWith` and `resumeCalledWith` for test tracking
-- Dallas: No navigation changes — actions are within existing JobDetailView
-# Decision: NFC Scan in SpoolInventoryView — Highlight vs Auto-Navigate
-
-**Date:** 2025-01-20
-**Author:** Ripley (iOS)
-**Status:** Implemented
-
-## Context
-When an NFC tag with a `.spoolId` is scanned on the inventory page, we need to show the user which spool was found.
-
-## Decision
-For `.spoolId` results, we scroll to and highlight the matching row (accent color, 2-second fade) rather than navigating to a detail view. This keeps the user on the inventory page and provides quick visual confirmation without a disruptive navigation. For `.newSpoolData`, we present AddSpoolView with pre-filled data — same pattern as SpoolPickerView.
-
-## Rationale
-- Inventory is a browsing context, not a selection context — highlighting feels more natural than auto-selecting
-- SpoolPickerView uses auto-select because its purpose is selection; inventory's purpose is management
-- The 2-second highlight auto-clear prevents stale visual state
-
----
-
-
----
-
-# Decision: Fix GcodeFileName mapping in backend JobQueueService
-
-**Date:** 2025-07-22
-**Author:** Ripley (iOS Dev)
-**Status:** Applied
-
-## Context
-Print job detail pages in the iOS app showed internal on-disk filenames (GUID-based) instead of the original user-uploaded filename. The `StoredFile` base class has two name fields: `Name` (original display name) and `FileName` (GUID-based disk name).
-
-## Decision
-Fixed the backend `JobQueueService.cs` to use `GcodeFile.Name` instead of `GcodeFile.FileName` when populating the `GcodeFileName` field in `JobQueuePrintJobDto`. This was a cross-repo fix applied in `~/s/PFarm1`.
-
-## Impact
-- No iOS model or view changes needed — the iOS `PrintJob.gcodeFileName` field and computed `name` property already display whatever the API sends
-- All API consumers (iOS, web) will now see the original filename
-- Existing print jobs in the database are unaffected since the DTO mapping is computed at query time from the GcodeFile navigation property
-
----
-
-# Decision: pbxproj UUID Generation Must Be Validated
-
-**Date:** 2026-03-07
-**Author:** Ripley (iOS Dev)
-**Status:** Proposed
-
-## Context
-
-Xcode builds were failing because `SpoolScannerProtocol.swift` was assigned the same UUID as `AppDelegate.swift` in `project.pbxproj`. This happened because UUIDs were hand-crafted when adding Phase 2 scanning files outside of Xcode (likely by an agent generating pbxproj entries directly).
-
-SPM builds (`swift build`) passed fine since they use `Package.swift`, masking the issue entirely.
-
-## Decision
-
-When any agent modifies `project.pbxproj` directly (outside Xcode):
-1. **All new UUIDs must be checked for uniqueness** against every existing UUID in the file before insertion.
-2. **Use random 24-character hex strings** (not human-readable patterns like `A1B2C3D4...`) to reduce collision risk.
-3. **Run `plutil -lint` AND `xcodebuild` after changes** — plutil alone won't catch UUID collisions.
-
-## Consequences
-
-- Prevents silent build failures that only surface in Xcode
-- Adds a validation step to any pbxproj-modifying workflow
-# Decision: Extract Auth Gating Into RootView
-
-**Author:** Ripley  
-**Date:** 2025-07-19  
-**Status:** Implemented  
-
-## Decision
-Never gate conditional view rendering on `@Observable` properties inside
-`PFarmApp.body`. Extracted the `isAuthenticated` check into a new
-`RootView` struct that reads `AuthViewModel` via `@Environment`.
-
-## Rationale
-`@Observable` property tracking is unreliable inside `App` struct bodies.
-After login, `isAuthenticated` changed but SwiftUI sometimes didn't
-re-render, causing a blank screen. Moving the check into a `View` body
-(where observation tracking is reliable) fixes the issue.
-
-## Impact
-- **PFarmApp** now delegates all view gating to `RootView`
-- All `.environment()` values provided at the App level
-- New `hasCheckedAuth` flag on `AuthViewModel` enables a launch screen
-  during session restore (eliminates LoginView flash on cold start)
-- Three-state auth flow: checking → authenticated → unauthenticated
-
----
-
-
----
-
+Spool NFC tags use the same dual-record NDEF pattern as printer tags:
+1. **URI record:** `printfarmer://spool/{spoolmanId}` — triggers deep link navigation to spool in inventory
+2. **Text record:** OpenSpool JSON (`material`, `color_hex`, `brand`, `weight_g`, `spoolman_id`) — readable by any NFC reader
+
+Both records are written via `NFCMessageWriteDelegate` (full NDEF message writer), not `NFCWriteDelegate` (raw bytes).
+
+### Key Implementation Details
+- DeepLinkHandler now supports `printfarmer://spool/{id}` URLs
+- AppRouter navigates to inventory tab and highlights spool via `pendingSpoolHighlightId`
+- `writeSpoolTag()` reuses the same delegate as `writePrinterTag()` — no new delegate classes
+- Legacy `writeTag(spool:)` preserved for backward compat but should be deprecated in future
+
+### Team Notes
+- Backend `hasNfcTag: Bool?` field supported by SpoolmanSpoolDto (Jeff's WI-1)
+- Test fixtures need `hasNfcTag: nil` parameter in all SpoolmanSpool initializers going forward
+- Feature restricted to iPhone devices only (Core NFC not available on iPad)

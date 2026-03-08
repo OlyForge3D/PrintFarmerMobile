@@ -425,6 +425,59 @@ enum TestJSON {
     }
     """
 
+    // MARK: Spoolman Spool
+
+    static let spoolmanSpool = """
+    {
+        "id": 1,
+        "name": "PLA Basic Black",
+        "material": "PLA",
+        "colorHex": "#000000",
+        "inUse": true,
+        "filamentName": "Prusament PLA",
+        "vendor": "Prusa Research",
+        "registeredAt": "2025-01-15T10:00:00Z",
+        "firstUsedAt": "2025-01-20T14:00:00Z",
+        "lastUsedAt": "2025-07-17T10:00:00Z",
+        "remainingWeightG": 750.0,
+        "initialWeightG": 1000.0,
+        "usedWeightG": 250.0,
+        "spoolWeightG": 200.0,
+        "remainingLengthMm": 250000.0,
+        "usedLengthMm": 83000.0,
+        "archived": false,
+        "price": 25.99,
+        "usedPercent": 25.0,
+        "remainingPercent": 75.0
+    }
+    """
+
+    static let spoolmanSpoolMinimal = """
+    {
+        "id": 2,
+        "name": "PETG Orange",
+        "material": "PETG",
+        "colorHex": "#FF6600",
+        "inUse": false,
+        "filamentName": "eSUN PETG",
+        "vendor": "eSUN",
+        "remainingWeightG": 1000.0,
+        "initialWeightG": 1000.0,
+        "usedWeightG": 0.0,
+        "archived": false
+    }
+    """
+
+    static let spoolmanSpoolArray = "[\(spoolmanSpool), \(spoolmanSpoolMinimal)]"
+
+    static let spoolmanPagedResult = """
+    {"items": [\(spoolmanSpool), \(spoolmanSpoolMinimal)], "totalCount": 2}
+    """
+
+    static let spoolmanPagedResultEmpty = """
+    {"items": [], "totalCount": 0}
+    """
+
     // MARK: Errors
 
     static let apiError = """
@@ -475,6 +528,14 @@ enum TestData {
 
     static func decodeStatisticsSummary(from json: String = TestJSON.statisticsSummary) throws -> StatisticsSummary {
         try decoder.decode(StatisticsSummary.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeSpoolmanSpool(from json: String = TestJSON.spoolmanSpool) throws -> SpoolmanSpool {
+        try decoder.decode(SpoolmanSpool.self, from: json.data(using: .utf8)!)
+    }
+
+    static func decodeSpoolmanPagedResult(from json: String = TestJSON.spoolmanPagedResult) throws -> SpoolmanPagedResult<SpoolmanSpool> {
+        try decoder.decode(SpoolmanPagedResult<SpoolmanSpool>.self, from: json.data(using: .utf8)!)
     }
 
     static func decodeAuthResponse(from json: String = TestJSON.authResponseSuccess) throws -> AuthResponse {
