@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PrinterDetailView: View {
     @Environment(ServiceContainer.self) private var services
+    @Environment(AppRouter.self) private var router
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: PrinterDetailViewModel
 
@@ -59,7 +60,14 @@ struct PrinterDetailView: View {
             #if canImport(UIKit)
             viewModel.configureNFCScanner(services.nfcService)
             #endif
+            viewModel.configureAutoPrint(services.autoPrintService)
             await viewModel.loadPrinter()
+
+            // Handle NFC "mark ready" deep link
+            if let pendingId = router.pendingNFCReadyPrinterId, pendingId == viewModel.printerId {
+                viewModel.showNFCReadyConfirmation = true
+                router.pendingNFCReadyPrinterId = nil
+            }
         }
         .sheet(isPresented: $viewModel.showSpoolPicker) {
             SpoolPickerView { spool in
@@ -80,6 +88,14 @@ struct PrinterDetailView: View {
             if let error = viewModel.nfcScanError {
                 Text(error)
             }
+        }
+        .alert("Mark Printer Ready?", isPresented: $viewModel.showNFCReadyConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Mark Ready") {
+                Task { await viewModel.markPrinterReady() }
+            }
+        } message: {
+            Text("Clear the bed and mark this printer as ready for the next print job?")
         }
     }
 
@@ -576,6 +592,19 @@ struct PrinterDetailView: View {
                 }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
+
+                #if canImport(UIKit)
+                // Write NFC printer tag
+                Button {
+                    viewModel.writeNFCPrinterTag()
+                } label: {
+                    Label("Write NFC Tag", systemImage: "wave.3.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(Color.pfAccent)
+                .accessibilityLabel("Write NFC printer identification tag")
+                #endif
 
                 // Emergency Stop (always available when online)
                 Button(role: .destructive) {

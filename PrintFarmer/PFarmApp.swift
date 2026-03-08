@@ -34,6 +34,11 @@ struct PFarmApp: App {
                 .environment(themeManager)
                 .tint(Color.pfAccent)
                 .preferredColorScheme(themeManager.preferredColorScheme)
+                .onOpenURL { url in
+                    if let destination = DeepLinkHandler.parse(url: url) {
+                        router.navigate(to: destination)
+                    }
+                }
                 .task {
                     await authViewModel.restoreSession()
                     #if canImport(UIKit)

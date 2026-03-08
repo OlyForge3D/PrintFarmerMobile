@@ -11,6 +11,21 @@ final class AppRouter {
     var maintenancePath = NavigationPath()
     var notificationBadgeCount: Int = 0
     var sidebarVisibility: NavigationSplitViewVisibility = .automatic
+    var pendingNFCReadyPrinterId: UUID?
+
+    func navigate(to destination: DeepLinkDestination) {
+        switch destination {
+        case .printerDetail(let id):
+            selectedTab = .printers
+            printersPath = NavigationPath()
+            printersPath.append(AppDestination.printerDetail(id: id))
+        case .printerReady(let id):
+            selectedTab = .printers
+            printersPath = NavigationPath()
+            pendingNFCReadyPrinterId = id
+            printersPath.append(AppDestination.printerDetail(id: id))
+        }
+    }
 
     func resetToRoot(tab: AppTab) {
         switch tab {

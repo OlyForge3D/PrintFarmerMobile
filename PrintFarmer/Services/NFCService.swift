@@ -31,6 +31,33 @@ final class NFCService: SpoolScannerProtocol, @unchecked Sendable {
 
     // MARK: - Tag Writing
 
+    // MARK: - Printer Tag Writing
+
+    /// Writes a printer identification tag with a deep link URI and printer name.
+    func writePrinterTag(printerId: UUID, printerName: String) async throws {
+        guard isAvailable else {
+            throw SpoolScanError.notSupported
+        }
+
+        let urlString = "printfarmer://printer/\(printerId.uuidString)"
+        guard let uriPayload = NFCNDEFPayload.wellKnownTypeURIPayload(string: urlString) else {
+            throw SpoolScanError.invalidPayload("Could not create printer tag URL.")
+        }
+
+        let namePayload = NFCNDEFPayload.wellKnownTypeTextPayload(string: printerName, locale: .current)!
+        let message = NFCNDEFMessage(records: [uriPayload, namePayload])
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let delegate = NFCMessageWriteDelegate(message: message, continuation: continuation)
+            let session = NFCTagReaderSession(pollingOption: .iso14443, delegate: delegate, queue: nil)
+            session?.alertMessage = "Hold your iPhone near the NFC tag to write printer data for \(printerName)."
+            objc_setAssociatedObject(session as Any, &NFCMessageWriteDelegate.associatedKey, delegate, .OBJC_ASSOCIATION_RETAIN)
+            session?.begin()
+        }
+    }
+
+    // MARK: - Spool Tag Writing
+
     /// Writes OpenSpool-format NDEF data to an NFC tag from spool data.
     func writeTag(spool: SpoolmanSpool) async throws {
         guard isAvailable else {
@@ -129,6 +156,85 @@ private final class NFCReadDelegate: NSObject, NFCNDEFReaderSessionDelegate, @un
 
     private func resume(with result: SpoolScanResult) {
         continuation?.resume(returning: result)
+        continuation = nil
+    }
+}
+
+// MARK: - NFC Message Write Delegate (Printer Tags)
+
+private final class NFCMessageWriteDelegate: NSObject, NFCTagReaderSessionDelegate, @unchecked Sendable {
+    nonisolated(unsafe) static var associatedKey: UInt8 = 0
+    private let message: NFCNDEFMessage
+    private var continuation: CheckedContinuation<Void, Error>?
+
+    init(message: NFCNDEFMessage, continuation: CheckedContinuation<Void, Error>) {
+        self.message = message
+        self.continuation = continuation
+    }
+
+    func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {}
+
+    func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        let nfcError = error as NSError
+        if nfcError.domain == "NFCError" && nfcError.code == 200 {
+            resume(throwing: SpoolScanError.cancelled)
+        } else {
+            resume(throwing: SpoolScanError.invalidPayload(error.localizedDescription))
+        }
+    }
+
+    func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+        nonisolated(unsafe) let session = session
+
+        guard let tag = tags.first else {
+            session.invalidate(errorMessage: "No tag detected.")
+            resume(throwing: SpoolScanError.invalidPayload("No tag detected."))
+            return
+        }
+
+        session.connect(to: tag) { [weak self] error in
+            guard let self else { return }
+            if let error {
+                session.invalidate(errorMessage: "Connection failed.")
+                self.resume(throwing: SpoolScanError.invalidPayload(error.localizedDescription))
+                return
+            }
+
+            var ndefTag: NFCNDEFTag?
+            switch tag {
+            case .iso7816(let t): ndefTag = t
+            case .miFare(let t): ndefTag = t
+            case .iso15693(let t): ndefTag = t
+            case .feliCa(let t): ndefTag = t
+            @unknown default: break
+            }
+
+            guard let ndef = ndefTag else {
+                session.invalidate(errorMessage: "Tag does not support NDEF.")
+                self.resume(throwing: SpoolScanError.invalidPayload("Tag does not support NDEF."))
+                return
+            }
+
+            ndef.writeNDEF(self.message) { writeError in
+                if let writeError {
+                    session.invalidate(errorMessage: "Write failed.")
+                    self.resume(throwing: SpoolScanError.invalidPayload(writeError.localizedDescription))
+                } else {
+                    session.alertMessage = "Printer tag written successfully!"
+                    session.invalidate()
+                    self.resume(returning: ())
+                }
+            }
+        }
+    }
+
+    private func resume(throwing error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
+    }
+
+    private func resume(returning value: Void) {
+        continuation?.resume(returning: value)
         continuation = nil
     }
 }

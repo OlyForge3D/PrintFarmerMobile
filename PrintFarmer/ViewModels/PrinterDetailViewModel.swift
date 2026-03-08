@@ -48,8 +48,10 @@ final class PrinterDetailViewModel {
     var nfcScanError: String?
     var nfcScannedData: ScannedSpoolData?
     var showScannedDataSheet = false
+    var showNFCReadyConfirmation = false
 
     private var nfcScanner: (any SpoolScannerProtocol)?
+    private var autoPrintService: (any AutoPrintServiceProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -64,6 +66,49 @@ final class PrinterDetailViewModel {
 
     func configureNFCScanner(_ scanner: any SpoolScannerProtocol) {
         self.nfcScanner = scanner
+    }
+
+    func configureAutoPrint(_ service: any AutoPrintServiceProtocol) {
+        self.autoPrintService = service
+    }
+
+    // MARK: - NFC Printer Tag Writing
+
+    #if canImport(UIKit)
+    func writeNFCPrinterTag() {
+        guard let printer else { return }
+        guard let nfcService = nfcScanner as? NFCService else {
+            nfcScanError = "NFC writing is not available on this device."
+            return
+        }
+        Task {
+            do {
+                try await nfcService.writePrinterTag(printerId: printer.id, printerName: printer.name)
+            } catch SpoolScanError.cancelled {
+                // User cancelled — do nothing
+            } catch {
+                nfcScanError = error.localizedDescription
+            }
+        }
+    }
+    #endif
+
+    // MARK: - Mark Ready (NFC Deep Link)
+
+    func markPrinterReady() async {
+        guard let autoPrintService else {
+            actionError = "Auto-print service not available."
+            return
+        }
+        isPerformingAction = true
+        actionError = nil
+        do {
+            _ = try await autoPrintService.markReady(printerId: printerId)
+            await loadPrinter()
+        } catch {
+            actionError = error.localizedDescription
+        }
+        isPerformingAction = false
     }
 
     // MARK: - Filament / Spool
