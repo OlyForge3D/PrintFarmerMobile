@@ -11,9 +11,9 @@ final class MockURLProtocol: URLProtocol {
     /// Captures all requests made during the test for assertion.
     nonisolated(unsafe) static var capturedRequests: [URLRequest] = []
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
+    override static func canInit(with request: URLRequest) -> Bool { true }
 
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
         Self.capturedRequests.append(request)

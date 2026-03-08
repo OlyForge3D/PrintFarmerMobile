@@ -36,15 +36,15 @@ final class SpoolPickerViewModel {
         let materials = Set(spools.map { $0.material })
         return materials.sorted()
     }
-    
+
     var filteredSpools: [SpoolmanSpool] {
         var result = spools
-        
+
         // Apply material filter first
         if let material = selectedMaterial {
             result = result.filter { $0.material == material }
         }
-        
+
         // Apply status filter
         if let status = selectedStatus {
             result = result.filter { spool in
@@ -68,7 +68,7 @@ final class SpoolPickerViewModel {
                 }
             }
         }
-        
+
         // Then apply search text filter
         guard !searchText.isEmpty else { return result }
         let query = searchText.lowercased()

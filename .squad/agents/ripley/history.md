@@ -127,3 +127,16 @@ For full details on previous work, see git history and .squad/decisions.md. Summ
 - **Blank screen fix:** RootView extraction + hasCheckedAuth flag pattern
 - **Camera enhancement:** Service-based snapshot + AsyncImage fallback
 - **Phase 2 scanning:** QRScannerView, NFCScanButton, NFCWriteView with pre-fill from scans
+
+### SwiftLint Cleanup & NFC Wiring (2026-03-08)
+- Fixed 28 SwiftLint violations across 10 source files
+- **Trailing whitespace:** Cleaned SpoolPickerViewModel, SpoolInventoryViewModel, SpoolPickerView, SpoolInventoryView
+- **Vertical whitespace:** Removed double blank lines in AuthViewModel and FilamentModels
+- **Control statement:** Removed unnecessary parentheses in LoginViewModel guard condition
+- **Statement position:** Rewrote SpoolmanSpool+ColorName.swift with `} else {` on same line (extracted achromaticNames/dominantChannelNames helpers)
+- **Cyclomatic complexity:** Split approximateColorNames into 3 focused helpers (approximateColorNames, achromaticNames, dominantChannelNames) reducing complexity below threshold
+- **Line length:** Broke long accessibilityLabel in TemperatureView across multiple lines
+- **Function body length:** Extracted activeSpoolContent(_:) from filamentSection in PrinterDetailView
+- **File length:** Suppressed file_length for Models.swift with swiftlint:disable comment (structural, not worth splitting)
+- **NFC wiring:** Added `viewModel.configureNFCScanner(services.nfcService)` in SpoolPickerView .task block (was missing vs SpoolInventoryView pattern)
+- Build verified: BUILD SUCCEEDED, zero SwiftLint warnings in app source (remaining warnings are pre-existing test file issues)

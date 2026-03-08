@@ -1,5 +1,6 @@
 import Foundation
 
+// swiftlint:disable file_length
 // MARK: - Enums
 
 enum PrinterBackend: String, Codable, Sendable {

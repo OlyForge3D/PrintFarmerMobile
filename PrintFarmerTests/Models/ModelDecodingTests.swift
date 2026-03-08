@@ -331,7 +331,7 @@ final class ModelDecodingTests: XCTestCase {
     func testEmptyPrinterArrayDecodes() throws {
         let printers = try decoder.decode(
             [Printer].self,
-            from: "[]".data(using: .utf8)!
+            from: Data("[]".utf8)
         )
         XCTAssertEqual(printers.count, 0)
     }
@@ -339,7 +339,7 @@ final class ModelDecodingTests: XCTestCase {
     func testEmptyJobArrayDecodes() throws {
         let jobs = try decoder.decode(
             [PrintJob].self,
-            from: "[]".data(using: .utf8)!
+            from: Data("[]".utf8)
         )
         XCTAssertEqual(jobs.count, 0)
     }

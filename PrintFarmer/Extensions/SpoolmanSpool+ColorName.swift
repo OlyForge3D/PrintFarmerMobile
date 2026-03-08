@@ -19,33 +19,13 @@ extension SpoolmanSpool {
         let ri = Int(r), gi = Int(g), bi = Int(b)
         let maxC = max(ri, gi, bi)
         let minC = min(ri, gi, bi)
-        var names: [String] = []
 
         // Achromatic
         if maxC - minC < 30 {
-            if maxC < 50 { names.append("black") }
-            else if minC > 200 { names.append("white") }
-            else { names.append("gray"); names.append("grey"); names.append("silver") }
-            return names
+            return achromaticNames(maxC: maxC, minC: minC)
         }
 
-        // Dominant channel heuristics
-        if ri > gi && ri > bi {
-            if gi > 150 && bi < 80 { names.append("orange") }
-            else if gi < 80 && bi < 80 { names.append("red") }
-            else if bi > 100 { names.append("pink"); names.append("magenta") }
-            else { names.append("red") }
-        }
-        if gi > ri && gi > bi {
-            if ri > 150 { names.append("yellow") }
-            else if bi > 100 { names.append("teal"); names.append("cyan") }
-            else { names.append("green") }
-        }
-        if bi > ri && bi > gi {
-            if ri > 100 && gi < 80 { names.append("purple"); names.append("violet") }
-            else if gi > 150 { names.append("cyan"); names.append("teal") }
-            else { names.append("blue") }
-        }
+        var names = dominantChannelNames(ri: ri, gi: gi, bi: bi)
 
         // Yellow catch-all
         if ri > 200 && gi > 200 && bi < 100 { names.append("yellow") }
@@ -54,6 +34,50 @@ extension SpoolmanSpool {
         // Gold
         if ri > 180 && gi > 150 && bi < 80 { names.append("gold") }
 
+        return names
+    }
+
+    private static func achromaticNames(maxC: Int, minC: Int) -> [String] {
+        if maxC < 50 {
+            return ["black"]
+        } else if minC > 200 {
+            return ["white"]
+        } else {
+            return ["gray", "grey", "silver"]
+        }
+    }
+
+    private static func dominantChannelNames(ri: Int, gi: Int, bi: Int) -> [String] {
+        var names: [String] = []
+        if ri > gi && ri > bi {
+            if gi > 150 && bi < 80 {
+                names.append("orange")
+            } else if gi < 80 && bi < 80 {
+                names.append("red")
+            } else if bi > 100 {
+                names.append("pink"); names.append("magenta")
+            } else {
+                names.append("red")
+            }
+        }
+        if gi > ri && gi > bi {
+            if ri > 150 {
+                names.append("yellow")
+            } else if bi > 100 {
+                names.append("teal"); names.append("cyan")
+            } else {
+                names.append("green")
+            }
+        }
+        if bi > ri && bi > gi {
+            if ri > 100 && gi < 80 {
+                names.append("purple"); names.append("violet")
+            } else if gi > 150 {
+                names.append("cyan"); names.append("teal")
+            } else {
+                names.append("blue")
+            }
+        }
         return names
     }
 }

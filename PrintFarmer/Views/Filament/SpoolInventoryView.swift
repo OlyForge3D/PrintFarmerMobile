@@ -137,7 +137,7 @@ struct SpoolInventoryView: View {
                             in: Capsule()
                         )
                 }
-                
+
                 // Material chips
                 ForEach(viewModel.availableMaterials, id: \.self) { material in
                     Button {
@@ -165,7 +165,7 @@ struct SpoolInventoryView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     private var statusFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -185,7 +185,7 @@ struct SpoolInventoryView: View {
                             in: Capsule()
                         )
                 }
-                
+
                 // Status chips
                 ForEach(SpoolStatus.allCases, id: \.self) { status in
                     Button {
@@ -213,7 +213,7 @@ struct SpoolInventoryView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     private var spoolList: some View {
         ScrollViewReader { proxy in
             List {
@@ -259,14 +259,14 @@ struct SpoolInventoryView: View {
 
 struct SpoolInventoryRowView: View {
     let spool: SpoolmanSpool
-    
+
     private var weightPercent: Double? {
         guard let remaining = spool.remainingWeightG,
               let initial = spool.initialWeightG,
               initial > 0 else { return nil }
         return remaining / initial
     }
-    
+
     private var weightColor: Color {
         guard let percent = weightPercent else { return .gray }
         if percent > 0.5 { return .green }
@@ -289,7 +289,7 @@ struct SpoolInventoryRowView: View {
                     Text(spool.filamentName ?? spool.name)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.pfTextPrimary)
-                    
+
                     if spool.inUse {
                         Image(systemName: "printer.fill")
                             .font(.caption2)
@@ -324,13 +324,13 @@ struct SpoolInventoryRowView: View {
                     Text("\(Int(remaining))/\(Int(initial))g")
                         .font(.caption2)
                         .foregroundStyle(Color.pfTextTertiary)
-                    
+
                     // Weight progress bar
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(Color.pfBackgroundTertiary)
-                            
+
                             Capsule()
                                 .fill(weightColor)
                                 .frame(width: geo.size.width * (weightPercent ?? 0))

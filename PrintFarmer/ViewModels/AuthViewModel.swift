@@ -29,7 +29,6 @@ final class AuthViewModel {
         }
     }
 
-
     // MARK: - Session Restoration
 
     func restoreSession() async {

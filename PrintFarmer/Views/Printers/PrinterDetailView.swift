@@ -88,90 +88,7 @@ struct PrinterDetailView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 if let spool = printer.spoolInfo, spool.hasActiveSpool {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color(hex: spool.colorHex ?? "#808080"))
-                            .frame(width: 28, height: 28)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(Color.pfBorder, lineWidth: 1)
-                            )
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(spool.filamentName ?? spool.spoolName ?? "Unknown")
-                                .font(.subheadline.weight(.medium))
-
-                            HStack(spacing: 6) {
-                                if let material = spool.material {
-                                    Text(material)
-                                        .font(.caption.weight(.medium))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.pfBackgroundTertiary, in: Capsule())
-                                }
-                                if let vendor = spool.vendor {
-                                    Text(vendor)
-                                        .font(.caption)
-                                        .foregroundStyle(Color.pfTextSecondary)
-                                }
-                            }
-                        }
-
-                        Spacer()
-                    }
-
-                    // Remaining weight progress
-                    if let remaining = spool.remainingWeightG {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Remaining")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.pfTextSecondary)
-                                Spacer()
-                                Text("\(Int(remaining))g")
-                                    .font(.caption.weight(.medium))
-                            }
-
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.pfBackgroundTertiary)
-                                        .frame(height: 8)
-
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.pfAccent)
-                                        .frame(width: geo.size.width * filamentProgress(remaining: remaining), height: 8)
-                                }
-                            }
-                            .frame(height: 8)
-                        }
-                    }
-
-                    Divider()
-
-                    HStack(spacing: 12) {
-                        Button {
-                            viewModel.loadFilament()
-                        } label: {
-                            Label("Change Filament", systemImage: "arrow.triangle.2.circlepath")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-
-                        Button(role: .destructive) {
-                            Task { await viewModel.ejectFilament() }
-                        } label: {
-                            Label("Eject", systemImage: "eject.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(Color.pfError)
-                    }
-                    .disabled(viewModel.isPerformingAction)
-
-                    NFCScanButton(action: {
-                        viewModel.handleNFCScanToLoad()
-                    }, compact: true)
+                    activeSpoolContent(spool)
                 } else {
                     // No filament loaded
                     VStack(spacing: 12) {
@@ -207,6 +124,93 @@ struct PrinterDetailView: View {
                     .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
+    }
+
+    @ViewBuilder
+    private func activeSpoolContent(_ spool: PrinterSpoolInfo) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color(hex: spool.colorHex ?? "#808080"))
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.pfBorder, lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(spool.filamentName ?? spool.spoolName ?? "Unknown")
+                    .font(.subheadline.weight(.medium))
+
+                HStack(spacing: 6) {
+                    if let material = spool.material {
+                        Text(material)
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.pfBackgroundTertiary, in: Capsule())
+                    }
+                    if let vendor = spool.vendor {
+                        Text(vendor)
+                            .font(.caption)
+                            .foregroundStyle(Color.pfTextSecondary)
+                    }
+                }
+            }
+
+            Spacer()
+        }
+
+        if let remaining = spool.remainingWeightG {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Remaining")
+                        .font(.caption)
+                        .foregroundStyle(Color.pfTextSecondary)
+                    Spacer()
+                    Text("\(Int(remaining))g")
+                        .font(.caption.weight(.medium))
+                }
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.pfBackgroundTertiary)
+                            .frame(height: 8)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.pfAccent)
+                            .frame(width: geo.size.width * filamentProgress(remaining: remaining), height: 8)
+                    }
+                }
+                .frame(height: 8)
+            }
+        }
+
+        Divider()
+
+        HStack(spacing: 12) {
+            Button {
+                viewModel.loadFilament()
+            } label: {
+                Label("Change Filament", systemImage: "arrow.triangle.2.circlepath")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+
+            Button(role: .destructive) {
+                Task { await viewModel.ejectFilament() }
+            } label: {
+                Label("Eject", systemImage: "eject.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(Color.pfError)
+        }
+        .disabled(viewModel.isPerformingAction)
+
+        NFCScanButton(action: {
+            viewModel.handleNFCScanToLoad()
+        }, compact: true)
     }
 
     /// Estimate progress assuming ~1000g full spool when no initial weight data is available

@@ -9,7 +9,10 @@ actor SpoolService: SpoolServiceProtocol {
         self.apiClient = apiClient
     }
 
-    func listSpools(limit: Int = 50, offset: Int = 0, search: String? = nil, material: String? = nil, vendor: String? = nil) async throws -> SpoolmanPagedResult<SpoolmanSpool> {
+    func listSpools(
+        limit: Int = 50, offset: Int = 0,
+        search: String? = nil, material: String? = nil, vendor: String? = nil
+    ) async throws -> SpoolmanPagedResult<SpoolmanSpool> {
         var params: [String] = []
         params.append("limit=\(limit)")
         params.append("offset=\(offset)")

@@ -98,5 +98,3 @@ struct SpoolmanSpoolRequest: Codable, Sendable {
 struct SetActiveSpoolRequest: Codable, Sendable {
     let spoolId: Int?
 }
-
-
