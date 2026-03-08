@@ -53,7 +53,7 @@ jobs:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         run: |
-          fastlane match appstore --readonly --git_url "$MATCH_GIT_URL"
+          fastlane match appstore --readonly --git_url "$MATCH_GIT_URL" --app_identifier "com.olyforge3d.printfarmer.ios"
 
       - name: Update build version numbers
         run: |
