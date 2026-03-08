@@ -1,212 +1,49 @@
 # Lambert — History
 
-## Project Context
-- **Project:** PFarm-Ios — Native iOS client for Printfarmer
+## Core Context (Archived)
+
+### Project Setup & Architecture (Dallas, 2026-03-06)
+- **Project:** PFarm-Ios — Native iOS client for Printfarmer backend (~/s/PFarm1)
 - **User:** Jeff Papiez
-- **Stack:** Swift, SwiftUI, iOS 17+
-- **Backend:** Printfarmer (42+ REST endpoints, SignalR, JWT auth) at ~/s/PFarm1
+- **Stack:** Swift, SwiftUI, iOS 17+, MVVM + Repository Pattern, @Observable ViewModels, Actor-based services, ServiceContainer DI, KeychainSwift token storage
+- **Build:** SPM (Package.swift) + Xcode (.xcodeproj), target iOS 17+, Swift 6.0
 
-## Project Structure (Dallas, 2026-03-06)
+### Backend Integration & Patterns (Verified across 2026-03-06 → 2026-03-08)
+- **Authentication:** Single JWT token (no refresh) via POST /api/auth/login; stored in Keychain; validated via GET /api/auth/me; auto-logout on 401
+- **API Contracts:** 40+ endpoints across 7 services; backend uses JsonStringEnumConverter (enums as strings, not ints); ISO 8601 dates with fractional seconds; TimeSpan as "HH:MM:SS" strings
+- **Service patterns:** All services conform to protocols in PrintFarmer/Services/Protocols/; MockServices available for testability; ServiceContainer provides DI
+- **Printer DTOs:** CompletePrinterDto (list endpoint, includes live status) vs PrinterDto (detail endpoint, includes serverUrl/apiKey); custom init(from:) handles both
+- **Resilient decoding:** Custom dual-format ISO8601 decoder (fractional → plain fallback); enum String raw values with fallback; silent error suppression for secondary data loads
 
-**Root:** `PrintFarmer/` (source), `PrintFarmerTests/` (tests)
+### Completed Service Layers (2026-03-06 → 2026-03-08)
+1. **MVP (2026-03-06):** APIClient, AuthService, PrinterService, JobService, NotificationService, StatisticsService, SignalRService (7 services, 6+ service models)
+2. **Push Notifications (2026-07-17):** PushNotificationManager (@MainActor @Observable singleton), AppDelegate adapter, NotificationService extensions (registerDeviceToken/unregisterDeviceToken)
+3. **Phase 1 Filament/Spool (2026-07-17):** SpoolService (CRUD + pagination), PrinterService extensions (setActiveSpool/loadFilament/unloadFilament/changeFilament), FilamentModels (SpoolmanSpool/Filament/Vendor/Material), APIClient.patch()
+4. **Phase 2 Scanning (Completed 2026-03-07T16:34Z):** SpoolScannerProtocol abstraction, QRSpoolScannerService, NFCService (CoreNFC + NFC tag parsing), QR/NFC parsers, ServiceContainer conditional registration
+5. **New Service Layers (2026-03-08):** MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService (5 services, 30+ DTOs, all registered in ServiceContainer)
 
-### Key Folders
-- **App:** AppDelegate, main entry point
-- **Models:** Core domain models, RequestModels, SignalRModels
-- **Views:** SwiftUI views organized by feature
-- **ViewModels:** @Observable view models per feature
-- **Services:** Actor-based services (Auth, APIClient, Networking, Persistence)
-- **Utilities:** Constants, Extensions, Helpers
-- **Resources:** Assets, Localization
+### Key Technical Decisions Codified (2026-03-07 → 2026-03-08)
+- **Spoolman naming & pagination:** Model prefix `Spoolman` (avoid future collisions), limit/offset pagination (not page/pageSize), SetActiveSpoolRequest returns CommandResult, APIClient.patch() for updates
+- **Filament UI architecture:** Filament section in PrinterDetailView (between Camera and Actions), SpoolService for list/create/delete, PrinterService for active spool assignment, SpoolPickerView as modal sheet, phase 2 NFC hook ready
+- **iPad layout architecture:** @Environment(\.horizontalSizeClass) for adaptive layouts; NavigationSplitView (iPad) vs TabView (iPhone); sidebar with explicit Button-based rows (List(selection:) unavailable on iOS)
+- **Service layer design:** PredictionRequest optional fields adapted to match existing ViewModel (not breaking existing code); FleetPrinterStatistics computed Identifiable (id backed by printerId); date query params use ISO8601Plain format; request models Encodable-only (never decoded)
 
-### Architecture
-- MVVM + Repository Pattern
-- @Observable ViewModels (modern SwiftUI)
-- Actor-based services for Swift 6 strict concurrency
-- ServiceContainer for dependency injection
-- KeychainSwift for token storage
+### Testing Infrastructure (2026-07-18 → 2026-03-08)
+- **Unit tests:** MockURLProtocol for in-process mocking; MockServices for all protocols; 145+ test cases validating MVP endpoint coverage; 61 test cases for parser contracts (QR/NFC)
+- **XCUITest infrastructure:** MockAPIServer (NWListener-based TCP server, not MockURLProtocol, due to process isolation); environment variable injection (PFARM_MOCK_SERVER_URL); wildcard route matching (/api/printers/*); canned JSON responses (MockResponses enum); Spoolman test fixtures
+- **Build verification:** 33 new files added to Xcode.pbxproj (2026-03-08); ~10 source mismatches reconciled between Lambert models/protocols and Ripley ViewModels
 
-## Key Patterns & Contracts
-
-### Authentication & Configuration
-- Backend returns single JWT token (no refresh) via POST /api/auth/login
-- Token stored in Keychain, validated via GET /api/auth/me
-- APIClient has mutable base URL (actor-isolated), persisted to UserDefaults
-- AuthService.login(serverURL:) calls apiClient.updateBaseURL()
-- PFarmApp creates APIClient → AuthService → AuthViewModel chain
-
-### Backend DTO Mapping
-- **Printer list:** GET /api/printers returns CompletePrinterDto[] (includes live SignalR status)
-- **Printer detail:** GET /api/printers/{id} returns PrinterDto (has serverUrl/apiKey, missing live status fields)
-- Swift Printer model decodes both via custom init(from:) with decodeIfPresent + defaults
-- **Key difference:** CompletePrinterDto has MotionType/HomedAxes/InMaintenance, PrinterDto lacks these but has CameraSnapshotUrl
-
-### JSON Serialization
-- Backend uses `JsonStringEnumConverter()` globally — all enums serialize as strings ("Printing", "Ready", etc.)
-- Swift enums must have String raw values (not Int) with fallback decoders
-- Backend `.NET 10` emits ISO 8601 dates with fractional seconds; Swift's .iso8601 rejects them
-  - Solution: Custom dual-format ISO8601 decoder (tries fractional first, falls back to plain)
-  - Made formatters `internal` so SignalRService can reuse them
-- TimeSpan serializes as strings (e.g., "01:30:00"); Swift stores as String? with helper properties
-
-### Error Handling & Security
-- 401 responses: APIClient posts Notification.Name.sessionExpired → AuthViewModel calls logout() automatically
-- Token expiry pre-check: AuthService.isTokenExpired() with 5-minute buffer checked before every request
-- Force unwraps removed: URLComponents creation now uses guard let + NetworkError.invalidURL
-- Silent error suppression: Secondary data loads (status, snapshot, stats) logged as warnings, don't block primary view
-
-### Service Protocols
-- All services conform to protocols in PrintFarmer/Services/Protocols/ for testability
-- MockServices available for all: MockPrinterService, MockJobService, MockSpoolService, MockNFCService, etc.
-- ServiceContainer registers all services and provides DI via environment injection
-
-## Completed Implementations
-
-### MVP Networking (2026-03-06)
-- **6 services:** APIClient, AuthService, PrinterService, JobService, NotificationService, StatisticsService, SignalRService
-- **9 models:** PrinterStatusDetail, PrintJobStatusInfo, CommandResult, AppNotification, QueueOverview, StatisticsSummary, MmuStatus, SpoolInfo, and 16+ supporting DTOs
-- **API endpoints:** 40+ endpoints across all services verified against ~/s/PFarm1 source
-- **SignalR:** Full WebSocket implementation with auto-reconnect, exponential backoff (1s→30s), 2 MVP events (printerupdated, jobqueueupdate)
-
-### Push Notifications (2026-07-17)
-- **PushNotificationManager:** @MainActor @Observable singleton handling APNs, permissions, foreground display via UNUserNotificationCenterDelegate
-- **AppDelegate:** UIApplicationDelegateAdaptor for push callbacks
-- **NotificationService:** registerDeviceToken() / unregisterDeviceToken() methods (backend endpoint placeholder; real endpoint needed)
-- **Deep-link ready:** Tapped notifications post Notification.Name.pushNotificationTapped with userInfo for navigation
-- **All code:** #if canImport(UIKit) guarded for SPM macOS build compatibility
-
-### Phase 1 Filament/Spool Services (2026-07-17)
-- **FilamentModels:** SpoolmanSpool, SpoolmanFilament, SpoolmanVendor, SpoolmanMaterial, SpoolmanPagedResult<T>, SetActiveSpoolRequest
-- **SpoolService:** Actor-based CRUD for spools; list filaments/vendors/materials; pagination (limit/offset)
-- **PrinterService extensions:** setActiveSpool(), loadFilament(), unloadFilament(), changeFilament()
-- **APIClient.patch():** Added PATCH method support for updates
-- **Key finding:** Backend uses paginated SpoolmanPagedResult (limit/offset, not page/pageSize)
-
-### Phase 2 Scanning Services (2026-07-17, Completed 2026-03-07T16:34Z)
-- **SpoolScannerProtocol:** Shared abstraction for QR + NFC scanners with error types + ScannedSpoolData
-- **QRSpoolScannerService:** VisionKit DataScannerViewController wrapper, supports single-scan mode
-- **NFCService:** CoreNFC read/write with NDEF support, ISO 14443 tag support, OpenSpool + OpenPrintTag parsing
-- **Parsers:** QRCodeParser (3 formats: URL /spools/{id}, plain int, JSON), NFCTagParser (OpenSpool + OpenPrintTag)
-- **ServiceContainer:** Conditionally registers behind #if canImport(UIKit)
-- **pbxproj:** 7 new files registered with collision-free UUIDs
-- **Build:** Zero errors, plutil validates clean
-- **Info.plist:** NSCameraUsageDescription, NFCReaderUsageDescription not yet set in target (requires Xcode or manual plist)
-
-### QA Fixes (2026-07-16 → 2026-03-07)
-- JSON decode: Enum serialization (string not int), fractional seconds in dates
-- Resilient decoding: CompletePrinterDto vs PrinterDto mapped via custom init(from:)
-- SignalR date decoder: Made formatters internal for reuse
-- 401 auto-logout: Posts sessionExpired notification → AuthViewModel logout
-- Token pre-check: isTokenExpired() closure called before each request
-- APIClient debug logging: #if DEBUG block prints raw response on decode failure
-- All test fixtures updated: String enum values, stale PrintJob fields corrected
-
-## Recent Work (2026-03-07)
-
-### NFCService Sendable Conformance
-- Fixed Sendable warning at line 201 in tagReaderSession(_:didDetect:)
-- Pattern: Move nonisolated(unsafe) rebinding to method entry (before first closure)
-- Both @Sendable closures now safely capture binding references
-- Ensures NFCService works in @Observable ViewModels without "sending risk" errors
-
-### Ripley's Filename Mapping Fix
-- Backend JobQueueService.cs was mapping GcodeFile.FileName (GUID disk name) instead of GcodeFile.Name (original filename)
-- Fixed 6 locations across JobQueueService (committed to ~/s/PFarm1)
-- iOS models/views require no changes — DTO contract unchanged
-- Users now see original filenames instead of internal GUIDs
-
-## Cross-Agent Dependencies
-
-**Ripley (UI Layer) depends on:**
-- ✓ SpoolServiceProtocol (list, get, create, update, delete with pagination)
-- ✓ PrinterService filament methods (setActiveSpool, loadFilament, unloadFilament, changeFilament)
-- ✓ SpoolScannerProtocol + QRSpoolScannerService + NFCService (ready for scanning UI)
-- ✓ APIClient.patch() for updates
-
-**Ash (Testing) depends on:**
-- ✓ All service protocols with mocks available
-- ✓ 145+ test cases validating MVP endpoint coverage
-- ✓ Parser contracts defined via 61 test cases
-
-**Dallas (Architecture) depends on:**
-- ✓ ServiceContainer pre-populated for DI
-- ✓ No breaking changes to startup or configuration patterns
-
-## Archived Entries
-
-For full details on earlier work (JSON decoding, resilient decoders, QA audit fixes, SignalR implementation), see git history and decisions.md. Key archived topics:
-
-- Backend API discovery & verification from ~/s/PFarm1 source
-- SignalR event mapping (printerupdated, jobqueueupdate)
-- Enum serialization fix (string vs int)
-- Fractional seconds in ISO 8601 dates
-- 401 auto-logout pattern
-- Token expiry pre-check
-- Silent error suppression pattern
-- Test fixture updates
-
-### Issue #1: "Available" Spool Filter Fix (2026-07-18)
-- **Root cause:** `SpoolmanJsonParser.cs` in `~/s/PFarm1` had a fallback where absent `in_use` field defaulted to `!archived`. Since most spools have `archived: false`, this set `inUse = true` for ALL non-archived spools, making the iOS "Available" filter (`!spool.inUse && !archived`) return zero results.
-- **Fix:** Removed the `!archived` fallback entirely. When `in_use` is absent from Spoolman JSON, the parser now falls through to the existing `?? false` default on the DTO constructor (line 145). "Archived" and "in use" are independent concepts.
-- **Scope:** Backend-only change in `~/s/PFarm1/src/infra/Parsing/SpoolmanJsonParser.cs`. No iOS code changes needed — the iOS filter logic was correct all along.
-
-## Learnings
-
-### MockAPIServer for XCUITest Support (2026-07-18)
-- **Key files:** `PrintFarmerTests/Helpers/MockAPIServer.swift`, `PrintFarmerTests/Helpers/TestFixtures.swift`
-- **Architecture:** Real TCP server using `NWListener` (Network framework) — no external deps. Needed because XCUITests run app in a separate process, so `MockURLProtocol` (in-process) won't work.
-- **Route matching:** Supports exact paths (`/api/printers`) and wildcard (`/api/printers/*`) for ID-parameterized endpoints. First match wins.
-- **Launch environment:** App checks `PFARM_MOCK_SERVER_URL` env var in `PFarmApp.init()` — XCUITests set this to `http://localhost:{port}` to redirect all API calls to the mock server.
-- **Concurrency pattern:** Used `ErrorBox` class wrapper (not var capture) to satisfy Swift 6 strict sendability in `NWListener.stateUpdateHandler`.
-- **Spoolman fixtures added:** `TestJSON.spoolmanSpool`, `spoolmanSpoolMinimal`, `spoolmanSpoolArray`, `spoolmanPagedResult`, `spoolmanPagedResultEmpty` — match `SpoolmanPagedResult<SpoolmanSpool>` structure.
-- **MockResponses enum:** Standalone canned JSON for mock server (auth, printers, jobs, spools, commands). Separate from TestJSON to allow independent evolution.
-- **No UI test target yet:** Only `PrintFarmerTests` (unit test bundle) exists. XCUITest target creation deferred to when Ripley builds the first UI test.
-
-## 2026-03-08 — MockAPIServer & Spool Fixtures
-
-### XCUITest Infrastructure Delivery
-- **MockAPIServer.swift** — real TCP server using NWListener (Network framework)
-  - Wildcard route matching (/api/printers/*)
-  - Random port selection to avoid parallel test conflicts
-  - Environment variable injection (PFARM_MOCK_SERVER_URL)
-  - Canned JSON responses via MockResponses enum
-- **Environment variable contract** — PFarmApp.init() checks PFARM_MOCK_SERVER_URL before APIClient.savedBaseURL()
-- **Spoolman test fixtures** — added to TestFixtures.swift (spoolmanSpool, spoolmanPagedResult, etc.)
-
-### Key Pattern: ErrorBox for Sendable NWListener
-- Used nonisolated(unsafe) rebinding pattern in stateUpdateHandler to satisfy strict concurrency
-- Both @Sendable closures now safely capture binding references
-
-### Cross-Team Impact
-- **Ash (Tester):** Can now integrate XCUITests with MockAPIServer for deterministic UI test scenarios
-- **Ripley (UI):** Can pass PFARM_MOCK_SERVER_URL to XCUITests via launchEnvironment
-- **Dallas (Architecture):** No startup pattern changes; env var check is non-breaking
-
-### Learnings
-- XCUITest process isolation requires real TCP server (MockURLProtocol won't work across process boundaries)
-- Wildcard routes are essential for ID-parameterized endpoints
-- Spoolman test fixture structure matches paginated API response format (items + totalCount)
+### Known Issues & Resolutions
+- **Spoolman "Available" filter (Issue #1, 2026-07-18):** SpoolmanJsonParser.cs had fallback `inUse = !archived` when in_use absent — set all non-archived spools to inUse=true, breaking Available filter. Fixed: removed fallback, defaults to false. iOS filter logic was correct all along.
+- **XCUITest target setup (Decision, 2026-07-20):** XCUITest files ready, but target creation requires manual Xcode step (UI Testing Bundle wizard); deferred to Ripley UI test implementation
+- **NFCService Sendable (2026-03-07):** Fixed Sendable warning at line 201 using nonisolated(unsafe) rebinding pattern for @Sendable closures in tagReaderSession callback
+- **SwiftLint violations (2026-03-08):** Fixed 28 violations across 10 files (trailing whitespace, vertical whitespace, control statements, line length, cyclomatic complexity)
 
 ---
 
-## 2026-03-08 — Spoolman Parser Bug Fix
+## Recent Work (2026-03-08, Completed 2026-03-08T05:16Z)
 
-### Issue Resolution: "Available" Filter Returns Zero Results
-- **Root cause:** `SpoolmanJsonParser.cs` line 112–119 had a fallback: when Spoolman API doesn't return `in_use`, the parser set `inUse = !archived`
-- **Effect:** Since most spools are `archived: false`, they all got `inUse = true`, making "Available" filter (`!inUse && !archived`) return nothing
-- **Fix:** Removed the `!archived` fallback entirely. When `in_use` is absent, defaults to `false`. `archived` and `inUse` are now independent concepts.
-- **Scope:** Backend change only (~/s/PFarm1); no iOS model changes needed — DTO contract unchanged
-
-### Impact
-- iOS filter logic was correct all along; no iOS code changes needed
-- Spoolman spool association now works as intended in UI
-- Ripley's filament/spool features now fully functional with correct filter behavior
-
----
-
-## Learnings
-
-### New Service Layers (2026-03-08, Completed 2026-03-08T05:16Z)
+### New Service Layers (5 files, 15 total with models & protocols)
 - Created 5 new service layers (15 files) for Maintenance, AutoPrint, JobAnalytics, Predictive, Dispatch
 - **Models:** 30+ new DTOs across 5 model files in PrintFarmer/Models/ServiceModels/
 - **Protocols:** 5 protocol files with default-parameter extensions (same pattern as StatisticsServiceProtocol)
@@ -231,3 +68,17 @@ For full details on earlier work (JSON decoding, resilient decoders, QA audit fi
 - **Source mismatches fixed:** ~10 mismatches between Lambert's model names/protocol methods and Ripley's ViewModel references
 - **Files added:** All 33 new files properly registered in Xcode project.pbxproj with collision-free UUIDs
 - **Outcome:** All code compiled successfully; zero errors, zero new warnings
+
+## Learnings
+
+### Cross-Team Collaboration (2026-03-08)
+- Parallel agent execution (Lambert + Ripley + Build verification) requires upfront planning for source compatibility
+- Model/protocol naming must be coordinated before ViewModels reference them; build verification catches mismatches early
+- Service patterns should be established once (StatisticsServiceProtocol) and replicated for consistency
+- ServiceContainer DI pattern scales well to 12+ services (MVP 7 + new 5) with no friction
+
+### Service Layer Design at Scale
+- 5 new service layers (MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService) follow existing Actor-based patterns
+- Optional fields in request DTOs must match existing ViewModel expectations (PredictionRequest adapted to support both String? and Int?, not forcing breaking changes)
+- Computed Identifiable properties (FleetPrinterStatistics.id) enable DTOs without explicit id JSON fields
+- ISO8601 formatters reused across services for consistency (date query params use iso8601Plain)

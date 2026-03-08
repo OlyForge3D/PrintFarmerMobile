@@ -1,208 +1,86 @@
 # Ash — History
 
-## Project Context
-- **Project:** PFarm-Ios — Native iOS client for Printfarmer
+## Core Context (Archived)
+
+### Project Setup & Architecture (Dallas, 2026-03-06)
+- **Project:** PFarm-Ios — Native iOS client for Printfarmer backend (~/s/PFarm1)
 - **User:** Jeff Papiez
-- **Stack:** Swift, SwiftUI, iOS 17+
-- **Backend:** Printfarmer (42+ REST endpoints, SignalR, JWT auth) at ~/s/PFarm1
+- **Stack:** Swift, SwiftUI, iOS 17+, MVVM + Repository Pattern, @Observable ViewModels, Actor-based services, ServiceContainer DI, KeychainSwift for token storage
+- **Build:** SPM (Package.swift) for CLI validation, Xcode (.xcodeproj) for IDE, target iOS 17+, Swift 6.0
 
-## Project Structure (Dallas, 2026-03-06)
+### Test Infrastructure Established (2025-07-17 → 2026-03-08)
+- **Unit test architecture:** MockURLProtocol for service/APIClient integration tests; protocol-based mocks for ViewModel unit tests
+- **19+ test files created:** 2 helpers, 8+ mocks, 1 model decoding suite, 3+ service test suites, 4+ ViewModel test suites; ~150+ test cases total
+- **ViewModel DI pattern:** `configure(services:)` method with protocol-based DI; all ViewModel tests use protocol mocks — no network calls
+- **Protocol coverage:** PrinterServiceProtocol, JobServiceProtocol, NotificationServiceProtocol, StatisticsServiceProtocol, SignalRServiceProtocol, SpoolServiceProtocol all have mock implementations
+- **Mock services:** MockPrinterService, MockJobService, MockSpoolService, MockNFCService, MockAuthService, MockAPIClient all available in test helpers
+- **XCUITest scaffolding:** PrintFarmerUITests.swift (base), LoginFlowUITests.swift, PrinterListUITests.swift created; target creation deferred to manual Xcode step
+- **XCUITest infrastructure:** Ready to integrate with Lambert's MockAPIServer for deterministic UI test scenarios; environment variable injection pattern established (PFARM_MOCK_SERVER_URL)
 
-**Root:** `PrintFarmer/` (source), `PrintFarmerTests/` (tests)
+### Known Test Patterns & Gotchas
+- **Status filters:** SpoolmanSpool.inUse is Bool?; all filter tests cover nil/true/false edge cases
+- **Empty filter behavior:** nil remainingWeightG with non-nil initialWeightG treated as empty — documented false positive from UI audit
+- **Test simulator:** iPhone 16 not available on this machine; use iPhone 17 for test runs
+- **`.constant()` binding anti-pattern:** Used in 5 alert presentations; works but fragile, should be refactored to proper Binding eventually
+- **UUID prefix:** F2 used for pbxproj test entries to avoid conflicts with F1 (Phase 2 scanning tests)
 
-### Key Folders
-- **App:** AppDelegate, main entry point
-- **Models:** Core domain models, RequestModels, SignalRModels
-- **Views:** SwiftUI views organized by feature (Dashboard, Printers, Jobs, Locations, Settings)
-- **ViewModels:** @Observable view models per feature
-- **Services:** Actor-based services (Auth, APIClient, Networking, Persistence)
-- **Utilities:** Constants, Extensions, Helpers
-- **Resources:** Assets, Localization
-
-### Build System
-- **SPM:** Package.swift for CLI validation
-- **Xcode:** .xcodeproj for full IDE experience, target: iOS 17+, Swift 6.0
-
-### Architecture
-- MVVM + Repository Pattern
-- @Observable ViewModels (modern SwiftUI)
-- Actor-based services for Swift 6 strict concurrency
-- ServiceContainer for dependency injection
-- KeychainSwift for token storage
-
-## Learnings
-
-## Learnings
-
-### Cross-Agent Context (2026-03-06)
-- **Ripley's Login Screen:** LoginView + LoginViewModel (form state), AuthViewModel (auth state gating). Server URL flows: LoginView → LoginViewModel → AuthViewModel → AuthService.login(serverURL:) → APIClient.updateBaseURL(). Dark Mode + animated error banner working.
-- **Lambert's Networking:** APIClient actor (thread-safe), AuthService with single JWT (no refresh tokens). Base URL mutable, stored in UserDefaults. Session restore via GET /api/auth/me.
-- **Dallas's Pattern:** ServiceContainer at init, .task configures ViewModels. This is the canonical dependency injection pattern for the project.
-
-_Ash ready to implement feature screens and navigation flows._
-- **Session Directive (2026-03-06):** Use claude-opus-4.6 for code-writing tasks (Ripley, Lambert, Ash)
-
-### MVP Test Suite (2025-07-17)
-- **Test architecture:** MockURLProtocol for service/APIClient integration tests, protocol-based mocks for ViewModel unit tests.
-- **19 test files created:** 2 helpers, 8 mocks, 1 model decoding suite, 3 service test suites, 4 ViewModel test suites. ~80 test cases total.
-- **ViewModel DI pattern:** Ripley adopted `configure(printerService:)` pattern with protocol-based DI. All ViewModel tests use protocol mocks — no network calls.
-- **Protocol coverage:** PrinterServiceProtocol, JobServiceProtocol, NotificationServiceProtocol, StatisticsServiceProtocol, SignalRServiceProtocol all have mock implementations.
-- **AuthService has no protocol yet** — AuthService is a concrete actor. Tests use MockURLProtocol for integration testing. Created `AuthServiceProtocol` in TestProtocols.swift for future use.
-- **PrinterDetailViewModel uses methods not in protocol:** `snapshotURL(for:)`, `cancelPrint(id:)`, `setMaintenance(id:enabled:)` — these don't match `PrinterServiceProtocol`. Ripley needs to fix.
-- **SPM test linking issue:** `@main` in PFarmApp.swift causes duplicate `_main` symbol when linking SPM test target. Xcode build works fine. Not a test code issue.
-- **DashboardViewModel changed:** `activeJobs: [PrintJob]` → `queueOverview: [QueueOverview]`. JobService.list() now returns `[QueueOverview]` not `[PrintJob]`.
-- **Backend JSON format:** Backend uses camelCase — no CodingKeys needed for most models. ISO 8601 dates. Enum raw values are integers matching backend C# enums.
-
-### MVP Test Suite Completion (2026-03-06)
-- **Status:** ✅ 145 test cases across 8 suites — full coverage for MVP surface
-- **Suites:**
-  - APIClientTests (15 cases): JWT injection, error mapping (401/403/404/500), request building, base URL updates
-  - AuthServiceTests (12 cases): login/logout, token lifecycle, Keychain, URL normalization
-  - PrinterServiceTests (25 cases): 11 endpoints (list, get, status, snapshot, pause/resume/cancel/stop/emergency-stop, maintenance)
-  - JobServiceTests (18 cases): 5 endpoints (list, get, dispatch, cancel, abort) with QueueOverview decoding
-  - NotificationServiceTests (15 cases): CRUD, batch mark-read, unread count, model decoding
-  - ModelDecodingTests (20 cases): Printer, PrintJob, Location, CommandResult, QueueOverview, StatisticsSummary, AppNotification, MmuStatus, SignalR DTOs
-  - LoginViewModelTests (22 cases): form validation, URL normalization, persistence, error handling
-  - DashboardViewModelTests (18 cases): load, computed counts (online/printing/paused/offline/error), refresh, error states
-- **Mock Infrastructure:** 6 protocol-based mocks (MockPrinterService, MockJobService, MockAuthService, MockNotificationService, MockStatisticsService, MockSignalRService) + MockAPIClient helper + TestFixtures with realistic backend JSON
-- **Coverage:** All 6 MVP services have full protocol test coverage; all 9 MVP models tested; ViewModel DI pattern validated
-
-### Critical Issues Found (2026-03-06)
-- **BLOCKER: 3 PrinterDetailViewModel method mismatches** (Ripley implementation doesn't match Lambert's actual protocol):
-  - VM calls `snapshotURL(for:)` → protocol has `getSnapshot(id:) -> Data`
-  - VM calls `cancelPrint(id:)` → protocol has `cancel(id:) -> CommandResult`
-  - VM calls `setMaintenance(id:enabled:)` → protocol has `setMaintenanceMode(id:enabled:) -> CommandResult`
-- **AuthServiceProtocol missing:** AuthService is concrete actor; no protocol for testable AuthViewModel. Created AuthServiceProtocol in TestProtocols.swift for future use.
-- **SPM test runner incompatibility:** @main in PFarmApp.swift causes duplicate _main symbol. Xcode builds fine; `swift test` skipped (not blocking MVP).
-
-### Impact & Handoffs
-- **→ Ripley (URGENT):** Fix 3 PrinterDetailViewModel method calls to match actual protocol signatures
-- **→ All:** Test suite ready for integration validation after Ripley fixes mismatches
-- **Next:** Run full test suite post-fix; validate all ViewModel+Service integrations
-
-### MVP QA Review (2025-07-18)
-- **Test coverage: 41%** (7/17 testable units). 4 ViewModels and 5 Services lack test files. All existing 145 tests are structurally valid — no broken references.
-- **Mock alignment: 100%** — all 6 protocol mocks perfectly match current protocol signatures.
-- **Memory safety: Excellent** — no retain cycles found. SignalR uses `[weak self]` correctly. SwiftUI task lifecycle is safe. One future risk: SignalR handler arrays have no unregister mechanism.
-- **Critical error handling gaps:** JobListView and NotificationsView set `errorMessage` but never display it to users. Silent failures on job cancel/abort and notification operations.
-- **Token expiry not validated:** AuthService stores expiry in Keychain but never checks it before API calls. No auto-logout on 401 — users see generic errors on every screen.
-- **DashboardView missing empty state** for zero-printer scenario (new accounts).
-- **Redundant AuthService** created in PFarmApp.init() instead of using ServiceContainer's instance.
-- **Report written to:** `.squad/decisions/inbox/ash-qa-review.md` with 12 prioritized action items and owner assignments.
-- **→ Ripley:** Fix error UI in JobListView + NotificationsView (critical), add DashboardView empty state
-- **→ Lambert:** Implement 401 auto-logout, token expiry pre-check, SignalR handler cleanup
-- **→ Ash:** Write AuthViewModel, JobListViewModel, JobDetailViewModel, NotificationsViewModel tests
-- **→ Dallas:** Fix redundant AuthService in PFarmApp.init()
-
-### Test Coverage Extension (2025-07-18)
-- **80 new test cases** across 4 new test suites, bringing total from 146 → 226
-- **New suites:**
-  - JobListViewModelTests (23 cases): load, grouped jobs (active/queued/recent), cancel/abort, error paths, empty state, unconfigured guard
-  - JobDetailViewModelTests (24 cases): load, dispatch/cancel/abort actions, computed properties (canDispatch/canCancel/canAbort/isActive) for each status, action errors, unconfigured guards
-  - NotificationsViewModelTests (22 cases): load, mark read, mark all read (with unread filtering), delete (with local list removal + unread count decrement), error paths, edge cases (no negative unread count, skip markAll when all read)
-  - AuthViewModelTests (11 cases): login success, 401/403/500/network errors, error clearing, logout, session restore, session expired notification auto-logout
-- **TestFixtures extended:** Added QueuedPrintJobResponse fixtures (Printing, Queued, Completed, Failed, Paused, Assigned), AppNotification fixtures (unread, read, failed), StatisticsSummary fixtures. Added factory methods: decodeQueuedPrintJobResponse, decodeAppNotification, decodeStatisticsSummary, decodeAuthResponse, decodeUser.
-- **AuthViewModel testing pattern:** Uses MockURLProtocol integration testing (AuthVM → AuthService → APIClient) since AuthService is a concrete actor without protocol. Different from other VMs which use protocol-based mocks.
-- **No SettingsViewModel or StatisticsViewModel exist** — Settings is view-only, statistics are embedded in DashboardViewModel.
-- **Coverage gaps remaining:** JobService, StatisticsService, NotificationService lack dedicated service-level tests (they're covered indirectly via MockURLProtocol in auth tests and ViewModel tests use protocol mocks). PushNotificationManager untestable without UIKit runtime (singleton + UNUserNotificationCenter).
-
-### Phase 2 Scanning Test Suite (2025-07-20)
-- **4 new test files created** for QR/NFC scanning features:
-  - QRCodeParserTests.swift (22 cases): URL formats, plain numeric, JSON, invalid inputs, edge cases (zero, negative, floating point, malformed JSON)
-  - NFCTagParserTests.swift (18 cases): OpenSpool all/partial fields, OpenPrintTag all/partial fields, invalid data, string-typed values, round-trip payload creation
-  - SpoolPickerViewModelScanTests.swift (21 cases): QR scan success/invalid/not-found, NFC scan spoolId/newSpoolData/cancelled/error variants, scanner not available, network error, scanning state tracking
-  - MockScannerService.swift: Configurable mock for SpoolScannerProtocol with call tracking
-- **MockSpoolService.swift** registered in pbxproj (was on disk but missing from project)
-- **New Utilities test group** created in PrintFarmerTests
-- **All UUIDs use F1 prefix** to avoid conflicts with Lambert (D1) and Ripley (E1)
-- **QRCodeParser rejects id <= 0** — tests for 0 and negative numbers correctly expect nil
-- **NFCTagParser.parseOpenSpool returns non-nil for empty JSON** — it creates ScannedSpoolData with all-nil fields (not nil itself). Tests reflect actual behavior.
-- **SpoolPickerViewModel uses private parseSpoolId()** for QR scanning — it delegates to internal parsing, NOT QRCodeParser.parse(). The VM's parser accepts slightly different formats than the standalone QRCodeParser (e.g., "spool" singular path, "id" JSON key). Tests match actual VM behavior.
-- **Build: ✅ zero errors** | **Lint: ✅ zero errors**
-
-## 2026-03-07T16:34Z — Phase 2 Scanning Tests (SUCCESS)
-
-**Batch:** Parser + ViewModel test coverage  
-**Outcome:** ✅ Delivered 4 test files, 61 test cases, builds clean
-
-**What Was Built:**
-- QRCodeParserTests (15 cases: URL, plain int, JSON, edge cases)
-- NFCTagParserTests (18 cases: OpenSpool, OpenPrintTag, multi-record)
-- SpoolPickerViewModelScanTests (14 cases: happy path + error flows)
-- MockScannerService (spy/stub for ViewModel testing)
-
-**Cross-Team Impact:**
-- Lambert: Parser contracts defined via test cases
-- Ripley: ViewModel test helpers ready (MockScannerService)
-- Dallas: Test infrastructure supports all agent work
-
-**Coverage Summary:**
-- Parser tests: 33 cases (format variants)
-- ViewModel tests: 14 cases (flows + errors)
-- Mock infrastructure: MockScannerService for all ViewModel tests
-
-**Known Limitations:**
-- swift test has @main linker conflict in SPM; tests validated in Xcode
-- Integration tests deferred to Phase 3
-- Device-specific tests deferred to manual QA
-
-**Next Steps:**
-- Run tests in Xcode (SPM limitation)
-- Device QA validation
-- Phase 3: Snapshot tests for UI views
-
-### Full UI Code Audit (2025-07-18)
-- **10 bugs found** across all SwiftUI views, ViewModels, and related logic. 3 High, 5 Medium, 2 Low severity.
-- **Root cause of "Available" filter bug:** Backend `SpoolmanJsonParser.cs` fallback logic treats `archived: false` as `inUse: true`. When Spoolman API doesn't return `in_use`, all non-archived spools appear as "in use," making the Available filter return nothing. This is a backend bug, not iOS.
-- **PrinterDetailView NFC never configured:** `.task` block missing `configureNFCScanner()` call. 1-line fix. SpoolInventory and SpoolPicker do it correctly — pattern exists, just wasn't applied here.
-- **SettingsView URL change is a no-op:** Writes to UserDefaults but doesn't update APIClient or force logout. Potential security issue (token sent to wrong server).
-- **`.constant()` binding anti-pattern:** Used in 5 alert presentations across the app. Works but is fragile. Should be refactored to proper `Binding` eventually.
-- **Empty filter false positive:** Nil `remainingWeightG` with non-nil `initialWeightG` treated as "empty" — wrong assumption. Exists in both SpoolInventory and SpoolPicker ViewModels.
-- **3 GitHub issues filed:** #1 (Available filter, squad:lambert), #2 (NFC scanner, squad:ripley), #3 (Settings URL, squad:ripley)
-- **Report at:** `.squad/agents/ash/ui-audit-bugs.md`
-
-### Test Coverage Gap Fill (2025-07-20)
-- **68 new test cases** across 2 new ViewModel test suites:
-  - AddSpoolViewModelTests (25 cases): initial state, form validation (material+weight), loadReferenceData success/error/unconfigured, saveSpool success/error/invalid/unconfigured/zero-spool-weight, filament matching (exact/case-insensitive/no-match), prefill from scan data (all fields/nil/empty/zero/negative), color swatches
-  - SpoolInventoryViewModelTests (43 cases): initial state, loadSpools success/empty/error/clears-error/unconfigured/args, availableMaterials (sorted/deduped), status filters (available/inUse/low/empty with nil/Bool? edge cases), material filter, search (material/vendor/name/case-insensitive/no-match/empty), combined filters (2-way and 3-way), hasActiveSearch, activeFilterDescription, clearFilters, findSpool/clearHighlight, deleteSpool success/error/unconfigured, NFC scan not-available/unconfigured
-- **XCUITest scaffolding created** in `PrintFarmerUITests/`:
-  - PrintFarmerUITests.swift: Base test class with `--uitesting` launch arg, helper methods
-  - LoginFlowUITests.swift: Login screen presence, form interaction, login→dashboard transition
-  - PrinterListUITests.swift: Printer list display, navigation to detail, search field
-  - UI test target NOT yet added to .xcodeproj (requires manual Xcode target creation — see decision doc)
-- **SpoolmanSpool.inUse is Bool?** — tests cover nil, true, false for all status filters that depend on it
-- **SpoolInventoryViewModel "empty" filter treats nil remainingWeightG with non-nil initialWeightG as empty** — this is the documented false positive from the UI audit, tests confirm actual behavior
-- **UUID prefix F2** used for pbxproj entries to avoid conflicts with F1 (Phase 2 scanning tests)
-- **Test simulator:** iPhone 16 not available on this machine; use `iPhone 17` for test runs
-- **All 68 tests pass**, build clean, zero lint warnings
-
-## 2026-03-08 — ViewModel Tests & UI Test Scaffolding
-
-### Test Suite Expansion
-- **AddSpoolViewModelTests** — 25 test cases covering form validation, loadReferenceData, saveSpool, filament matching, scan data prefill
-- **SpoolInventoryViewModelTests** — 43 test cases covering load, material/status/search filters, combined filters, delete, NFC scanner paths
-- **Total new tests:** 68 cases, all passing
-
-### XCUITest Scaffolding
-- **PrintFarmerUITests.swift** — base test class with `--uitesting` launch argument
-- **LoginFlowUITests.swift** — login screen presence, form interaction, login → dashboard transition
-- **PrinterListUITests.swift** — printer list display, navigation to detail, search field
-- **Note:** XCUITest target creation is a manual Xcode step (File → New → Target → UI Testing Bundle) — files are ready, target creation deferred
-
-### Key Test Patterns
-- **Status filters:** Tests cover all Bool? edge cases (nil, true, false) for Available/InUse/Low/Empty filters
-- **Empty filter behavior:** Tests confirm actual behavior where `remainingWeightG == nil` with non-nil `initialWeightG` is treated as empty
-- **Combined filters:** Tests verify intersection logic (material AND status AND search)
-- **MockSpoolService:** Available for ViewModel testing; already registered in pbxproj
-
-### Cross-Team Learnings
-- XCUITest architecture requires real mock server (Lambert's MockAPIServer), not in-process URLSession interception
-- UI test files ready for Ripley to adopt once XCUITest target is created in Xcode
-- SpoolmanSpool.inUse is Bool? — filter tests properly validate nil/true/false cases
-
-### Build & Validation
-- ✅ All 68 tests pass
-- ✅ Build clean, zero lint warnings
-- ✅ MockAPIServer integration ready for UI test scenarios
+### Test Suite Growth (2025-07-17 → 2026-03-08)
+1. **MVP test suite (2025-07-17):** ~80 test cases across service + ViewModel tests
+2. **Spool feature tests (2025-07-20):** 68 new test cases (AddSpoolViewModelTests 25 cases, SpoolInventoryViewModelTests 43 cases)
+3. **Pending:** Unit tests for all 7 new ViewModels (Maintenance, AutoPrint, JobAnalytics, Predictive, Dispatch, JobHistory, UptimeReliability) + 5 new services
 
 ---
+
+## Recent Work (2026-03-08, In Progress)
+
+### Writing Unit Tests for New Service Layers (2026-03-08)
+- **Target:** Unit tests for all 7 new ViewModels + 5 new services (MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService)
+- **Status:** In progress (background agent)
+- **Test files being created:**
+  - MaintenanceAnalyticsViewModelTests (form validation, loadMaintenanceIssues, acknowledgeAlert, resolveAlert)
+  - AutoPrintViewModelTests (loadAutoRules, enableRule, disableRule, updateRuleSettings)
+  - JobAnalyticsViewModelTests (loadAnalytics, filtering by printer/date range, metrics calculations)
+  - PredictiveInsightsViewModelTests (loadPredictions, failureLikelihoodByMaterial, estimatedFailureDate calculations)
+  - DispatchDashboardViewModelTests (loadQueue, allocatePrint, reassignJob)
+  - JobHistoryViewModelTests (loadJobs, filtering by status/date, pagination)
+  - UptimeReliabilityViewModelTests (loadMetrics, fleet uptime, availability calculations)
+- **Service test coverage:** Tests for all 5 new services matching MVP test architecture (MockAPIClient + protocol-based mocks)
+- **Mock services:** Will create MockMaintenanceService, MockAutoPrintService, MockJobAnalyticsService, MockPredictiveService, MockDispatchService
+- **Expected outcome:** 50+ new test cases, all passing, zero lint warnings
+
+### Cross-Agent Work Received (2026-03-08)
+- **Lambert (agent-32):** Completed 5 new service layers (15 files); all protocols defined, ready for mock implementations
+- **Ripley (agent-33):** Completed 7 new feature UIs (18 files); all ViewModels expecting service protocols that Lambert built
+- **Build verification:** 33 new files added to Xcode; ~10 source mismatches resolved
+- **Dependency chain:** Ash's mocks depend on Lambert's protocol definitions; ViewModels depend on both mocks + service protocols
+
+## Learnings
+
+### Test Architecture Patterns (2025-07-17 → 2026-03-08)
+- **MockURLProtocol** works well for APIClient integration tests; allows in-process HTTP mocking without external servers
+- **Protocol-based DI** in ViewModels enables clean unit testing without network calls; `configure(services:)` pattern adopted project-wide
+- **MockServices** should mirror protocol signatures exactly; any protocol change requires corresponding mock updates
+- **Status filter edge cases** (Bool? fields) require explicit nil/true/false test paths to catch filter logic bugs
+- **Combined filters** (material AND status AND search) need intersection logic tests to verify all combinations
+
+### XCUITest Infrastructure (2026-07-18 → 2026-03-08)
+- **Process isolation** requires real TCP mock server (MockAPIServer), not in-process URLSession interception
+- **Environment variable injection** (PFARM_MOCK_SERVER_URL) allows XCUITests to redirect all API calls to mock server
+- **Scenario-based test data** — MockAPIServer supports configurable responses for deterministic UI testing
+- **UI test target creation** is a manual Xcode step; test files can be pre-written and added to target later
+
+### New Service Layer Testing Patterns (2026-03-08)
+- 5 new service protocols (MaintenanceServiceProtocol, AutoPrintServiceProtocol, JobAnalyticsServiceProtocol, PredictiveServiceProtocol, DispatchServiceProtocol) follow existing Actor-based pattern
+- Mock implementations should verify:
+  - Success paths (data loaded correctly)
+  - Error paths (API failures handled gracefully)
+  - Empty result paths (zero records returned)
+  - State mutations (viewModel updates after load)
+- Request DTO validation (e.g., PredictionRequest optional fields) should be tested in ViewModel layer, not service layer
+- Date query parameters (ISO8601Plain format) should be validated in APIClient tests, not individual service tests
+
+### Cross-Team Dependency Management (2026-03-08)
+- Parallel execution (Lambert services + Ripley UIs) requires upfront protocol definitions; Ash waits for both to complete
+- Mock service implementations depend on finalized protocol signatures; changes to Lambert's protocols require corresponding mock updates
+- ViewModel tests depend on stable mock interfaces; test cases should verify that ViewModels use services correctly (not test the services themselves)
+- ServiceContainer registration must be complete before integration testing; Ash validates that all services are properly DI-injected
