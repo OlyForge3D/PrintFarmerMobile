@@ -51,6 +51,7 @@ jobs:
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         run: |
           fastlane match appstore --readonly --git_url "$MATCH_GIT_URL"
 
@@ -99,7 +100,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*TestFlight Beta Uploaded*\n*Version:* ${{ steps.version.outputs.version }}\n*Build:* ${{ steps.version.outputs.build_number }}\n*Tag:* ${{ steps.version.outputs.tag_name }}\n*Repo:* <https://github.com/olyforge3d/PrintFarmerApp|olyforge3d/PrintFarmerApp>"
+                    "text": "*TestFlight Beta Uploaded*\n*Version:* ${{ steps.version.outputs.version }}\n*Build:* ${{ steps.version.outputs.build_number }}\n*Tag:* ${{ steps.version.outputs.tag_name }}\n*Repo:* <https://github.com/olyforge3d/PrintFarmerMobile|olyforge3d/PrintFarmerMobile>"
                   }
                 }
               ]
