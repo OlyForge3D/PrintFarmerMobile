@@ -8,8 +8,8 @@ enum AppConfig {
            let url = URL(string: envURL) {
             return url
         }
-        // Default for local development
-        return URL(string: "http://localhost:5000")!
+        // Default for Printfarmer server
+        return URL(string: "http://10.0.0.20:5000")!
     }()
 
     static let appVersion: String = {
