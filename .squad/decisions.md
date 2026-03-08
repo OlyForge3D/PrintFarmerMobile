@@ -948,3 +948,22 @@ All views that use NFC scanning must call `viewModel.configureNFCScanner(service
 When the user changes the server URL in Settings, `authViewModel.logout()` is now called immediately after saving the new URL. This clears the stale JWT token and forces re-authentication against the new server. The AuthViewModel was already available in SettingsView's environment.
 
 ---
+# Decision: Spool association is tracking-only, not physical
+
+**Date:** 2026-03-08
+**Author:** Ripley (iOS Dev)
+**Status:** Applied
+
+## Context
+`setActiveSpool()` and `loadSpoolById()` in PrinterDetailViewModel were making two API calls: `setActiveSpool` (association) followed by `loadFilament` (physical command). The physical load is wrong — users assign spools for usage tracking when filament is already physically loaded.
+
+## Decision
+- Removed `printerService.loadFilament()` calls from both `setActiveSpool(_:)` and `loadSpoolById(_:)`.
+- Renamed UI label from "Load Filament" → "Set Filament" to reflect association-only semantics.
+- Kept "Change Filament" label (still accurate for swapping the association).
+- Left `ejectFilament()` unchanged — clearing association + `unloadFilament` is an intentional physical action.
+
+## Impact
+- PrinterDetailViewModel.swift: 2 lines removed (loadFilament calls)
+- PrinterDetailView.swift: label text + icon update
+- No API contract changes; backend endpoints unchanged
