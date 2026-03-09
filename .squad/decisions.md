@@ -590,3 +590,13 @@ This is the same nil-coalescing fallback pattern used for PrusaLink temperature 
 - **Ripley:** View uses `viewModel.effectiveSpoolInfo`; no direct `printer.spoolInfo` access in filament section.
 - **Lambert:** Added memberwise `init` to `PrinterSpoolInfo` (non-breaking, additive). Ideally the backend's printer detail endpoint should also return `spoolInfo` long-term.
 - **Ash:** `PrinterDetailViewModel` has new testable computed property `effectiveSpoolInfo` and `lastSetSpoolInfo` behavior to cover.
+
+---
+
+### 2026-03-09T00:27Z: Beta release v0.1.0-beta.2
+
+**By:** Dallas (Coordinator)
+
+**What:** Released v0.1.0-beta.2 with fixes for APIClient empty response handling, PrusaLink temperature display, Predictive Insights decode error, and Set Filament button persistence. Merged 11 commits from development → main, tagged v0.1.0-beta.2, pushed to both remotes (origin + release), cancelled stuck v0.1.0-beta.1 TestFlight build (hung for 1.5+ hours), and initiated new v0.1.0-beta.2 TestFlight build.
+
+**Why:** User requested beta release after completing bug fix cycle. Previous build had stalled and needed to be cancelled to unblock deployment pipeline.
