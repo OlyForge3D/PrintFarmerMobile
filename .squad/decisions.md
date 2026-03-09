@@ -451,3 +451,142 @@ Both records are written via `NFCMessageWriteDelegate` (full NDEF message writer
 - Backend `hasNfcTag: Bool?` field supported by SpoolmanSpoolDto (Jeff's WI-1)
 - Test fixtures need `hasNfcTag: nil` parameter in all SpoolmanSpool initializers going forward
 - Feature restricted to iPhone devices only (Core NFC not available on iPad)
+
+### Decision: Swift 6 Concurrency Fixes with @preconcurrency (Ripley)
+**Date:** 2026-03-08  
+**Status:** Applied
+
+## Context
+Swift 6 strict concurrency mode treats Apple framework types like `UNNotificationSettings` as non-Sendable. These types cross actor boundaries (e.g., nonisolated methods returning to @MainActor), causing compiler errors that break TestFlight archive builds.
+
+## Decision
+Use `@preconcurrency import` for Apple frameworks with non-Sendable types. This is Apple's recommended migration path for Swift 6. Do NOT use `nonisolated(unsafe)` on local variables — that modifier is for stored properties only.
+
+## Applies To
+- UserNotifications
+- CoreLocation
+- CoreNFC
+- UIKit types crossing actor boundaries
+
+**Key File:** `PrintFarmer/Services/PushNotificationManager.swift`
+
+### Decision: Observable ViewModel Sheet Dismissal (Ripley)
+**Date:** 2025-07  
+**Status:** Applied
+
+## Context
+SpoolPickerView sheet failed to dismiss reliably after selection. The environment `dismiss()` action didn't propagate `showSpoolPicker = false` through `@State`/`@Observable` bindings when async state mutations ran concurrently on the same observable.
+
+## Decision
+For `@Observable` ViewModels controlling sheet presentation via boolean properties, explicitly reset the property in the action method (e.g., `showSpoolPicker = false`) rather than relying solely on `dismiss()` from the presented view.
+
+## Applies To
+All sheet-presenting flows using `@Observable` ViewModels with `@State` ownership.
+
+---
+
+### Decision: Fall Back to StatusDetail for Temperature Display (Ripley)
+**Date:** 2026-03-08  
+**Status:** Applied
+
+## Context
+PrusaLink printers showed "--" for hotend and bed temperatures in the iOS app, despite the web UI displaying them correctly. The backend's `PrusaLinkClient.CreatePrinterDtoAsync()` omits temperature fields from the `PrinterDto` response (used by `GET /api/printers/{id}`), but the `/status` endpoint returns them in `PrinterStatusDto`.
+
+## Decision
+`PrinterDetailView.temperatureSection()` uses nil-coalescing to fall back from `printer.hotendTemp` (etc.) to `viewModel.statusDetail?.hotendTemp`. This is backend-agnostic and works for all printer types without conditional logic per backend.
+
+## Alternatives Considered
+1. **Fix the backend** — Add temps to `PrusaLinkClient.CreatePrinterDtoAsync()`. Correct long-term fix, but requires backend deploy. Filed as known gap.
+2. **Use only statusDetail** — Would work but loses the benefit of printer data that already has temps (Moonraker/Bambu).
+
+## Applies To
+`PrinterDetailView.swift` — `temperatureSection()` method.
+
+## Team Notes
+- The backend `PrusaLinkClient.CreatePrinterDtoAsync()` should also be fixed to include temp fields (backend team item).
+- The `PrinterCardView` (list view) is not affected because the list endpoint uses `CompletePrinterDto` which includes temps from SignalR cache.
+
+---
+
+### Decision: APIClient Empty Response Handling for Optional Types (Ripley)
+**Date:** 2026-03-08  
+**Status:** Implemented
+
+## Context
+The PrintFarmer API returns empty response bodies (HTTP 204 No Content or 200 with empty body) when certain resources don't exist. For example, `/api/printers/{id}/printjob` returns an empty body when no print job is active.
+
+Previously, `APIClient.execute<T: Decodable>()` always attempted to JSON-decode the response body, which failed with "dataCorrupted" errors on empty data, even when the method signature indicated an Optional return type (e.g., `PrintJobStatusInfo?`).
+
+## Decision
+Modified `APIClient.execute<T: Decodable>()` to handle empty response bodies intelligently:
+
+1. **Before attempting decode**, check if `data.isEmpty`
+2. **If empty and T is Optional**: Return `nil` (tested via `Optional<Any>.none as? T`)
+3. **If empty and T is non-Optional**: Throw `NetworkError.decodingFailed` with descriptive message
+4. **If non-empty**: Proceed with normal JSON decode
+
+## Rationale
+- **Type-safe handling**: Uses Swift's type system to distinguish Optional vs non-Optional at runtime
+- **Contract enforcement**: Empty bodies for non-Optional types still error (catches API bugs)
+- **Better error messages**: Non-Optional empty responses get a clear error ("Empty response body for non-optional type X")
+- **Minimal change**: Single check before decode, doesn't affect existing decode paths
+
+## Alternatives Considered
+1. **Add `getOptional<T>()` method**: Rejected — duplicates logic, requires callsite changes
+2. **Return nil for all empty responses**: Rejected — hides API contract violations for non-Optional types
+3. **Check HTTP status code (204)**: Rejected — some 200 responses also have empty bodies
+
+## Impact
+- **Affected endpoints**: Currently only `PrinterService.getCurrentJob()`, but pattern now works for any future Optional-returning endpoints
+- **Backward compatible**: No changes to method signatures or callsites
+- **Build status**: Clean build, no regressions
+
+## Follow-up
+- Consider documenting this pattern in API client usage guidelines
+- Monitor for other endpoints that might benefit from Optional returns
+
+
+---
+
+### Decision: Predictive Insights Graceful Empty State (Ripley)
+**Date:** 2026-03-09  
+**Status:** Implemented
+
+## Context
+The Predictive Insights feature showed "Failed to decode response: The data couldn't be read because it's missing" when the API returned empty/null body (no predictions available yet). This is the same class of bug as the print job empty response fix.
+
+## Decision
+1. **All predictive model fields use `decodeIfPresent` with defaults** — the API may omit fields or return partial data. Models should never crash on missing keys.
+2. **`predictJobFailure` returns `JobFailurePrediction?`** — empty body returns nil instead of throwing decode error.
+3. **`getActiveAlerts`/`getMaintenanceForecast` coalesce empty body to `[]`** — array endpoints return empty arrays on empty/null body.
+4. **View shows "No predictions available" empty state** — instead of an error screen, users see a friendly message explaining predictions will appear once enough print history exists.
+5. **Errors are logged, not displayed** — decode/network failures go to `os.Logger`, not to the user-facing error state.
+
+## Impact
+- **Lambert:** No service contract changes needed — protocol already updated.
+- **Ash:** `MockPredictiveService.predictJobFailure` now returns Optional; tests expecting force-unwrap need updating.
+- **Dallas:** No architecture changes.
+
+---
+
+# Decision: Local State Override for Filament Button After SetActiveSpool
+
+**Author:** Ripley  
+**Date:** 2025-07-18  
+**Status:** Implemented
+
+## Context
+After `setActiveSpool` succeeds, the printer detail endpoint (`GET /api/printers/{id}`) returns a simpler `PrinterDto` that does not include `spoolInfo`. This caused the "Set Filament" button to remain visible even though a spool was successfully assigned.
+
+## Decision
+Use a **local state override pattern** in `PrinterDetailViewModel`:
+- `lastSetSpoolInfo: PrinterSpoolInfo?` is populated from the `SpoolmanSpool` data immediately after a successful `setActiveSpool` call.
+- `effectiveSpoolInfo` computed property returns server-provided `printer.spoolInfo` when available, falling back to the local override.
+- The view's filament section reads `viewModel.effectiveSpoolInfo` instead of `printer.spoolInfo` directly.
+
+This is the same nil-coalescing fallback pattern used for PrusaLink temperature display.
+
+## Impact
+- **Ripley:** View uses `viewModel.effectiveSpoolInfo`; no direct `printer.spoolInfo` access in filament section.
+- **Lambert:** Added memberwise `init` to `PrinterSpoolInfo` (non-breaking, additive). Ideally the backend's printer detail endpoint should also return `spoolInfo` long-term.
+- **Ash:** `PrinterDetailViewModel` has new testable computed property `effectiveSpoolInfo` and `lastSetSpoolInfo` behavior to cover.

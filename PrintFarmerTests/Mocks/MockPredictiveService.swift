@@ -12,10 +12,10 @@ final class MockPredictiveService: PredictiveServiceProtocol, @unchecked Sendabl
     var getMaintenanceForecastCalledWith: Int?
     var getActiveAlertsCalled = false
     
-    func predictJobFailure(request: PredictionRequest) async throws -> JobFailurePrediction {
+    func predictJobFailure(request: PredictionRequest) async throws -> JobFailurePrediction? {
         predictJobFailureCalledWith = request
         if let error = errorToThrow { throw error }
-        return predictionToReturn!
+        return predictionToReturn
     }
     
     func getMaintenanceForecast(days: Int? = nil) async throws -> [MaintenanceForecast] {

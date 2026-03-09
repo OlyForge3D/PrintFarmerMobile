@@ -149,3 +149,12 @@ TestFlight + GitHub Actions CI/CD infrastructure for PrintFarmer iOS beta distri
 7. Check in `.github/workflows/testflight-beta.yml` + `.github/ExportOptions.plist`
 8. Test: Tag first release (e.g., `git tag -a v1.0.0-beta.1`), push to release remote
 9. Monitor GitHub Actions, verify TestFlight build appears in App Store Connect (~30 min)
+
+### Cross-Agent Update: Ripley — Predictive Insights Fix (2026-03-08T2356)
+**From:** Ripley  
+**Task:** Fixed Predictive Insights decode error  
+**Status:** Complete. Build passes.
+**Architecture Impact:** None
+- No service protocol changes required
+- Predictive view now shows "No predictions available" gracefully
+- Errors logged, not displayed to user

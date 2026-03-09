@@ -107,7 +107,7 @@ struct PrinterDetailView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 10) {
-                if let spool = printer.spoolInfo, spool.hasActiveSpool {
+                if let spool = viewModel.effectiveSpoolInfo, spool.hasActiveSpool {
                     activeSpoolContent(spool)
                 } else {
                     // No filament loaded
@@ -379,15 +379,22 @@ struct PrinterDetailView: View {
     // MARK: - Temperatures
 
     private func temperatureSection(_ printer: Printer) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Prefer printer temps (from CompletePrinterDto), fall back to statusDetail
+        // (from /status endpoint). PrusaLink's PrinterDto omits temps but /status has them.
+        let hotend = printer.hotendTemp ?? viewModel.statusDetail?.hotendTemp
+        let hotendTgt = printer.hotendTarget ?? viewModel.statusDetail?.hotendTarget
+        let bed = printer.bedTemp ?? viewModel.statusDetail?.bedTemp
+        let bedTgt = printer.bedTarget ?? viewModel.statusDetail?.bedTarget
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Temperatures")
                 .font(.headline)
 
             VStack(spacing: 8) {
                 TemperatureView(
                     label: "Hotend",
-                    current: printer.hotendTemp,
-                    target: printer.hotendTarget,
+                    current: hotend,
+                    target: hotendTgt,
                     icon: "flame"
                 )
 
@@ -395,8 +402,8 @@ struct PrinterDetailView: View {
 
                 TemperatureView(
                     label: "Bed",
-                    current: printer.bedTemp,
-                    target: printer.bedTarget,
+                    current: bed,
+                    target: bedTgt,
                     icon: "square.stack.3d.up"
                 )
             }

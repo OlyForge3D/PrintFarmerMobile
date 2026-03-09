@@ -45,6 +45,7 @@ final class PrinterDetailViewModel {
     }
 
     var showSpoolPicker = false
+    private var lastSetSpoolInfo: PrinterSpoolInfo?
     var nfcScanError: String?
     var nfcScannedData: ScannedSpoolData?
     var showScannedDataSheet = false
@@ -152,6 +153,10 @@ final class PrinterDetailViewModel {
             print("📡 loadSpoolById: printer=\(printerId) spool=\(id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: id)
             print("✅ loadSpoolById: success")
+            lastSetSpoolInfo = PrinterSpoolInfo(
+                hasActiveSpool: true,
+                activeSpoolId: id
+            )
             await loadPrinter()
         } catch {
             print("❌ loadSpoolById failed: \(error)")
@@ -167,6 +172,7 @@ final class PrinterDetailViewModel {
         do {
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: nil)
             _ = try await printerService.unloadFilament(printerId: printerId)
+            lastSetSpoolInfo = nil
             await loadPrinter()
         } catch {
             actionError = error.localizedDescription
@@ -175,6 +181,7 @@ final class PrinterDetailViewModel {
     }
 
     func setActiveSpool(_ spool: SpoolmanSpool) async {
+        showSpoolPicker = false
         guard let printerService else {
             print("⚠️ setActiveSpool: printerService is nil")
             return
@@ -185,6 +192,17 @@ final class PrinterDetailViewModel {
             print("📡 setActiveSpool: printer=\(printerId) spool=\(spool.id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: spool.id)
             print("✅ setActiveSpool: success")
+            lastSetSpoolInfo = PrinterSpoolInfo(
+                hasActiveSpool: true,
+                activeSpoolId: spool.id,
+                spoolName: spool.name,
+                material: spool.material,
+                colorHex: spool.colorHex,
+                filamentName: spool.filamentName,
+                vendor: spool.vendor,
+                remainingWeightG: spool.remainingWeightG,
+                spoolInUse: true
+            )
             await loadPrinter()
         } catch {
             print("❌ setActiveSpool failed: \(error)")
@@ -299,6 +317,14 @@ final class PrinterDetailViewModel {
     }
 
     // MARK: - Computed State
+
+    /// Merges server-returned spoolInfo with local override from recent setActiveSpool
+    var effectiveSpoolInfo: PrinterSpoolInfo? {
+        if let serverInfo = printer?.spoolInfo, serverInfo.hasActiveSpool {
+            return serverInfo
+        }
+        return lastSetSpoolInfo ?? printer?.spoolInfo
+    }
 
     var isPrinting: Bool {
         printer?.state?.lowercased() == "printing"

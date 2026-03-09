@@ -10,22 +10,6 @@ struct PredictiveInsightsView: View {
             if viewModel.isLoading && viewModel.prediction == nil {
                 ProgressView("Analyzing…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.error, viewModel.prediction == nil {
-                ContentUnavailableView {
-                    Label("Error", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(error)
-                } actions: {
-                    Button("Retry") {
-                        Task {
-                            await viewModel.predictFailure(
-                                printerId: printerId,
-                                material: nil,
-                                duration: nil
-                            )
-                        }
-                    }
-                }
             } else {
                 insightsContent
             }
@@ -64,29 +48,41 @@ struct PredictiveInsightsView: View {
 
     private var riskGauge: some View {
         VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .stroke(Color.pfBackgroundTertiary, lineWidth: 12)
-                    .frame(width: 120, height: 120)
+            if viewModel.prediction != nil {
+                ZStack {
+                    Circle()
+                        .stroke(Color.pfBackgroundTertiary, lineWidth: 12)
+                        .frame(width: 120, height: 120)
 
-                Circle()
-                    .trim(from: 0, to: CGFloat(viewModel.riskPercentage) / 100.0)
-                    .stroke(riskColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: 120, height: 120)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(viewModel.riskPercentage) / 100.0)
+                        .stroke(riskColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 120, height: 120)
 
-                VStack(spacing: 2) {
-                    Text("\(viewModel.riskPercentage)%")
-                        .font(.title.bold().monospacedDigit())
+                    VStack(spacing: 2) {
+                        Text("\(viewModel.riskPercentage)%")
+                            .font(.title.bold().monospacedDigit())
 
-                    Text(viewModel.riskLevel)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(riskColor)
+                        Text(viewModel.riskLevel)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(riskColor)
+                    }
                 }
-            }
 
-            Text("Failure Risk")
-                .font(.headline)
+                Text("Failure Risk")
+                    .font(.headline)
+            } else {
+                Image(systemName: "chart.line.downtrend.xyaxis")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+                Text("No predictions available")
+                    .font(.headline)
+                Text("Predictions will appear once enough print history is collected.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding()

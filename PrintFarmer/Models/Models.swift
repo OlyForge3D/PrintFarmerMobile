@@ -282,6 +282,28 @@ struct PrinterSpoolInfo: Codable, Sendable {
     let remainingWeightG: Double?
     let spoolInUse: Bool?
 
+    init(
+        hasActiveSpool: Bool,
+        activeSpoolId: Int? = nil,
+        spoolName: String? = nil,
+        material: String? = nil,
+        colorHex: String? = nil,
+        filamentName: String? = nil,
+        vendor: String? = nil,
+        remainingWeightG: Double? = nil,
+        spoolInUse: Bool? = nil
+    ) {
+        self.hasActiveSpool = hasActiveSpool
+        self.activeSpoolId = activeSpoolId
+        self.spoolName = spoolName
+        self.material = material
+        self.colorHex = colorHex
+        self.filamentName = filamentName
+        self.vendor = vendor
+        self.remainingWeightG = remainingWeightG
+        self.spoolInUse = spoolInUse
+    }
+
     private enum CodingKeys: String, CodingKey {
         case hasActiveSpool, activeSpoolId, spoolName, material
         case colorHex, filamentName, vendor, remainingWeightG, spoolInUse

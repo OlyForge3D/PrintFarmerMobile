@@ -21,6 +21,7 @@
 3. **Phase 1 Filament/Spool (2026-07-17):** SpoolService (CRUD + pagination), PrinterService extensions (setActiveSpool/loadFilament/unloadFilament/changeFilament), FilamentModels (SpoolmanSpool/Filament/Vendor/Material), APIClient.patch()
 4. **Phase 2 Scanning (Completed 2026-03-07T16:34Z):** SpoolScannerProtocol abstraction, QRSpoolScannerService, NFCService (CoreNFC + NFC tag parsing), QR/NFC parsers, ServiceContainer conditional registration
 5. **New Service Layers (2026-03-08):** MaintenanceService, AutoPrintService, JobAnalyticsService, PredictiveService, DispatchService (5 services, 30+ DTOs, all registered in ServiceContainer)
+6. **Phase 3 Features (2026-03-08):** Spool NFC tag writing (`writeSpoolTag()` method); Predictive Insights graceful empty state (decodeIfPresent, optional returns)
 
 ### Key Technical Decisions Codified (2026-03-07 → 2026-03-08)
 - **Spoolman naming & pagination:** Model prefix `Spoolman` (avoid future collisions), limit/offset pagination (not page/pageSize), SetActiveSpoolRequest returns CommandResult, APIClient.patch() for updates
@@ -222,3 +223,24 @@
 - Integration tests: Verify highlight behavior, error handling, reload on success
 
 ---
+
+### Cross-Agent Update: Ripley — Predictive Insights Fix (2026-03-08T2356)
+**From:** Ripley  
+**Task:** Fixed Predictive Insights decode error
+**Status:** Implementation complete  
+**Service Updates:**
+- `predictJobFailure` returns `JobFailurePrediction?` instead of throwing on empty body
+- `getActiveAlerts`/`getMaintenanceForecast` coalesce empty/null body to `[]`
+- All predictive model fields use `decodeIfPresent` with defaults
+- **Impact to Lambert:** No protocol changes required; `PredictiveServiceProtocol` already designed for this
+
+---
+
+### Cross-Agent Update: Ripley — Set Filament Button Visibility Fix (2026-03-09T00:08)
+**From:** Ripley  
+**Task:** Fixed "Set Filament" button remaining visible after spool assignment  
+**Impact to Lambert:**
+- `PrinterSpoolInfo` already has memberwise init (no changes needed)
+- No protocol or service contract changes required
+- Backend follow-up: Ideally `GET /api/printers/{id}` should also return `spoolInfo` long-term to avoid local override workaround
+
