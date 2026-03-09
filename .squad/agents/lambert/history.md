@@ -390,3 +390,11 @@ Fixed xcodebuild archive hang (was 1.5+ hours) via standard GitHub Actions iOS k
 - Generate API key in App Store Connect and add 3 secrets to GitHub repo settings
 - Confirm API key has "Developer" or "Admin" role (minimum required for pilot uploads)
 
+
+### Fix: Spool Eject "Client error 400" (2025-07-24)
+
+**Root Cause:** Backend endpoints like `filament-unload` and `active-spool` return `CommandResult` (`{"success": false, "message": "..."}`) with HTTP 400 on failure. The iOS `APIError` model only had `title`/`detail`/`status`/`errors` fields (matching ASP.NET ProblemDetails), so the `message` field from `CommandResult` was silently lost. Users saw generic "Client error (400)" instead of the actual backend reason.
+
+**Fix:** Added `message: String?` to `APIError` and updated the `clientError` description fallback chain to `detail → message → title → "Client error (code)"`.
+
+**Key Insight:** The backend uses two different error body shapes — `ProblemDetails` (ASP.NET validation) and `CommandResult` (printer operations). The `APIError` model must handle both. This is a general pattern: any endpoint using `MapCommandResult()` can return `CommandResult` bodies on 400.

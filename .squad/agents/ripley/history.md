@@ -232,3 +232,23 @@ Completed two-phase spool picker flow aligned with web UI:
 **Lambert Integration:** New SpoolService.listAvailableMaterials() no contract-breaking changes.
 **Ash Integration:** Material selection flow + back-navigation paths ready for test coverage.
 
+## 13. Public Repo Readiness Prep (2025-07)
+
+**Status:** Complete and committed (a1c74a2)
+**Task:** Fix all public repo readiness issues from Dallas's audit
+
+### Changes
+- **LICENSE:** Added MIT License with OlyForge3D copyright (2025-present)
+- **README.md:** Professional project overview with tech stack, architecture, getting started, and configuration sections
+- **AppConfig.swift:** Changed hardcoded dev IP `10.0.0.20:5000` → `localhost:5000` as default (env var override still works)
+- **.gitignore:** Added patterns for secrets & certificates (.env, .p8, .p12, .pem, .key, secrets/)
+
+### Learnings
+- **Default config safety:** Always use `localhost` as default server URL, never a LAN IP. Environment variable override handles real deployments.
+- **gitignore layering:** Keep secret/cert patterns separate from build artifact patterns for clarity.
+
+### NFC Tag Persistence
+- **Always persist to backend after NFC write:** `markSpoolNFCWritten()` only updates local state — must also call `spoolService.updateSpool(id:, SpoolmanSpoolRequest(hasNfcTag: true))` so the flag survives refresh.
+- **SpoolmanSpoolRequest needs parity with SpoolmanSpool:** Any new field on the response DTO that users can modify (like `hasNfcTag`) must also exist on the request DTO.
+- **Key files:** `SpoolInventoryViewModel.writeNFCTag(for:)`, `FilamentModels.swift` (SpoolmanSpoolRequest).
+
