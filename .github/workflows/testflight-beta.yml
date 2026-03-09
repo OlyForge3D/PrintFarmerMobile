@@ -72,9 +72,6 @@ jobs:
           # Add to keychain search list
           security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
           
-          # Allow codesign to access keychain without prompt
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          
           echo "✅ Keychain setup complete"
 
       - name: Setup code signing with fastlane match
@@ -92,6 +89,13 @@ jobs:
             --app_identifier "com.olyforge3d.printfarmer.ios" \
             --keychain_name "$KEYCHAIN_PATH" \
             --keychain_password "$MATCH_PASSWORD"
+
+      - name: Allow codesign keychain access
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
       - name: Update build version numbers
         run: |
