@@ -244,3 +244,81 @@
 - No protocol or service contract changes required
 - Backend follow-up: Ideally `GET /api/printers/{id}` should also return `spoolInfo` long-term to avoid local override workaround
 
+---
+
+## Learnings
+
+### CI/CD Code Signing on GitHub Actions macOS Runners (2026-03-09)
+
+**Problem:** TestFlight Beta Build workflow consistently hung at `xcodebuild archive` step (1.5+ hours, no output) on both v0.1.0-beta.1 and v0.1.0-beta.2.
+
+**Root Cause:** 
+- `fastlane match` imports certificates into macOS keychain, but `xcodebuild` needs explicit keychain access on CI
+- Without proper keychain setup, xcodebuild prompts for keychain access (hangs on headless CI)
+- GitHub Actions runners require temporary keychain creation, unlocking, and explicit codesign partition list setup
+
+**Solution Pattern (Standard for GitHub Actions iOS Code Signing):**
+
+1. **Create temporary keychain** before match step:
+   ```yaml
+   - name: Setup Keychain
+     env:
+       KEYCHAIN_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+     run: |
+       KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+       security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+       security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"  # 6hr timeout, no sleep lock
+       security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+       security default-keychain -s "$KEYCHAIN_PATH"
+       security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+       security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+   ```
+
+2. **Pass keychain to fastlane match**:
+   ```yaml
+   fastlane match appstore \
+     --readonly \
+     --keychain_name "$KEYCHAIN_PATH" \
+     --keychain_password "$MATCH_PASSWORD"
+   ```
+
+3. **Tell xcodebuild where to find signing identity**:
+   ```yaml
+   xcodebuild archive \
+     OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
+     ...
+   ```
+
+4. **Add timeout to prevent infinite hangs**:
+   ```yaml
+   - name: Build for App Store
+     timeout-minutes: 30
+   ```
+
+5. **Always cleanup keychain** (even on failure):
+   ```yaml
+   - name: Cleanup keychain
+     if: always()
+     run: security delete-keychain "$KEYCHAIN_PATH" || true
+   ```
+
+**Key Technical Details:**
+- `RUNNER_TEMP` environment variable provides temp directory path on GitHub runners
+- `security set-key-partition-list` prevents codesign from prompting for keychain access
+- `-lut 21600` sets 6-hour timeout and disables lock-on-sleep
+- Keychain password can reuse `MATCH_PASSWORD` secret (same credential)
+- Cleanup step with `if: always()` ensures keychain deletion even on job failure
+
+**Files Modified:**
+- `.github/workflows/testflight-beta.yml` — Added 5 steps: keychain setup, match keychain args, xcodebuild keychain flag, timeout, cleanup
+
+**Testing Validation:**
+- YAML syntax validated with `python3 -c "import yaml"`
+- All existing workflow steps preserved (no regression)
+- ExportOptions.plist verified (no changes needed)
+
+**Architecture Decision:**
+- Standard GitHub Actions pattern for iOS code signing (used widely across iOS CI/CD community)
+- No custom tooling or workarounds needed
+- Follows Apple security best practices for keychain access control
+
