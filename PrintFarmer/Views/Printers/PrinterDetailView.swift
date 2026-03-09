@@ -107,7 +107,7 @@ struct PrinterDetailView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 10) {
-                if let spool = printer.spoolInfo, spool.hasActiveSpool {
+                if let spool = viewModel.effectiveSpoolInfo, spool.hasActiveSpool {
                     activeSpoolContent(spool)
                 } else {
                     // No filament loaded
