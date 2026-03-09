@@ -79,3 +79,15 @@
 - Tests expecting force-unwrap of this value require updating (use optional binding or nil coalescing)
 - View tests should verify "No predictions available" empty state when service returns nil
 - Decode tests should verify decodeIfPresent behavior for predictive models with missing fields
+
+---
+
+### Cross-Agent Update: Ripley — Set Filament Button Visibility Fix (2026-03-09T00:08)
+**From:** Ripley  
+**Task:** Fixed "Set Filament" button remaining visible after spool assignment  
+**Impact to Ash:**
+- `PrinterDetailViewModel` now has testable `effectiveSpoolInfo` computed property
+- New `lastSetSpoolInfo: PrinterSpoolInfo?` property gets populated after successful `setActiveSpool`
+- Tests should verify: button visibility depends on `effectiveSpoolInfo` (not direct `printer.spoolInfo`), fallback to local override when server data unavailable, cleared on spool eject
+- Test fixture: `PrinterSpoolInfo` requires memberwise init (already available in Models.swift)
+

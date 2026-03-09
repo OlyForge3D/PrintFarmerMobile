@@ -116,3 +116,35 @@ This pattern:
 - **Parse CI logs thoroughly:** Search for `: error:`, `ARCHIVE FAILED`, `signal`, `Segmentation fault`, `FAILED`, `fatal:`. Sometimes compiler crashes without clear messages — check "build commands failed" section.
 - **Tag retag workflow:** Delete remote first: `git push release :refs/tags/TAG && git tag -d TAG && git tag TAG main && git push release TAG`.
 - **Predictive Insights empty response fix:** The `predictJobFailure` endpoint can return empty body when no predictions are available. Changed return type to `JobFailurePrediction?` across protocol/service/mock, and all model fields to use `decodeIfPresent` with sensible defaults. View now shows graceful "No predictions available" empty state instead of decode error. Same pattern applied to `getActiveAlerts`/`getMaintenanceForecast` (return `[]` on empty body).
+
+### Local State Override Pattern (Set Filament Fix)
+- **Problem:** `GET /api/printers/{id}` (PrinterDto) doesn't return `spoolInfo`, so after `setActiveSpool` succeeds, the UI still shows "Set Filament" because `printer.spoolInfo` is nil.
+- **Solution:** `lastSetSpoolInfo` local override in ViewModel, constructed from the `SpoolmanSpool` we just set. `effectiveSpoolInfo` computed property merges server data with local override. Same nil-coalescing fallback pattern used for PrusaLink temperatures.
+- **Key files:** `PrinterDetailViewModel.swift` (effectiveSpoolInfo, lastSetSpoolInfo), `PrinterDetailView.swift` (filamentSection uses viewModel.effectiveSpoolInfo), `Models.swift` (PrinterSpoolInfo memberwise init).
+- **Applies to both paths:** spool picker selection AND NFC scan-to-load. Cleared on eject.
+
+---
+
+## Latest Work: Set Filament Button Visibility Fix (2026-03-09T00:08)
+
+**Status:** Complete and committed  
+**Task:** Fix "Set Filament" button remaining visible after successful spool assignment
+
+### Problem
+After `setActiveSpool` succeeds, the printer detail endpoint (`GET /api/printers/{id}`) returns `PrinterDto` without `spoolInfo`, causing the button to remain visible despite the spool being assigned.
+
+### Solution
+Implemented local state override pattern:
+- `PrinterDetailViewModel.lastSetSpoolInfo: PrinterSpoolInfo?` populated immediately after successful `setActiveSpool`
+- `effectiveSpoolInfo` computed property returns server `spoolInfo` when available, falls back to local override
+- `PrinterDetailView.filamentSection()` reads `viewModel.effectiveSpoolInfo` instead of direct `printer.spoolInfo`
+
+### Key Points
+- Reused same nil-coalescing fallback pattern as PrusaLink temperature display
+- Applies to both spool picker selection and NFC scan-to-load flows
+- Button correctly hides after assignment; state cleared on spool eject
+- Related Decision: **Local State Override for Filament Button After SetActiveSpool** → decisions.md
+
+### Build Status
+✓ Clean build, no warnings  
+✓ Committed to development branch as 4b3f20c

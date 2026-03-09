@@ -233,3 +233,14 @@
 - `getActiveAlerts`/`getMaintenanceForecast` coalesce empty/null body to `[]`
 - All predictive model fields use `decodeIfPresent` with defaults
 - **Impact to Lambert:** No protocol changes required; `PredictiveServiceProtocol` already designed for this
+
+---
+
+### Cross-Agent Update: Ripley — Set Filament Button Visibility Fix (2026-03-09T00:08)
+**From:** Ripley  
+**Task:** Fixed "Set Filament" button remaining visible after spool assignment  
+**Impact to Lambert:**
+- `PrinterSpoolInfo` already has memberwise init (no changes needed)
+- No protocol or service contract changes required
+- Backend follow-up: Ideally `GET /api/printers/{id}` should also return `spoolInfo` long-term to avoid local override workaround
+

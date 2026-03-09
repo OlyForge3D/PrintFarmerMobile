@@ -566,3 +566,27 @@ The Predictive Insights feature showed "Failed to decode response: The data coul
 - **Lambert:** No service contract changes needed — protocol already updated.
 - **Ash:** `MockPredictiveService.predictJobFailure` now returns Optional; tests expecting force-unwrap need updating.
 - **Dallas:** No architecture changes.
+
+---
+
+# Decision: Local State Override for Filament Button After SetActiveSpool
+
+**Author:** Ripley  
+**Date:** 2025-07-18  
+**Status:** Implemented
+
+## Context
+After `setActiveSpool` succeeds, the printer detail endpoint (`GET /api/printers/{id}`) returns a simpler `PrinterDto` that does not include `spoolInfo`. This caused the "Set Filament" button to remain visible even though a spool was successfully assigned.
+
+## Decision
+Use a **local state override pattern** in `PrinterDetailViewModel`:
+- `lastSetSpoolInfo: PrinterSpoolInfo?` is populated from the `SpoolmanSpool` data immediately after a successful `setActiveSpool` call.
+- `effectiveSpoolInfo` computed property returns server-provided `printer.spoolInfo` when available, falling back to the local override.
+- The view's filament section reads `viewModel.effectiveSpoolInfo` instead of `printer.spoolInfo` directly.
+
+This is the same nil-coalescing fallback pattern used for PrusaLink temperature display.
+
+## Impact
+- **Ripley:** View uses `viewModel.effectiveSpoolInfo`; no direct `printer.spoolInfo` access in filament section.
+- **Lambert:** Added memberwise `init` to `PrinterSpoolInfo` (non-breaking, additive). Ideally the backend's printer detail endpoint should also return `spoolInfo` long-term.
+- **Ash:** `PrinterDetailViewModel` has new testable computed property `effectiveSpoolInfo` and `lastSetSpoolInfo` behavior to cover.
