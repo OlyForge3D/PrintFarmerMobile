@@ -122,11 +122,13 @@ jobs:
 
       - name: Export IPA
         run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           xcodebuild \
             -exportArchive \
             -archivePath "build/PrintFarmer.xcarchive" \
             -exportOptionsPlist .github/ExportOptions.plist \
-            -exportPath "build/IPA"
+            -exportPath "build/IPA" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
       - name: Upload to TestFlight
         env:
