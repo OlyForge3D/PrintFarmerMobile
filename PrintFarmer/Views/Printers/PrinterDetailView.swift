@@ -454,6 +454,14 @@ struct PrinterDetailView: View {
 
                 if viewModel.snapshotData != nil || printer.cameraSnapshotUrl != nil {
                     Button {
+                        viewModel.rotateCameraView()
+                    } label: {
+                        Image(systemName: "rotate.right")
+                            .font(.subheadline)
+                    }
+                    .accessibilityLabel("Rotate camera view")
+                    
+                    Button {
                         Task { await viewModel.refreshSnapshot() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
@@ -490,6 +498,7 @@ struct PrinterDetailView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .rotationEffect(.degrees(Double(viewModel.cameraRotation)))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
                 snapshotUnavailable()
@@ -509,6 +518,7 @@ struct PrinterDetailView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .rotationEffect(.degrees(Double(viewModel.cameraRotation)))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             case .failure:
                 snapshotUnavailable()

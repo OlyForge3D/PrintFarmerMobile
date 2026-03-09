@@ -252,6 +252,13 @@ Completed two-phase spool picker flow aligned with web UI:
 - **SpoolmanSpoolRequest needs parity with SpoolmanSpool:** Any new field on the response DTO that users can modify (like `hasNfcTag`) must also exist on the request DTO.
 - **Key files:** `SpoolInventoryViewModel.writeNFCTag(for:)`, `FilamentModels.swift` (SpoolmanSpoolRequest).
 
+### Per-Printer Preferences with UserDefaults
+- **Camera rotation pattern:** Store per-printer settings with key pattern `"{setting}-{printerId.uuidString}"` (e.g., `"cameraRotation-12345-uuid"`).
+- **Load on init and loadPrinter:** Initialize from UserDefaults in `init()` and reload in `loadPrinter()` to handle cases where printer ID changes or view reloads.
+- **Rotation wrapping:** Use modulo operator `(value + 90) % 360` to wrap rotation values from 270 back to 0.
+- **Apply to both image types:** When adding rotation effects, apply to both `snapshotImage(from data:)` (UIImage) and `asyncSnapshotImage(url:)` (AsyncImage) for consistent behavior.
+- **Key files:** `PrinterDetailViewModel.swift` (cameraRotation property, rotateCameraView method), `PrinterDetailView.swift` (rotate button in camera section header, rotationEffect on images).
+
 
 ---
 

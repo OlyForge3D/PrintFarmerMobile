@@ -2,6 +2,43 @@
 
 ## Active Decisions
 
+### Decision: Per-Printer Camera Rotation (Ripley)
+**Date:** 2026-03-09  
+**Status:** Implemented
+
+## Context
+Phrozen Arco printers (and potentially other models) display camera images upside-down. Users need a way to correct the camera orientation on a per-printer basis.
+
+## Decisions
+1. **Storage:** `cameraRotation: Int` property in `PrinterDetailViewModel` storing degrees (0, 90, 180, 270)
+2. **Persistence:** UserDefaults with key pattern `"cameraRotation-{printerId.uuidString}"`
+3. **UI:** Rotate button (`rotate.right` SF Symbol) in camera section header, next to refresh button
+4. **Behavior:** Each tap rotates +90°, wrapping from 270→0
+5. **Application:** `.rotationEffect(.degrees(Double(cameraRotation)))` applied to both `snapshotImage(from:)` and `asyncSnapshotImage(url:)`
+
+## Rationale
+- Per-printer storage allows different rotation for each printer model
+- UserDefaults persistence survives app restarts
+- UI placement next to refresh button keeps camera controls grouped
+- Rotation applied to both data-based and URL-based images ensures consistent behavior
+- 90° increments cover all common orientations (0°, 90°, 180°, 270°)
+
+## Files Modified
+- `PrintFarmer/ViewModels/PrinterDetailViewModel.swift` — Added `cameraRotation` property, `rotateCameraView()` method, UserDefaults load in `init()` and `loadPrinter()`
+- `PrintFarmer/Views/Printers/PrinterDetailView.swift` — Added rotate button in camera section header, applied `.rotationEffect()` to both image views
+
+## Related Patterns
+- **Per-printer settings pattern:** Key format `"{setting}-{printerId.uuidString}"` can be reused for other printer-specific preferences
+- **Local preference override:** Similar to `lastSetSpoolInfo` pattern — preference changes take effect immediately without backend sync
+- **Toolbar button grouping:** Related controls (rotate, refresh) placed adjacent in toolbar for discoverability
+
+## Future Considerations
+- If many per-printer settings accumulate, consider moving to a structured UserDefaults object or Core Data
+- Could add a settings UI to reset all printer preferences if needed
+- Backend could eventually store camera orientation metadata per printer model
+
+---
+
 ### Decision: Spoolman Spool Model Naming & Pagination (Lambert)
 **Date:** 2026-03-07  
 **Status:** Implemented
