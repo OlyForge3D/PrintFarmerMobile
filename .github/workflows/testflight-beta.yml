@@ -76,8 +76,6 @@ jobs:
 
       - name: Setup code signing with fastlane match
         env:
-          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
@@ -132,11 +130,36 @@ jobs:
 
       - name: Upload to TestFlight
         env:
-          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          # Required secrets: APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_ISSUER_ID, APP_STORE_CONNECT_API_KEY_CONTENT
+          # The API key content must be the .p8 file base64-encoded
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
         run: |
+          # Create temporary API key JSON file for fastlane
+          API_KEY_JSON=$RUNNER_TEMP/api_key.json
+          
+          # Decode the base64-encoded .p8 key content
+          API_KEY_DECODED=$(echo "$APP_STORE_CONNECT_API_KEY_CONTENT" | base64 -d)
+          
+          # Build JSON with python3 (handles key escaping correctly)
+          export API_KEY_DECODED
+          export API_KEY_JSON_PATH="$API_KEY_JSON"
+          python3 -c "
+          import json, os
+          data = {
+              'key_id': os.environ['APP_STORE_CONNECT_API_KEY_ID'],
+              'issuer_id': os.environ['APP_STORE_CONNECT_API_ISSUER_ID'],
+              'key': os.environ['API_KEY_DECODED'],
+              'in_house': False
+          }
+          with open(os.environ['API_KEY_JSON_PATH'], 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+          
           fastlane pilot upload \
             --ipa "build/IPA/PrintFarmer.ipa" \
+            --api_key_path "$API_KEY_JSON" \
             --changelog "Beta build from tag: ${{ steps.version.outputs.tag_name }}" \
             --skip_waiting_for_build_processing
 
@@ -183,4 +206,6 @@ jobs:
         if: always()
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          API_KEY_JSON=$RUNNER_TEMP/api_key.json
           security delete-keychain "$KEYCHAIN_PATH" || true
+          rm -f "$API_KEY_JSON" || true
