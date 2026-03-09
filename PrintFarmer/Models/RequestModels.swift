@@ -88,4 +88,6 @@ struct APIError: Codable, Sendable {
     let status: Int?
     let detail: String?
     let errors: [String: [String]]?
+    // Backend CommandResult returns "message" instead of "detail"
+    let message: String?
 }

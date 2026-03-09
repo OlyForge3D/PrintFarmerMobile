@@ -305,7 +305,7 @@ enum NetworkError: LocalizedError, Sendable {
         case .timeout: "Request timed out"
         case .serverUnreachable: "Server is unreachable"
         case .clientError(let code, let apiError):
-            apiError?.detail ?? apiError?.title ?? "Client error (\(code))"
+            apiError?.detail ?? apiError?.message ?? apiError?.title ?? "Client error (\(code))"
         case .serverError(let code): "Server error (\(code))"
         case .unexpectedStatus(let code): "Unexpected status (\(code))"
         case .decodingFailed(let error): "Failed to decode response: \(error.localizedDescription)"
