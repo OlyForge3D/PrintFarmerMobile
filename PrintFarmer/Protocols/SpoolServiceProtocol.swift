@@ -12,6 +12,7 @@ protocol SpoolServiceProtocol: Sendable {
     func listFilaments() async throws -> [SpoolmanFilament]
     func listVendors() async throws -> [SpoolmanVendor]
     func listMaterials() async throws -> [SpoolmanMaterial]
+    func listAvailableMaterials() async throws -> [String]
 }
 
 // Convenience overloads

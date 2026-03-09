@@ -7,6 +7,7 @@ final class MockSpoolService: SpoolServiceProtocol, @unchecked Sendable {
     var filamentsToReturn: [SpoolmanFilament] = []
     var vendorsToReturn: [SpoolmanVendor] = []
     var materialsToReturn: [SpoolmanMaterial] = []
+    var availableMaterialsToReturn: [String] = []
     var errorToThrow: Error?
 
     // Call tracking
@@ -19,6 +20,7 @@ final class MockSpoolService: SpoolServiceProtocol, @unchecked Sendable {
     var listFilamentsCalled = false
     var listVendorsCalled = false
     var listMaterialsCalled = false
+    var listAvailableMaterialsCalled = false
 
     func listSpools(limit: Int, offset: Int, search: String?, material: String?, vendor: String?) async throws -> SpoolmanPagedResult<SpoolmanSpool> {
         listSpoolsCalled = true
@@ -64,12 +66,19 @@ final class MockSpoolService: SpoolServiceProtocol, @unchecked Sendable {
         return materialsToReturn
     }
 
+    func listAvailableMaterials() async throws -> [String] {
+        listAvailableMaterialsCalled = true
+        if let error = errorToThrow { throw error }
+        return availableMaterialsToReturn
+    }
+
     func reset() {
         spoolsPageToReturn = SpoolmanPagedResult<SpoolmanSpool>(items: [], totalCount: 0)
         spoolToReturn = nil
         filamentsToReturn = []
         vendorsToReturn = []
         materialsToReturn = []
+        availableMaterialsToReturn = []
         errorToThrow = nil
         listSpoolsCalled = false
         listSpoolsArgs = nil
@@ -79,5 +88,6 @@ final class MockSpoolService: SpoolServiceProtocol, @unchecked Sendable {
         listFilamentsCalled = false
         listVendorsCalled = false
         listMaterialsCalled = false
+        listAvailableMaterialsCalled = false
     }
 }

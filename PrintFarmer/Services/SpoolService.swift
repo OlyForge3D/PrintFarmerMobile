@@ -46,4 +46,8 @@ actor SpoolService: SpoolServiceProtocol {
     func listMaterials() async throws -> [SpoolmanMaterial] {
         try await apiClient.get("/api/spoolman/materials")
     }
+
+    func listAvailableMaterials() async throws -> [String] {
+        try await apiClient.get("/api/spoolman/materials/available")
+    }
 }

@@ -1,8 +1,15 @@
 import Foundation
 import os
 
+enum SpoolPickerPhase {
+    case selectMaterial
+    case selectSpool
+}
+
 @MainActor @Observable
 final class SpoolPickerViewModel {
+    var phase: SpoolPickerPhase = .selectMaterial
+    var availableMaterials: [String] = []
     var spools: [SpoolmanSpool] = []
     var searchText = ""
     var selectedMaterial: String?
@@ -32,9 +39,20 @@ final class SpoolPickerViewModel {
         self.nfcScanner = scanner
     }
 
-    var availableMaterials: [String] {
-        let materials = Set(spools.map { $0.material })
-        return materials.sorted()
+    func selectMaterial(_ material: String) {
+        selectedMaterial = material
+        phase = .selectSpool
+        Task {
+            await loadSpools()
+        }
+    }
+
+    func backToMaterialSelection() {
+        phase = .selectMaterial
+        spools = []
+        selectedMaterial = nil
+        selectedStatus = nil
+        searchText = ""
     }
 
     var filteredSpools: [SpoolmanSpool] {
@@ -108,6 +126,25 @@ final class SpoolPickerViewModel {
         searchText = ""
     }
 
+    func loadMaterials() async {
+        guard let spoolService else {
+            errorMessage = "Spool service not available"
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            availableMaterials = try await spoolService.listAvailableMaterials()
+        } catch {
+            logger.warning("Failed to load materials: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     func loadSpools() async {
         guard let spoolService else {
             errorMessage = "Spool service not available"
@@ -118,7 +155,13 @@ final class SpoolPickerViewModel {
         errorMessage = nil
 
         do {
-            let result = try await spoolService.listSpools(limit: 200, offset: 0)
+            let result = try await spoolService.listSpools(
+                limit: 200,
+                offset: 0,
+                search: nil,
+                material: selectedMaterial,
+                vendor: nil
+            )
             spools = result.items.filter { !($0.archived ?? false) }
         } catch {
             logger.warning("Failed to load spools: \(error.localizedDescription)")
@@ -198,11 +241,21 @@ final class SpoolPickerViewModel {
                 return
             }
 
-            // Reload and search again
-            let result = try await spoolService.listSpools(limit: 200, offset: 0)
-            spools = result.items.filter { !($0.archived ?? false) }
+            // Reload all spools without material filter to find the scanned spool
+            let result = try await spoolService.listSpools(
+                limit: 200,
+                offset: 0,
+                search: nil,
+                material: nil,
+                vendor: nil
+            )
+            let allSpools = result.items.filter { !($0.archived ?? false) }
 
-            if let spool = spools.first(where: { $0.id == id }) {
+            if let spool = allSpools.first(where: { $0.id == id }) {
+                // Bypass material selection when scanning
+                selectedMaterial = spool.material
+                phase = .selectSpool
+                spools = allSpools.filter { $0.material == spool.material }
                 onAutoSelect?(spool)
             } else {
                 scanError = "Spool #\(id) not found in inventory."

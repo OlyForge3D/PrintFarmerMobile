@@ -10,57 +10,27 @@ struct SpoolPickerView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let error = viewModel.errorMessage, viewModel.spools.isEmpty {
-                    ContentUnavailableView {
-                        Label("Error", systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Retry") {
-                            Task { await viewModel.loadSpools() }
-                        }
-                    }
-                } else if viewModel.spools.isEmpty && !viewModel.isLoading {
-                    ContentUnavailableView {
-                        Label("No Spools", systemImage: "cylinder")
-                    } description: {
-                        Text("No spools available. Add spools in the Inventory tab.")
-                    }
-                } else if viewModel.hasActiveSearch && viewModel.filteredSpools.isEmpty {
-                    VStack(spacing: 0) {
-                        materialFilterChips
-                        statusFilterChips
-                        Spacer()
-                        ContentUnavailableView {
-                            Label("No Matching Spools", systemImage: "line.3.horizontal.decrease.circle")
-                        } description: {
-                            Text(viewModel.activeFilterDescription)
-                        } actions: {
-                            Button("Clear Filters") {
-                                withAnimation {
-                                    viewModel.clearFilters()
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.pfAccent)
-                        }
-                        Spacer()
-                    }
+                if viewModel.phase == .selectMaterial {
+                    materialSelectionView
                 } else {
-                    VStack(spacing: 0) {
-                        materialFilterChips
-                        statusFilterChips
-                        spoolList
-                    }
+                    spoolSelectionView
                 }
             }
-            .navigationTitle("Select Spool")
+            .navigationTitle(viewModel.phase == .selectMaterial ? "Select Material" : "Select Spool")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    if viewModel.phase == .selectMaterial {
+                        Button("Cancel") { dismiss() }
+                    } else {
+                        Button("Back") {
+                            withAnimation {
+                                viewModel.backToMaterialSelection()
+                            }
+                        }
+                    }
                 }
                 #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
@@ -82,13 +52,9 @@ struct SpoolPickerView: View {
                 }
                 #endif
             }
-            .searchable(text: $viewModel.searchText, prompt: "Search by name, material, color…")
-            .refreshable {
-                await viewModel.loadSpools()
-            }
             .overlay {
-                if viewModel.isLoading && viewModel.spools.isEmpty {
-                    ProgressView("Loading spools…")
+                if viewModel.isLoading {
+                    ProgressView(viewModel.phase == .selectMaterial ? "Loading materials…" : "Loading spools…")
                 }
                 if viewModel.isScanning {
                     ProgressView("Looking up spool…")
@@ -119,7 +85,7 @@ struct SpoolPickerView: View {
                 if let data = viewModel.scannedSpoolData {
                     AddSpoolView(scannedData: data)
                         .onDisappear {
-                            Task { await viewModel.loadSpools() }
+                            Task { await viewModel.loadMaterials() }
                         }
                 }
             }
@@ -132,57 +98,110 @@ struct SpoolPickerView: View {
                     onSelect(spool)
                     dismiss()
                 }
-                await viewModel.loadSpools()
+                await viewModel.loadMaterials()
             }
         }
     }
 
-    private var materialFilterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                // "All" chip
-                Button {
-                    withAnimation {
-                        viewModel.selectedMaterial = nil
-                    }
-                } label: {
-                    Text("All")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(viewModel.selectedMaterial == nil ? .white : Color.pfTextSecondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            viewModel.selectedMaterial == nil ? Color.pfAccent : Color.pfBackgroundTertiary,
-                            in: Capsule()
-                        )
-                }
+    // MARK: - Material Selection View
 
-                // Material chips
-                ForEach(viewModel.availableMaterials, id: \.self) { material in
+    private var materialSelectionView: some View {
+        Group {
+            if let error = viewModel.errorMessage, viewModel.availableMaterials.isEmpty {
+                ContentUnavailableView {
+                    Label("Error", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Retry") {
+                        Task { await viewModel.loadMaterials() }
+                    }
+                }
+            } else if viewModel.availableMaterials.isEmpty && !viewModel.isLoading {
+                ContentUnavailableView {
+                    Label("No Materials", systemImage: "cube")
+                } description: {
+                    Text("No spools with remaining filament found. Add spools in the Inventory tab.")
+                }
+            } else {
+                List(viewModel.availableMaterials, id: \.self) { material in
                     Button {
                         withAnimation {
-                            if viewModel.selectedMaterial == material {
-                                viewModel.selectedMaterial = nil
-                            } else {
-                                viewModel.selectedMaterial = material
-                            }
+                            viewModel.selectMaterial(material)
                         }
                     } label: {
-                        Text(material)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(viewModel.selectedMaterial == material ? .white : Color.pfTextSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                viewModel.selectedMaterial == material ? Color.pfAccent : Color.pfBackgroundTertiary,
-                                in: Capsule()
-                            )
+                        HStack {
+                            Text(material)
+                                .font(.body)
+                                .foregroundStyle(Color.pfTextPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.pfTextTertiary)
+                        }
                     }
                 }
             }
-            .padding(.horizontal)
         }
-        .padding(.vertical, 8)
+        .refreshable {
+            await viewModel.loadMaterials()
+        }
+    }
+
+    // MARK: - Spool Selection View
+
+    private var spoolSelectionView: some View {
+        Group {
+            if let error = viewModel.errorMessage, viewModel.spools.isEmpty {
+                ContentUnavailableView {
+                    Label("Error", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Retry") {
+                        Task { await viewModel.loadSpools() }
+                    }
+                }
+            } else if viewModel.spools.isEmpty && !viewModel.isLoading {
+                ContentUnavailableView {
+                    Label("No Spools", systemImage: "cylinder")
+                } description: {
+                    if let material = viewModel.selectedMaterial {
+                        Text("No \(material) spools available. Try a different material or add spools in the Inventory tab.")
+                    } else {
+                        Text("No spools available. Add spools in the Inventory tab.")
+                    }
+                }
+            } else if viewModel.hasActiveSearch && viewModel.filteredSpools.isEmpty {
+                VStack(spacing: 0) {
+                    statusFilterChips
+                    Spacer()
+                    ContentUnavailableView {
+                        Label("No Matching Spools", systemImage: "line.3.horizontal.decrease.circle")
+                    } description: {
+                        Text(viewModel.activeFilterDescription)
+                    } actions: {
+                        Button("Clear Filters") {
+                            withAnimation {
+                                viewModel.clearFilters()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.pfAccent)
+                    }
+                    Spacer()
+                }
+            } else {
+                VStack(spacing: 0) {
+                    statusFilterChips
+                    spoolList
+                }
+            }
+        }
+        .searchable(text: $viewModel.searchText, prompt: "Search by name, color, vendor…")
+        .refreshable {
+            await viewModel.loadSpools()
+        }
     }
 
     private var statusFilterChips: some View {
