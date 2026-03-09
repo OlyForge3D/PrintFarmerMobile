@@ -252,3 +252,36 @@ Completed two-phase spool picker flow aligned with web UI:
 - **SpoolmanSpoolRequest needs parity with SpoolmanSpool:** Any new field on the response DTO that users can modify (like `hasNfcTag`) must also exist on the request DTO.
 - **Key files:** `SpoolInventoryViewModel.writeNFCTag(for:)`, `FilamentModels.swift` (SpoolmanSpoolRequest).
 
+
+---
+
+## 14. Button Sizing & Touch Target Compliance (2026-03-09T21:06)
+
+**Status:** Complete and committed  
+**Agent:** Parker (UI/UX Designer)  
+**Task:** Audit and fix button touch targets across all full-width action buttons
+
+### Problem
+Full-width action buttons were too short (~34-36pt), violating Apple Human Interface Guidelines (44pt minimum) and causing accessibility issues.
+
+### Solution
+Created `.fullWidthActionButton()` view modifier in `ActionButtonStyle.swift` with two levels:
+- **Standard:** 44pt (Apple HIG compliance)
+- **Prominent:** 50pt (critical actions: Start Print, Sign In, Emergency Stop)
+
+Applied to 7 view files; also fixed LoginView height:22 bug during migration.
+
+### Key Changes
+- **Created:** `PrintFarmer/Views/Components/ActionButtonStyle.swift`
+- **Modified:** LoginView, JobDetailView, PrinterDetailView, NFCScanButton, NFCWriteView, AutoPrintSection, MaintenanceAlertRow
+- **Outcome:** ✅ Build passed, button sizing now compliant across app
+
+### Design Guidelines
+- Primary actions (Start Print, Sign In, Emergency Stop) use `.prominent` (50pt)
+- Secondary actions (Pause, Cancel, Acknowledge) use standard (44pt)
+- Font minimum `.subheadline` (avoid `.caption` on buttons)
+- Weight `.semibold` for primary actions
+
+### Integration Points
+- **Ripley:** All future full-width buttons should use `.fullWidthActionButton()` for consistency
+- **Related Decision:** Touch-Compliant Button Sizing System → decisions.md
