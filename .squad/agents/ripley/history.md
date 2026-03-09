@@ -232,3 +232,56 @@ Completed two-phase spool picker flow aligned with web UI:
 **Lambert Integration:** New SpoolService.listAvailableMaterials() no contract-breaking changes.
 **Ash Integration:** Material selection flow + back-navigation paths ready for test coverage.
 
+## 13. Public Repo Readiness Prep (2025-07)
+
+**Status:** Complete and committed (a1c74a2)
+**Task:** Fix all public repo readiness issues from Dallas's audit
+
+### Changes
+- **LICENSE:** Added MIT License with OlyForge3D copyright (2025-present)
+- **README.md:** Professional project overview with tech stack, architecture, getting started, and configuration sections
+- **AppConfig.swift:** Changed hardcoded dev IP `10.0.0.20:5000` → `localhost:5000` as default (env var override still works)
+- **.gitignore:** Added patterns for secrets & certificates (.env, .p8, .p12, .pem, .key, secrets/)
+
+### Learnings
+- **Default config safety:** Always use `localhost` as default server URL, never a LAN IP. Environment variable override handles real deployments.
+- **gitignore layering:** Keep secret/cert patterns separate from build artifact patterns for clarity.
+
+### NFC Tag Persistence
+- **Always persist to backend after NFC write:** `markSpoolNFCWritten()` only updates local state — must also call `spoolService.updateSpool(id:, SpoolmanSpoolRequest(hasNfcTag: true))` so the flag survives refresh.
+- **SpoolmanSpoolRequest needs parity with SpoolmanSpool:** Any new field on the response DTO that users can modify (like `hasNfcTag`) must also exist on the request DTO.
+- **Key files:** `SpoolInventoryViewModel.writeNFCTag(for:)`, `FilamentModels.swift` (SpoolmanSpoolRequest).
+
+
+---
+
+## 14. Button Sizing & Touch Target Compliance (2026-03-09T21:06)
+
+**Status:** Complete and committed  
+**Agent:** Parker (UI/UX Designer)  
+**Task:** Audit and fix button touch targets across all full-width action buttons
+
+### Problem
+Full-width action buttons were too short (~34-36pt), violating Apple Human Interface Guidelines (44pt minimum) and causing accessibility issues.
+
+### Solution
+Created `.fullWidthActionButton()` view modifier in `ActionButtonStyle.swift` with two levels:
+- **Standard:** 44pt (Apple HIG compliance)
+- **Prominent:** 50pt (critical actions: Start Print, Sign In, Emergency Stop)
+
+Applied to 7 view files; also fixed LoginView height:22 bug during migration.
+
+### Key Changes
+- **Created:** `PrintFarmer/Views/Components/ActionButtonStyle.swift`
+- **Modified:** LoginView, JobDetailView, PrinterDetailView, NFCScanButton, NFCWriteView, AutoPrintSection, MaintenanceAlertRow
+- **Outcome:** ✅ Build passed, button sizing now compliant across app
+
+### Design Guidelines
+- Primary actions (Start Print, Sign In, Emergency Stop) use `.prominent` (50pt)
+- Secondary actions (Pause, Cancel, Acknowledge) use standard (44pt)
+- Font minimum `.subheadline` (avoid `.caption` on buttons)
+- Weight `.semibold` for primary actions
+
+### Integration Points
+- **Ripley:** All future full-width buttons should use `.fullWidthActionButton()` for consistency
+- **Related Decision:** Touch-Compliant Button Sizing System → decisions.md

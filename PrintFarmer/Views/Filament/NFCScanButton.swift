@@ -22,7 +22,7 @@ struct NFCScanButton: View {
                     .font(.subheadline)
             } else {
                 Label("Scan NFC Tag", systemImage: "wave.3.right")
-                    .frame(maxWidth: .infinity)
+                    .fullWidthActionButton()
             }
         }
         .buttonStyle(.bordered)

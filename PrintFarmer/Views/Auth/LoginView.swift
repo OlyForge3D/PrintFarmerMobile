@@ -160,11 +160,9 @@ struct LoginView: View {
                         .fontWeight(.semibold)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 22)
+            .fullWidthActionButton(prominence: .prominent)
         }
         .buttonStyle(.borderedProminent)
-        .controlSize(.large)
         .disabled(!viewModel.isFormValid || authViewModel.isLoading)
     }
 

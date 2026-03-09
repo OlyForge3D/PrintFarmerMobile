@@ -20,6 +20,7 @@
 		G142D92FBF824D7ABB0E5813 /* DispatchViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1324516876342C9A7B5305E /* DispatchViewModelTests.swift */; };
 		G127C8AD0BA949758A364AB4 /* UptimeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1EE99D3914544B496FD266B /* UptimeViewModelTests.swift */; };
 		0165CA554584E940BBCF8A15 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 534568DC689B743CE69E44A4 /* EmptyStateView.swift */; };
+		13A9714DB66389EFE231ED4E /* ActionButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46DEBCDF7D99C0F2AEFB6AEC /* ActionButtonStyle.swift */; };
 		05882F81ABFBD68C96376608 /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D49DAAAE1D5A8AC05429321 /* MockAuthService.swift */; };
 		137CA002069C980DF3C582AF /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD48733BD08251D5B57CCA3 /* TestFixtures.swift */; };
 		14548BCF3A6E9E12FB4673B2 /* ModelDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC1B357CBA7677A4D4E3D61 /* ModelDecodingTests.swift */; };
@@ -220,6 +221,7 @@
 		4F5C0DDAD4063D1EA8540264 /* PrinterListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterListViewModel.swift; sourceTree = "<group>"; };
 		4FD237969E9A136249F6351A /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		534568DC689B743CE69E44A4 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		46DEBCDF7D99C0F2AEFB6AEC /* ActionButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButtonStyle.swift; sourceTree = "<group>"; };
 		574F629AF29665D4872351E8 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		57A3A3E21352CC6A4514221E /* PrinterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterCardView.swift; sourceTree = "<group>"; };
 		5D49DAAAE1D5A8AC05429321 /* MockAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthService.swift; sourceTree = "<group>"; };
@@ -645,6 +647,7 @@
 			isa = PBXGroup;
 			children = (
 				534568DC689B743CE69E44A4 /* EmptyStateView.swift */,
+				46DEBCDF7D99C0F2AEFB6AEC /* ActionButtonStyle.swift */,
 				93B8E20F526E7CE3E92BE781 /* JobCardView.swift */,
 				44789FEC15B2FCE4E3A02174 /* PrintProgressBar.swift */,
 				57A3A3E21352CC6A4514221E /* PrinterCardView.swift */,
@@ -922,6 +925,7 @@
 				1DC1666AD87080FDC1140528 /* LoginView.swift in Sources */,
 				D8F9A0B1C2E3D4F5A6B7C8D9 /* RootView.swift in Sources */,
 				0165CA554584E940BBCF8A15 /* EmptyStateView.swift in Sources */,
+				13A9714DB66389EFE231ED4E /* ActionButtonStyle.swift in Sources */,
 				2145660BC57194889CDBC78A /* JobCardView.swift in Sources */,
 				977E6F182EC8F10888253205 /* PrintProgressBar.swift in Sources */,
 				C36E71E0B8D651B87256150D /* PrinterCardView.swift in Sources */,
