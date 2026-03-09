@@ -336,3 +336,57 @@ Fixed xcodebuild archive hang (was 1.5+ hours) via standard GitHub Actions iOS k
 **Ripley Integration:** No view/ViewModel changes; workflow improvements transparent to app code.
 **Ash Integration:** No test infrastructure changes; CI improvements isolated to GitHub Actions.
 
+### App Store Connect API Keys for TestFlight CI Upload (2026-03-09)
+
+**Problem:** TestFlight upload step was using `FASTLANE_USER`/`FASTLANE_PASSWORD` environment variables, which Apple rejects with "Invalid username and password combination" error in CI environments. Apple's policy now requires API Key authentication for CI-based uploads.
+
+**Why the rejection:**
+- Apple deprecated iTunes Connect credentials for CI/CD in favor of API keys
+- App Store Connect API Keys provide role-based access control (security)
+- FASTLANE_USER/FASTLANE_PASSWORD were originally designed for local developer machines
+- GitHub Actions CI environment triggers Apple's fraud detection (IP-based filtering)
+
+**Solution Implemented:**
+1. **Generate App Store Connect API Key:**
+   - Create at `https://appstoreconnect.apple.com/access/integrations/api/` with Developer or Admin role
+   - Download as `.p8` file (private key in EC format)
+   - Extract `key_id` and `issuer_id` from API key details page
+
+2. **Add GitHub Secrets (3 required):**
+   - `APP_STORE_CONNECT_API_KEY_ID` — key ID from API key page
+   - `APP_STORE_CONNECT_API_ISSUER_ID` — issuer ID (usually company ID)
+   - `APP_STORE_CONNECT_API_KEY_CONTENT` — the `.p8` file base64-encoded
+
+3. **Updated Workflow Step (Upload to TestFlight):**
+   - Removed `FASTLANE_USER` and `FASTLANE_PASSWORD` env vars
+   - Create temporary API key JSON file in fastlane's expected format:
+     ```json
+     {
+       "key_id": "...",
+       "issuer_id": "...",
+       "key": "-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----",
+       "in_house": false
+     }
+     ```
+   - Base64-decode the .p8 content, inject into JSON template
+   - Pass `--api_key_path` to `fastlane pilot upload` command
+   - Cleanup temp JSON file in "Cleanup keychain" step
+
+4. **Also removed FASTLANE_USER/FASTLANE_PASSWORD from fastlane match step:**
+   - `fastlane match appstore` uses git-based certificate storage (via `MATCH_GIT_BASIC_AUTHORIZATION`)
+   - Does not need Apple ID credentials; was unnecessary there
+   - Simplified env vars to only: `MATCH_PASSWORD`, `MATCH_GIT_URL`, `MATCH_GIT_BASIC_AUTHORIZATION`
+
+**Technical Details:**
+- `jq -Rs '.'` escapes newlines in the PEM-format private key for JSON encoding
+- `base64 -d` decodes the secret (CI stores secrets as base64 to avoid binary data issues)
+- Temp files created in `$RUNNER_TEMP` (GitHub's isolated temp directory)
+- Cleanup happens in `if: always()` block to ensure file is deleted even on upload failure
+
+**Files Modified:**
+- `.github/workflows/testflight-beta.yml` — Updated "Upload to TestFlight" and "Setup code signing with fastlane match" steps, enhanced "Cleanup keychain"
+
+**Configuration Required:**
+- Generate API key in App Store Connect and add 3 secrets to GitHub repo settings
+- Confirm API key has "Developer" or "Admin" role (minimum required for pilot uploads)
+
