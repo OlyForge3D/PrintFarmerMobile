@@ -595,7 +595,7 @@ struct PrinterDetailView: View {
                         printer.inMaintenance ? "Exit Maintenance" : "Enter Maintenance",
                         systemImage: "wrench.and.screwdriver"
                     )
-                    .frame(maxWidth: .infinity)
+                    .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
@@ -606,7 +606,7 @@ struct PrinterDetailView: View {
                     viewModel.writeNFCPrinterTag()
                 } label: {
                     Label("Write NFC Tag", systemImage: "wave.3.right")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
                 .tint(Color.pfAccent)
@@ -618,7 +618,7 @@ struct PrinterDetailView: View {
                     viewModel.requestEmergencyStop()
                 } label: {
                     Label("Emergency Stop", systemImage: "exclamationmark.octagon.fill")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton(prominence: .prominent)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -639,7 +639,7 @@ struct PrinterDetailView: View {
             Task { await action() }
         } label: {
             Label(title, systemImage: icon)
-                .frame(maxWidth: .infinity)
+                .fullWidthActionButton()
         }
         .buttonStyle(.bordered)
         .tint(color)

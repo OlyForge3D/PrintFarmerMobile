@@ -59,8 +59,8 @@ struct AutoPrintSection: View {
                                 Task { await viewModel.markReady(printerId: printerId) }
                             } label: {
                                 Label("Next Job", systemImage: "play.fill")
-                                    .font(.caption.weight(.medium))
-                                    .frame(maxWidth: .infinity)
+                                    .font(.subheadline.weight(.medium))
+                                    .fullWidthActionButton()
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(Color.pfAccent)
@@ -69,8 +69,8 @@ struct AutoPrintSection: View {
                                 Task { await viewModel.skip(printerId: printerId) }
                             } label: {
                                 Label("Skip", systemImage: "forward.fill")
-                                    .font(.caption.weight(.medium))
-                                    .frame(maxWidth: .infinity)
+                                    .font(.subheadline.weight(.medium))
+                                    .fullWidthActionButton()
                             }
                             .buttonStyle(.bordered)
                         }

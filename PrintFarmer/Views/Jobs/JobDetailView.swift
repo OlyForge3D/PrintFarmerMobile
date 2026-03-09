@@ -211,7 +211,7 @@ struct JobDetailView: View {
                     Task { await viewModel.dispatchJob() }
                 } label: {
                     Label("Start Print", systemImage: "play.circle.fill")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton(prominence: .prominent)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -222,7 +222,7 @@ struct JobDetailView: View {
                     Task { await viewModel.pauseJob() }
                 } label: {
                     Label("Pause Print", systemImage: "pause.circle.fill")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton()
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -234,7 +234,7 @@ struct JobDetailView: View {
                     Task { await viewModel.resumeJob() }
                 } label: {
                     Label("Resume Print", systemImage: "play.circle.fill")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton(prominence: .prominent)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -245,7 +245,7 @@ struct JobDetailView: View {
                     viewModel.showCancelConfirmation = true
                 } label: {
                     Label("Cancel Job", systemImage: "xmark.circle")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
             }
@@ -255,7 +255,7 @@ struct JobDetailView: View {
                     Task { await viewModel.abortJob() }
                 } label: {
                     Label("Abort Print", systemImage: "stop.circle.fill")
-                        .frame(maxWidth: .infinity)
+                        .fullWidthActionButton()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.pfError)

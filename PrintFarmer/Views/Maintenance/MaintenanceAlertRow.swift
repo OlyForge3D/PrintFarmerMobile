@@ -42,8 +42,8 @@ struct MaintenanceAlertRow: View {
                         onAcknowledge()
                     } label: {
                         Label("Acknowledge", systemImage: "checkmark")
-                            .font(.caption.weight(.medium))
-                            .frame(maxWidth: .infinity)
+                            .font(.subheadline.weight(.medium))
+                            .fullWidthActionButton()
                     }
                     .buttonStyle(.bordered)
                     .tint(Color.pfAccent)
@@ -52,8 +52,8 @@ struct MaintenanceAlertRow: View {
                         onDismiss()
                     } label: {
                         Label("Dismiss", systemImage: "xmark")
-                            .font(.caption.weight(.medium))
-                            .frame(maxWidth: .infinity)
+                            .font(.subheadline.weight(.medium))
+                            .fullWidthActionButton()
                     }
                     .buttonStyle(.bordered)
                     .tint(Color.pfTextSecondary)

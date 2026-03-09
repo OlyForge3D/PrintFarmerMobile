@@ -8,6 +8,7 @@ How to decide who handles what.
 |-----------|----------|----------|
 | Architecture, scope, decisions | Dallas | App structure, navigation flow, API contract decisions |
 | SwiftUI, UI components, screens | Ripley | Views, navigation, layouts, animations, accessibility |
+| UI/UX design, sizing, spacing, touch targets | Parker | Button sizing, layout audit, visual consistency, HIG compliance |
 | API integration, networking, data | Lambert | REST clients, SignalR, models, caching, auth flow |
 | Code review | Dallas | Review PRs, check quality, suggest improvements |
 | Testing | Ash | Write tests, find edge cases, verify fixes |

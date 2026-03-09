@@ -155,8 +155,7 @@ struct NFCWriteView: View {
                 Task { await performWrite() }
             } label: {
                 Label("Write Tag", systemImage: "wave.3.right")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                    .fullWidthActionButton(prominence: .prominent)
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.pfAccent)
@@ -168,7 +167,7 @@ struct NFCWriteView: View {
             Button("Done") { dismiss() }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.pfAccent)
-                .frame(maxWidth: .infinity)
+                .fullWidthActionButton()
 
         case .error:
             VStack(spacing: 10) {
@@ -176,14 +175,14 @@ struct NFCWriteView: View {
                     Task { await performWrite() }
                 } label: {
                     Label("Retry", systemImage: "arrow.clockwise")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                        .fullWidthActionButton()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.pfAccent)
 
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
+                    .fullWidthActionButton()
             }
         }
     }

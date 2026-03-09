@@ -16,6 +16,7 @@
 | Ripley | iOS Dev | .squad/agents/ripley/charter.md | 📱 Active |
 | Lambert | Networking | .squad/agents/lambert/charter.md | 🔧 Active |
 | Ash | Tester | .squad/agents/ash/charter.md | 🧪 Active |
+| Parker | UI/UX Designer | .squad/agents/parker/charter.md | 🎨 Active |
 | Scribe | Session Logger | .squad/agents/scribe/charter.md | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
