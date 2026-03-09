@@ -222,3 +222,13 @@
 - Integration tests: Verify highlight behavior, error handling, reload on success
 
 ---
+
+### Cross-Agent Update: Ripley — Predictive Insights Fix (2026-03-08T2356)
+**From:** Ripley  
+**Task:** Fixed Predictive Insights decode error
+**Status:** Implementation complete  
+**Service Updates:**
+- `predictJobFailure` returns `JobFailurePrediction?` instead of throwing on empty body
+- `getActiveAlerts`/`getMaintenanceForecast` coalesce empty/null body to `[]`
+- All predictive model fields use `decodeIfPresent` with defaults
+- **Impact to Lambert:** No protocol changes required; `PredictiveServiceProtocol` already designed for this

@@ -70,3 +70,12 @@
 - **Navigation race condition:** AppRouter.navigate(to:) uses async sleep; tests calling this directly should use `await` or integration test patterns
 - **Spool NFC tests** should verify: badge rendering (hasNfcTag nil/true/false), filter logic (coalescing pattern), write flow (success/error states)
 - **iPhone-only Core NFC:** All NFC tests confined to iPhone, not iPad
+
+### Cross-Agent Update: Ripley — Predictive Insights Fix (2026-03-08T2356)
+**From:** Ripley  
+**Task:** Fixed Predictive Insights decode error
+**Impact to Ash:**
+- `MockPredictiveService.predictJobFailure` now returns `Optional<JobFailurePrediction>` instead of non-optional
+- Tests expecting force-unwrap of this value require updating (use optional binding or nil coalescing)
+- View tests should verify "No predictions available" empty state when service returns nil
+- Decode tests should verify decodeIfPresent behavior for predictive models with missing fields
