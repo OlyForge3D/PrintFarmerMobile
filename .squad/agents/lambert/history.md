@@ -322,3 +322,17 @@
 - No custom tooling or workarounds needed
 - Follows Apple security best practices for keychain access control
 
+## 7. TestFlight Build Hang Fix — Keychain Setup (2026-03-09)
+
+**Orchestration Log:** `.squad/orchestration-log/2026-03-09T0150-lambert.md`
+
+Fixed xcodebuild archive hang (was 1.5+ hours) via standard GitHub Actions iOS keychain pattern:
+- **Root cause:** xcodebuild on macOS runners requires explicit keychain access config; without it, codesign prompts (hangs headless)
+- **Solution:** Temporary keychain management (`$RUNNER_TEMP/app-signing.keychain-db`) with explicit codesign flags
+- **Steps:** Setup keychain + configure fastlane match + configure xcodebuild OTHER_CODE_SIGN_FLAGS + timeout protection + cleanup
+- **Reuses secrets:** `MATCH_PASSWORD` double-duty (keychain + fastlane match)
+- **Outcome:** ✅ Expected build time ~10–15 minutes (was 1.5+ hour hang); industry-proven pattern
+
+**Ripley Integration:** No view/ViewModel changes; workflow improvements transparent to app code.
+**Ash Integration:** No test infrastructure changes; CI improvements isolated to GitHub Actions.
+

@@ -218,3 +218,17 @@ Implemented two-phase picker flow:
 - Load without material filter temporarily to find the spool, then filter down
 - Auto-selection with `onAutoSelect` callback dismisses picker immediately after scan
 
+## 12. Material-First Spool Picker Redesign (2026-03-09)
+
+**Orchestration Log:** `.squad/orchestration-log/2026-03-09T0150-ripley.md`
+
+Completed two-phase spool picker flow aligned with web UI:
+- **Phase 1:** Load material types from `/api/spoolman/materials/available`, user selects one
+- **Phase 2:** Load spools of selected material, existing filter/search flow
+- **Scanning exception:** QR/NFC bypasses phase 1, auto-sets material + auto-selects
+- **Files:** SpoolPickerViewModel (phase enum, loadMaterials, selectMaterial), SpoolPickerView (split views, dynamic toolbar), SpoolService (listAvailableMaterials), MockSpoolService (stub)
+- **Outcome:** ✅ Performance improved (20 spools vs 200), UX simplified, web UI aligned
+
+**Lambert Integration:** New SpoolService.listAvailableMaterials() no contract-breaking changes.
+**Ash Integration:** Material selection flow + back-navigation paths ready for test coverage.
+

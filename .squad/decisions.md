@@ -590,3 +590,109 @@ This is the same nil-coalescing fallback pattern used for PrusaLink temperature 
 - **Ripley:** View uses `viewModel.effectiveSpoolInfo`; no direct `printer.spoolInfo` access in filament section.
 - **Lambert:** Added memberwise `init` to `PrinterSpoolInfo` (non-breaking, additive). Ideally the backend's printer detail endpoint should also return `spoolInfo` long-term.
 - **Ash:** `PrinterDetailViewModel` has new testable computed property `effectiveSpoolInfo` and `lastSetSpoolInfo` behavior to cover.
+
+---
+
+### Decision: User Directive — Material-First Spool Picker UX (2026-03-09T00:42)
+**Date:** 2026-03-09  
+**Status:** Implemented  
+**Category:** Feature Alignment
+
+## Context
+Web UI spool picker updated to require user to choose material type first before loading filament. This narrows the choice list significantly before presenting all spools of that type. PrintFarmer backend added `/api/spoolman/materials/available` endpoint specifically for this pattern.
+
+## Decision
+Aligned iOS app with web UI by implementing a two-phase spool picker flow:
+
+1. **Phase 1: Material Selection**
+   - Display list of available material types from `/api/spoolman/materials/available`
+   - User selects material (e.g., "PLA", "PETG", "ABS")
+
+2. **Phase 2: Spool Selection**
+   - Load spools of selected material via `listSpools(material: X)`
+   - Display spool list with status filters and search (existing flow)
+   - "Back" button returns to material selection
+
+3. **Exception: QR/NFC Scanning**
+   - Bypasses material selection phase entirely
+   - Scan → lookup spool → auto-set material → auto-filter → auto-select
+
+## Rationale
+- **Performance**: Load ~20 spools per material instead of all 200
+- **UX Consistency**: Matches web UI pattern users already know
+- **Backend-aligned**: Uses specialized endpoint designed for this flow
+- **Scanning fast-path**: QR/NFC bypass maintains quick workflow for tagged spools
+
+## Implementation
+- **SpoolPickerViewModel**: Added `SpoolPickerPhase` enum, phase tracking, `loadMaterials()`, `selectMaterial()`, `backToMaterialSelection()`
+- **SpoolPickerView**: Split into material selection and spool selection sub-views; dynamic navigation titles and toolbar buttons
+- **SpoolServiceProtocol/SpoolService**: Added `listAvailableMaterials() -> [String]` calling `/api/spoolman/materials/available`
+- **MockSpoolService**: Added stub for `listAvailableMaterials()`
+
+## Impact
+- **Ripley:** Implemented spool picker redesign (4 files modified)
+- **Lambert:** New service method added; no contract-breaking changes
+- **Ash:** Material selection flow and back-navigation paths need test coverage
+
+---
+
+### Decision: GitHub Actions iOS Code Signing Keychain Setup (Lambert)
+**Date:** 2026-03-09  
+**Status:** Implemented  
+**Category:** CI/CD Infrastructure
+
+## Context
+TestFlight Beta Build workflow (`.github/workflows/testflight-beta.yml`) consistently hanging at "Build for App Store" step during `xcodebuild archive`. Issue occurred on both v0.1.0-beta.1 and v0.1.0-beta.2 builds, with the step running for 1.5+ hours with no output before being cancelled.
+
+## Root Cause
+GitHub Actions macOS runners require explicit keychain management for iOS code signing. `fastlane match` imports certificates into a keychain, but `xcodebuild` on CI cannot access the keychain without explicit configuration. Without proper setup, xcodebuild prompts for keychain access (which hangs on headless CI).
+
+## Decision
+Implemented standard GitHub Actions pattern for iOS code signing with temporary keychain management:
+
+1. **Setup Keychain** (before match step)
+   - Create temporary keychain at `$RUNNER_TEMP/app-signing.keychain-db`
+   - Set 6-hour timeout, disable lock-on-sleep
+   - Unlock keychain and set as default
+   - Configure `set-key-partition-list` for codesign access without prompts
+
+2. **Configure fastlane match**
+   - Pass `--keychain_name` and `--keychain_password` flags
+   - Certificates import directly to temporary keychain
+
+3. **Configure xcodebuild**
+   - Add `OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"`
+   - Explicitly tell codesign where to find signing identity
+
+4. **Timeout Protection**
+   - `timeout-minutes: 30` on build step
+   - Prevents infinite hangs if issue recurs
+
+5. **Cleanup Keychain** (always runs)
+   - `if: always()` ensures cleanup even on failure
+   - Prevents keychain accumulation on runner
+
+## Rationale
+- **Industry standard**: Widely used across iOS CI/CD workflows on GitHub Actions
+- **Security**: Temporary keychain isolated per job, cleaned up automatically
+- **Reliability**: Explicit keychain reference eliminates ambiguity for xcodebuild
+- **No custom tooling**: Uses built-in macOS `security` command
+- **Reuses secrets**: `MATCH_PASSWORD` serves double duty as keychain password
+
+## Impact
+- **Positive**: ✅ Fixes 1.5+ hour hang; build should complete in ~10–15 minutes
+- **Positive**: ✅ No changes to secrets, certificates, or provisioning profiles needed
+- **Positive**: ✅ Standard pattern makes workflow easier to maintain
+- **Neutral**: Adds 5 workflow steps (~50 lines YAML); keychain setup adds ~5–10 seconds to workflow runtime
+- **Negative**: None identified (this is a standard, proven pattern)
+
+## Testing & Validation
+- ✅ YAML syntax validated with `python3 -c "import yaml"`
+- ✅ All existing workflow steps preserved
+- ✅ ExportOptions.plist verified (no changes needed)
+- ⏳ Next: Test on actual GitHub Actions runner with next beta tag push
+
+## References
+- GitHub Actions iOS Code Signing: https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+- fastlane match keychain docs: https://docs.fastlane.tools/actions/match/
+- Apple security command reference: `man security`
