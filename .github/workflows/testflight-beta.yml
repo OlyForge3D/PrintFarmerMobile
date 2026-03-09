@@ -16,6 +16,9 @@ on:
           - internal
           - external
 
+permissions:
+  contents: write
+
 jobs:
   build-and-upload:
     runs-on: macos-latest
@@ -38,7 +41,8 @@ jobs:
 
       - name: Select Xcode version
         run: |
-          XCODE_PATH=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          # Prefer Xcode 26+ (iOS 26 SDK required by App Store after April 2026)
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE_PATH" ]; then
             XCODE_PATH="/Applications/Xcode.app"
           fi
