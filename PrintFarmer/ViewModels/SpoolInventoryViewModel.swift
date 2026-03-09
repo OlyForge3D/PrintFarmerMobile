@@ -217,6 +217,13 @@ final class SpoolInventoryViewModel {
 
         do {
             try await nfcService.writeSpoolTag(spool: spool)
+            // Persist NFC tag association to backend
+            if let spoolService {
+                _ = try await spoolService.updateSpool(
+                    id: spool.id,
+                    SpoolmanSpoolRequest(hasNfcTag: true)
+                )
+            }
             markSpoolNFCWritten(id: spool.id)
             isWritingNFC = false
             return true

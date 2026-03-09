@@ -94,6 +94,7 @@ struct SpoolmanSpoolRequest: Codable, Sendable {
     var price: Double?
     var comment: String?
     var archived: Bool?
+    var hasNfcTag: Bool?
 }
 
 // MARK: - Set Active Spool Request (matches SetActiveSpoolRequest)
