@@ -148,3 +148,73 @@ Implemented local state override pattern:
 ### Build Status
 ✓ Clean build, no warnings  
 ✓ Committed to development branch as 4b3f20c
+
+---
+
+## Latest Work: Material-First Spool Picker Redesign (2026-03-09T01:00)
+
+**Status:** Complete and built successfully  
+**Task:** Redesign SpoolPickerView to require material type selection BEFORE showing spools
+
+### Problem
+The existing picker loaded ALL 200 spools immediately, making selection slow and requiring users to manually filter by material type. The web UI had already moved to a two-step flow (material → spool) for better UX and performance.
+
+### Solution
+Implemented two-phase picker flow:
+
+**Phase 1: Material Selection**
+- Added `SpoolPickerPhase` enum (`.selectMaterial`, `.selectSpool`) to ViewModel
+- Call `/api/spoolman/materials/available` endpoint to get material names with available spools
+- Display clean List view with material names and chevron indicators
+- QR/NFC scanning still available in this phase (bypasses material selection)
+
+**Phase 2: Spool Selection**
+- User selects material → loads ONLY spools of that material type via `listSpools(material: selectedMaterial)`
+- Show existing spool list with SpoolRowView items
+- "Back" button in toolbar returns to material selection
+- Status filter chips and search remain available
+- Material filter chips removed (redundant since material already selected)
+
+**Scanning Flow Enhancement**
+- QR/NFC scan bypasses material selection entirely
+- Loads ALL spools, finds the scanned spool, auto-sets `selectedMaterial`, filters to that material, and auto-selects the spool
+- Seamless experience: scan → dismiss with selected spool
+
+### Key Changes
+
+**Files Modified:**
+1. `SpoolServiceProtocol.swift` — Added `listAvailableMaterials()` method
+2. `SpoolService.swift` — Implemented `listAvailableMaterials()` calling `/api/spoolman/materials/available`
+3. `SpoolPickerViewModel.swift` — Added phase state, `selectMaterial()`, `backToMaterialSelection()`, `loadMaterials()` methods; updated `loadSpools()` to use material filter; enhanced scan flow
+4. `SpoolPickerView.swift` — Split into `materialSelectionView` and `spoolSelectionView`; dynamic title/toolbar based on phase; removed material filter chips from spool view
+5. `MockSpoolService.swift` — Added `listAvailableMaterials()` stub and tracking
+
+### Build Status
+✓ Clean build, no warnings  
+✓ All changes compile successfully on iOS 17+ simulator
+
+### Related Patterns
+- **Two-phase selection pattern:** Material → Spool reduces cognitive load and improves performance
+- **Backend-driven material list:** Using `/materials/available` ensures only materials with actual inventory are shown
+- **Bypass-on-scan pattern:** Direct ID lookup skips manual selection for QR/NFC workflows
+- **NavigationStack phase switching:** Use phase enum + conditional view composition instead of navigation push
+
+
+### Learnings from This Work
+
+**Two-Phase Picker UI Pattern:**
+- Use phase enum in ViewModel to control which view is shown
+- Keep both phases in same NavigationStack (not separate sheets/navigation pushes)
+- Dynamic toolbar: "Cancel" in phase 1, "Back" in phase 2
+- Keep scanning buttons visible in both phases for seamless QR/NFC flow
+
+**Backend Integration:**
+- `/api/spoolman/materials/available` returns `[String]` — just material names with available spools
+- Prefer specialized "available" endpoints over loading everything and client-side filtering
+- Material filter param on `listSpools()` keeps the load fast and focused
+
+**Scan Flow Architecture:**
+- When scanned spool ID is found, bypass phase 1 by setting material + phase + filtered spools
+- Load without material filter temporarily to find the spool, then filter down
+- Auto-selection with `onAutoSelect` callback dismisses picker immediately after scan
+

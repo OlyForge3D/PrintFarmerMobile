@@ -50,6 +50,33 @@ jobs:
         run: |
           sudo gem install fastlane -NV
 
+      - name: Setup Keychain
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo "Setting up keychain at: $KEYCHAIN_PATH"
+          
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Set keychain settings (timeout 6 hours, no lock on sleep)
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          
+          # Unlock keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Set as default keychain
+          security default-keychain -s "$KEYCHAIN_PATH"
+          
+          # Add to keychain search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+          
+          # Allow codesign to access keychain without prompt
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          echo "✅ Keychain setup complete"
+
       - name: Setup code signing with fastlane match
         env:
           FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
@@ -58,7 +85,13 @@ jobs:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         run: |
-          fastlane match appstore --readonly --git_url "$MATCH_GIT_URL" --app_identifier "com.olyforge3d.printfarmer.ios"
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          fastlane match appstore \
+            --readonly \
+            --git_url "$MATCH_GIT_URL" \
+            --app_identifier "com.olyforge3d.printfarmer.ios" \
+            --keychain_name "$KEYCHAIN_PATH" \
+            --keychain_password "$MATCH_PASSWORD"
 
       - name: Update build version numbers
         run: |
@@ -66,7 +99,9 @@ jobs:
           agvtool new-marketing-version ${{ steps.version.outputs.version }}
 
       - name: Build for App Store
+        timeout-minutes: 30
         run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           xcodebuild \
             -project PrintFarmer.xcodeproj \
             -scheme PrintFarmer \
@@ -78,6 +113,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="match AppStore com.olyforge3d.printfarmer.ios" \
             DEVELOPMENT_TEAM=ZPKA84F3TY \
             SWIFT_STRICT_CONCURRENCY=minimal \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             archive
 
       - name: Export IPA
@@ -136,3 +172,9 @@ jobs:
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          security delete-keychain "$KEYCHAIN_PATH" || true
