@@ -22,3 +22,12 @@ Package.resolved
 
 build.log
 test.log
+
+# Secrets & certificates
+.env
+.env.*
+*.p8
+*.p12
+*.pem
+*.key
+secrets/
