@@ -1,3 +1,35 @@
+# =============================================================================
+# TestFlight Beta Build — CI/CD Pipeline
+# =============================================================================
+#
+# REQUIRED GITHUB SECRETS:
+#
+#   MATCH_PASSWORD
+#     The passphrase used when running `fastlane match init` to encrypt/decrypt
+#     certificates in the match git repo.
+#
+#   MATCH_GIT_URL
+#     URL of the private certificates repo.
+#     Value: https://github.com/OlyForge3D/PrintFarmerApp-certificates.git
+#
+#   MATCH_GIT_BASIC_AUTHORIZATION
+#     Base64-encoded "username:token" for git access to the certificates repo.
+#     Generate with: echo -n "username:ghp_your_token" | base64
+#
+#   APP_STORE_CONNECT_API_KEY_ID
+#     Key ID from App Store Connect > Users and Access > Integrations > Keys.
+#
+#   APP_STORE_CONNECT_API_ISSUER_ID
+#     Issuer ID from App Store Connect > Users and Access > Integrations > Keys.
+#
+#   APP_STORE_CONNECT_API_KEY_CONTENT
+#     The .p8 private key file content (raw PEM or base64-encoded).
+#
+# OPTIONAL:
+#   SLACK_WEBHOOK_URL — Slack incoming webhook for build notifications.
+#
+# =============================================================================
+
 name: TestFlight Beta Build
 
 on:
@@ -55,20 +87,19 @@ jobs:
           sudo gem install fastlane -NV
 
       - name: Setup Keychain
-        env:
-          KEYCHAIN_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          CI_KEYCHAIN_PWD="ci-keychain-temp-password"
           echo "Setting up keychain at: $KEYCHAIN_PATH"
           
-          # Create temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          # Create temporary keychain (ephemeral — destroyed in cleanup step)
+          security create-keychain -p "$CI_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
           
           # Set keychain settings (timeout 6 hours, no lock on sleep)
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           
           # Unlock keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$CI_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
           
           # Set as default keychain
           security default-keychain -s "$KEYCHAIN_PATH"
@@ -93,11 +124,10 @@ jobs:
             --keychain_password "$MATCH_PASSWORD"
 
       - name: Allow codesign keychain access
-        env:
-          KEYCHAIN_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          CI_KEYCHAIN_PWD="ci-keychain-temp-password"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$CI_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
 
       - name: Update build version numbers
         run: |
