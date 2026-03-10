@@ -170,19 +170,19 @@ struct NFCWriteView: View {
                 .fullWidthActionButton()
 
         case .error:
-            VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 Button {
                     Task { await performWrite() }
                 } label: {
                     Label("Retry", systemImage: "arrow.clockwise")
-                        .fullWidthActionButton()
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.pfAccent)
 
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
-                    .fullWidthActionButton()
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
         }
     }

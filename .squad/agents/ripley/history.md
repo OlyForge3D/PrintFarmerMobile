@@ -292,3 +292,44 @@ Applied to 7 view files; also fixed LoginView height:22 bug during migration.
 ### Integration Points
 - **Ripley:** All future full-width buttons should use `.fullWidthActionButton()` for consistency
 - **Related Decision:** Touch-Compliant Button Sizing System → decisions.md
+
+
+---
+
+## 15. Compact Side-by-Side Action Buttons (2026-07-23)
+
+**Status:** Complete, build passed  
+**Task:** Group contextually related action buttons side-by-side to reduce vertical space
+
+### Changes Made
+- **JobDetailView.swift** — Refactored `actionSection` to group simultaneous buttons:
+  - Printing state: "Pause" + "Abort" side-by-side in HStack
+  - Paused state: "Resume" + "Abort" side-by-side in HStack
+  - Shortened labels: "Pause Print"→"Pause", "Abort Print"→"Abort", "Resume Print"→"Resume", "Cancel Job"→"Cancel"
+  - "Start Print" stays full-width (primary solo action)
+  - "Cancel" (queued) stays full-width (solo action)
+  - Fallback: if only one of the paired buttons shows, it renders full-width
+
+### Learnings
+- For side-by-side buttons in HStack, use `.frame(maxWidth: .infinity, minHeight: 44)` directly instead of `.fullWidthActionButton()` — the modifier's maxWidth: .infinity works per-button within HStack to split evenly
+- PrinterDetailView already had side-by-side grouping via its `actionButton` helper + HStacks — no changes needed there
+- When grouping buttons, use conditional logic that checks both flags together (`canPause && canAbort`) to ensure paired layout only when both appear simultaneously, with else-branch fallback for solo display
+
+---
+
+## 16. Button Layout Polish from Parker's UI Audit (2026-07-23)
+
+**Status:** Complete, build passed  
+**Task:** Apply button layout improvements based on Parker's UI audit findings
+
+### Changes Made
+- **NFCWriteView.swift** — Error state "Retry" + "Cancel" changed from VStack to HStack(spacing: 10) side-by-side, using `.frame(maxWidth: .infinity, minHeight: 44)` per button
+- **PrinterDetailView.swift** — Label shortening: "Change Filament"→"Change", "Write NFC Tag"→"Write Tag"; No-spool section: "Set Filament"+"Scan NFC Tag" grouped into HStack(spacing: 10) side-by-side, "Set Filament"→"Set"
+- **MaintenanceAlertRow.swift** — "Acknowledge"→"Accept"
+- **SpoolInventoryView.swift** — "Clear Filters"→"Reset"
+- **NFCScanButton.swift** — "Scan NFC Tag"→"Scan Tag"; changed from `.fullWidthActionButton()` to `.frame(maxWidth: .infinity, minHeight: 44)` so it works correctly both standalone and inside HStacks
+
+### Learnings
+- NFCScanButton needed its modifier changed from `.fullWidthActionButton()` to `.frame(maxWidth: .infinity, minHeight: 44)` to work properly in both standalone and HStack contexts — the modifier was forcing full-width which breaks even splitting in HStack
+- Shorter labels improve button density in side-by-side layouts while SF Symbol icons maintain clarity
+- All touch targets remain ≥44pt compliant

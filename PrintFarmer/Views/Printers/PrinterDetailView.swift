@@ -122,18 +122,20 @@ struct PrinterDetailView: View {
                             Spacer()
                         }
 
-                        Button {
-                            viewModel.loadFilament()
-                        } label: {
-                            Label("Set Filament", systemImage: "plus.circle.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.pfAccent)
+                        HStack(spacing: 10) {
+                            Button {
+                                viewModel.loadFilament()
+                            } label: {
+                                Label("Set", systemImage: "plus.circle.fill")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.pfAccent)
 
-                        NFCScanButton(action: {
-                            viewModel.handleNFCScanToLoad()
-                        })
+                            NFCScanButton(action: {
+                                viewModel.handleNFCScanToLoad()
+                            })
+                        }
                     }
                 }
             }
@@ -212,7 +214,7 @@ struct PrinterDetailView: View {
             Button {
                 viewModel.loadFilament()
             } label: {
-                Label("Change Filament", systemImage: "arrow.triangle.swap")
+                Label("Change", systemImage: "arrow.triangle.swap")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -615,7 +617,7 @@ struct PrinterDetailView: View {
                 Button {
                     viewModel.writeNFCPrinterTag()
                 } label: {
-                    Label("Write NFC Tag", systemImage: "wave.3.right")
+                    Label("Write Tag", systemImage: "wave.3.right")
                         .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)

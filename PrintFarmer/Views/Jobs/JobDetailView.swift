@@ -217,48 +217,95 @@ struct JobDetailView: View {
                 .buttonStyle(.borderedProminent)
             }
 
-            if viewModel.canPause {
-                Button {
-                    Task { await viewModel.pauseJob() }
-                } label: {
-                    Label("Pause Print", systemImage: "pause.circle.fill")
-                        .fullWidthActionButton()
-                        .fontWeight(.semibold)
+            // Printing: Pause + Abort side-by-side
+            if viewModel.canPause && viewModel.canAbort {
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await viewModel.pauseJob() }
+                    } label: {
+                        Label("Pause", systemImage: "pause.circle.fill")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.pfWarning)
+
+                    Button(role: .destructive) {
+                        Task { await viewModel.abortJob() }
+                    } label: {
+                        Label("Abort", systemImage: "stop.circle.fill")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.pfError)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.pfWarning)
+            } else {
+                if viewModel.canPause {
+                    Button {
+                        Task { await viewModel.pauseJob() }
+                    } label: {
+                        Label("Pause", systemImage: "pause.circle.fill")
+                            .fullWidthActionButton()
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.pfWarning)
+                }
             }
 
-            if viewModel.canResume {
-                Button {
-                    Task { await viewModel.resumeJob() }
-                } label: {
-                    Label("Resume Print", systemImage: "play.circle.fill")
-                        .fullWidthActionButton(prominence: .prominent)
-                        .fontWeight(.semibold)
+            // Paused: Resume + Abort side-by-side
+            if viewModel.canResume && viewModel.canAbort {
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await viewModel.resumeJob() }
+                    } label: {
+                        Label("Resume", systemImage: "play.circle.fill")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button(role: .destructive) {
+                        Task { await viewModel.abortJob() }
+                    } label: {
+                        Label("Abort", systemImage: "stop.circle.fill")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.pfError)
                 }
-                .buttonStyle(.borderedProminent)
+            } else {
+                if viewModel.canResume {
+                    Button {
+                        Task { await viewModel.resumeJob() }
+                    } label: {
+                        Label("Resume", systemImage: "play.circle.fill")
+                            .fullWidthActionButton(prominence: .prominent)
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+
+                if viewModel.canAbort {
+                    Button(role: .destructive) {
+                        Task { await viewModel.abortJob() }
+                    } label: {
+                        Label("Abort", systemImage: "stop.circle.fill")
+                            .fullWidthActionButton()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.pfError)
+                }
             }
 
             if viewModel.canCancel {
                 Button(role: .destructive) {
                     viewModel.showCancelConfirmation = true
                 } label: {
-                    Label("Cancel Job", systemImage: "xmark.circle")
+                    Label("Cancel", systemImage: "xmark.circle")
                         .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
-            }
-
-            if viewModel.canAbort {
-                Button(role: .destructive) {
-                    Task { await viewModel.abortJob() }
-                } label: {
-                    Label("Abort Print", systemImage: "stop.circle.fill")
-                        .fullWidthActionButton()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.pfError)
             }
         }
         .disabled(viewModel.isPerformingAction)

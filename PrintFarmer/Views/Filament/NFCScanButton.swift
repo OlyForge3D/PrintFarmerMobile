@@ -21,8 +21,8 @@ struct NFCScanButton: View {
                 Label("NFC", systemImage: "wave.3.right")
                     .font(.subheadline)
             } else {
-                Label("Scan NFC Tag", systemImage: "wave.3.right")
-                    .fullWidthActionButton()
+                Label("Scan Tag", systemImage: "wave.3.right")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
         }
         .buttonStyle(.bordered)
