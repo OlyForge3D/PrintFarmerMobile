@@ -31,3 +31,8 @@ test.log
 *.pem
 *.key
 secrets/
+# Squad: ignore runtime state (logs, inbox, sessions)
+.squad/decisions/inbox/
+.squad/sessions/
+# Squad: SubSquad activation file (local to this machine)
+.squad-workstream
