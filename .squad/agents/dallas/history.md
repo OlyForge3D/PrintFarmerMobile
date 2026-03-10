@@ -19,10 +19,11 @@ Dallas leads strategic architecture and release planning for PFarm-Ios. Role: sc
 2. **Phase 1 Filament/NFC:** SpoolService, NFCService (read/write), SpoolInventoryView, NFC integration ✅
 3. **Phase 2 Scanning:** VisionKit QR + AVFoundation fallback, SpoolScannerProtocol abstraction ✅
 
-**Learnings Archive (2025-07 to 2026-03-06):**
+**Learnings Archive (2025-07 to 2026-03-09):**
 - Backend catalog: 100+ endpoints; MVP needs ~22. API contract compliance verified.
 - SignalR: 5 hubs; MVP uses PrinterHub only. `/api/job-queue` (hyphenated), printer commands individual endpoints.
 - Code signing: fastlane match + encrypted cert repo (no hardcoded creds).
+- CI keychain password decoupled from match secret — ephemeral keychain uses hardcoded temp password (destroyed in cleanup), `secrets.MATCH_PASSWORD` reserved solely for match cert decryption. 6 GitHub secrets documented in workflow header.
 - SemVer versioning with git commit count for deterministic build numbers.
 - Xcode pbxproj fragile — use auto-generation when files added.
 - QA audit complete: all MVP endpoints verified, 3 ViewModel fixes applied, critical findings resolved.

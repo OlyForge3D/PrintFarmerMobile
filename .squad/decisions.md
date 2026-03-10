@@ -2,6 +2,43 @@
 
 ## Active Decisions
 
+### Decision: Per-Printer Camera Rotation (Ripley)
+**Date:** 2026-03-09  
+**Status:** Implemented
+
+## Context
+Phrozen Arco printers (and potentially other models) display camera images upside-down. Users need a way to correct the camera orientation on a per-printer basis.
+
+## Decisions
+1. **Storage:** `cameraRotation: Int` property in `PrinterDetailViewModel` storing degrees (0, 90, 180, 270)
+2. **Persistence:** UserDefaults with key pattern `"cameraRotation-{printerId.uuidString}"`
+3. **UI:** Rotate button (`rotate.right` SF Symbol) in camera section header, next to refresh button
+4. **Behavior:** Each tap rotates +90°, wrapping from 270→0
+5. **Application:** `.rotationEffect(.degrees(Double(cameraRotation)))` applied to both `snapshotImage(from:)` and `asyncSnapshotImage(url:)`
+
+## Rationale
+- Per-printer storage allows different rotation for each printer model
+- UserDefaults persistence survives app restarts
+- UI placement next to refresh button keeps camera controls grouped
+- Rotation applied to both data-based and URL-based images ensures consistent behavior
+- 90° increments cover all common orientations (0°, 90°, 180°, 270°)
+
+## Files Modified
+- `PrintFarmer/ViewModels/PrinterDetailViewModel.swift` — Added `cameraRotation` property, `rotateCameraView()` method, UserDefaults load in `init()` and `loadPrinter()`
+- `PrintFarmer/Views/Printers/PrinterDetailView.swift` — Added rotate button in camera section header, applied `.rotationEffect()` to both image views
+
+## Related Patterns
+- **Per-printer settings pattern:** Key format `"{setting}-{printerId.uuidString}"` can be reused for other printer-specific preferences
+- **Local preference override:** Similar to `lastSetSpoolInfo` pattern — preference changes take effect immediately without backend sync
+- **Toolbar button grouping:** Related controls (rotate, refresh) placed adjacent in toolbar for discoverability
+
+## Future Considerations
+- If many per-printer settings accumulate, consider moving to a structured UserDefaults object or Core Data
+- Could add a settings UI to reset all printer preferences if needed
+- Backend could eventually store camera orientation metadata per printer model
+
+---
+
 ### Decision: Spoolman Spool Model Naming & Pagination (Lambert)
 **Date:** 2026-03-07  
 **Status:** Implemented
@@ -937,3 +974,53 @@ Added `message: String?` to `APIError`. The error description fallback chain is 
 - All 400-level errors from printer command endpoints now surface the backend's actual error message to the user.
 - No breaking changes — `message` is optional, existing ProblemDetails-shaped errors still work via `detail`/`title`.
 - Ripley: error messages in the UI will now be more descriptive for spool/filament operations (e.g., "Spool 42 is already loaded on printer X" instead of "Client error (400)").
+
+---
+
+### Decision: Side-by-Side Button Layout Pattern
+
+**Author:** Ripley (iOS Dev)  
+**Date:** 2026-07-23  
+**Status:** Implemented
+
+#### Context
+Full-width action buttons stacked vertically consumed excessive screen space when multiple actions were available simultaneously (e.g., Pause + Abort while printing).
+
+#### Decision
+Group contextually related, simultaneously-visible action buttons side-by-side using HStack. Solo actions remain full-width.
+
+#### Rules
+1. **Side-by-side buttons:** Use `HStack(spacing: 10)` with `.frame(maxWidth: .infinity, minHeight: 44)` on each button label — do NOT use `.fullWidthActionButton()` inside HStacks
+2. **Solo buttons:** Continue using `.fullWidthActionButton()` for full-width layout
+3. **Primary actions** (Start Print, Emergency Stop): Always full-width + `.prominent` sizing
+4. **Destructive buttons** (Abort, Emergency Stop): Keep red tint (`.pfError`) regardless of layout
+5. **Touch targets:** Minimum 44pt height always applies (Apple HIG)
+6. **Conditional pairing:** Only group buttons that appear simultaneously — use combined conditionals (`canX && canY`) with else-branch fallback for solo display
+
+#### Files Affected
+- `PrintFarmer/Views/Jobs/JobDetailView.swift` — Pause+Abort, Resume+Abort paired
+- `PrintFarmer/Views/Printers/PrinterDetailView.swift` — Already implemented this pattern
+
+---
+
+### Decision: NFCScanButton Frame Strategy for HStack Compatibility
+
+**Author:** Ripley (iOS Developer)  
+**Date:** 2026-07-23  
+**Status:** Implemented
+
+#### Context
+NFCScanButton used `.fullWidthActionButton()` modifier for its non-compact variant. When placed inside an HStack for side-by-side layout (e.g., "Set" + "Scan Tag" in PrinterDetailView's no-spool section), the modifier forced full-width rendering, breaking the even 50/50 split.
+
+#### Decision
+Changed NFCScanButton's non-compact variant from `.fullWidthActionButton()` to `.frame(maxWidth: .infinity, minHeight: 44)`. This makes the button expand to fill available space (full-width when standalone, half-width when in HStack with another `.infinity` sibling) while maintaining the 44pt minimum touch target.
+
+#### Rationale
+- `.fullWidthActionButton()` is ideal for solo full-width buttons but conflicts with HStack even-splitting
+- `.frame(maxWidth: .infinity, minHeight: 44)` achieves the same result in standalone context and adapts correctly in HStack
+- Consistent with the pattern established in JobDetailView's side-by-side buttons
+
+#### Impact
+- Any view embedding NFCScanButton in an HStack now gets correct even splitting
+- Standalone NFCScanButton usage is visually unchanged
+- Touch target remains ≥44pt

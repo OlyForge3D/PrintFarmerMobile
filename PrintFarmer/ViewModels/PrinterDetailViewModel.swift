@@ -56,9 +56,12 @@ final class PrinterDetailViewModel {
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
+    
+    var cameraRotation: Int = 0
 
     init(printerId: UUID) {
         self.printerId = printerId
+        self.cameraRotation = UserDefaults.standard.integer(forKey: "cameraRotation-\(printerId.uuidString)")
     }
 
     func configure(printerService: any PrinterServiceProtocol) {
@@ -214,6 +217,8 @@ final class PrinterDetailViewModel {
     func loadPrinter() async {
         isLoading = true
         errorMessage = nil
+        
+        cameraRotation = UserDefaults.standard.integer(forKey: "cameraRotation-\(printerId.uuidString)")
 
         guard let printerService else {
             errorMessage = "Printer service not available"
@@ -314,6 +319,11 @@ final class PrinterDetailViewModel {
             logger.warning("Failed to refresh snapshot: \(error.localizedDescription)")
         }
         isLoadingSnapshot = false
+    }
+    
+    func rotateCameraView() {
+        cameraRotation = (cameraRotation + 90) % 360
+        UserDefaults.standard.set(cameraRotation, forKey: "cameraRotation-\(printerId.uuidString)")
     }
 
     // MARK: - Computed State

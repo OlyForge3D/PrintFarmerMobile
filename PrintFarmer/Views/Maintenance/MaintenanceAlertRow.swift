@@ -41,7 +41,7 @@ struct MaintenanceAlertRow: View {
                     Button {
                         onAcknowledge()
                     } label: {
-                        Label("Acknowledge", systemImage: "checkmark")
+                        Label("Accept", systemImage: "checkmark")
                             .font(.subheadline.weight(.medium))
                             .fullWidthActionButton()
                     }

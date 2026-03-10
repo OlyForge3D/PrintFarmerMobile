@@ -43,7 +43,7 @@ struct SpoolInventoryView: View {
                         } description: {
                             Text(viewModel.activeFilterDescription)
                         } actions: {
-                            Button("Clear Filters") {
+                            Button("Reset") {
                                 withAnimation {
                                     viewModel.clearFilters()
                                 }

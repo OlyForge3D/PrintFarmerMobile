@@ -122,18 +122,20 @@ struct PrinterDetailView: View {
                             Spacer()
                         }
 
-                        Button {
-                            viewModel.loadFilament()
-                        } label: {
-                            Label("Set Filament", systemImage: "plus.circle.fill")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.pfAccent)
+                        HStack(spacing: 10) {
+                            Button {
+                                viewModel.loadFilament()
+                            } label: {
+                                Label("Set", systemImage: "plus.circle.fill")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.pfAccent)
 
-                        NFCScanButton(action: {
-                            viewModel.handleNFCScanToLoad()
-                        })
+                            NFCScanButton(action: {
+                                viewModel.handleNFCScanToLoad()
+                            })
+                        }
                     }
                 }
             }
@@ -212,7 +214,7 @@ struct PrinterDetailView: View {
             Button {
                 viewModel.loadFilament()
             } label: {
-                Label("Change Filament", systemImage: "arrow.triangle.swap")
+                Label("Change", systemImage: "arrow.triangle.swap")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -454,6 +456,14 @@ struct PrinterDetailView: View {
 
                 if viewModel.snapshotData != nil || printer.cameraSnapshotUrl != nil {
                     Button {
+                        viewModel.rotateCameraView()
+                    } label: {
+                        Image(systemName: "rotate.right")
+                            .font(.subheadline)
+                    }
+                    .accessibilityLabel("Rotate camera view")
+                    
+                    Button {
                         Task { await viewModel.refreshSnapshot() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
@@ -490,6 +500,7 @@ struct PrinterDetailView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .rotationEffect(.degrees(Double(viewModel.cameraRotation)))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
                 snapshotUnavailable()
@@ -509,6 +520,7 @@ struct PrinterDetailView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .rotationEffect(.degrees(Double(viewModel.cameraRotation)))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             case .failure:
                 snapshotUnavailable()
@@ -605,7 +617,7 @@ struct PrinterDetailView: View {
                 Button {
                     viewModel.writeNFCPrinterTag()
                 } label: {
-                    Label("Write NFC Tag", systemImage: "wave.3.right")
+                    Label("Write Tag", systemImage: "wave.3.right")
                         .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
