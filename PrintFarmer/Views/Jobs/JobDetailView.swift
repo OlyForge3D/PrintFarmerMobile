@@ -83,9 +83,9 @@ struct JobDetailView: View {
 
     private func thumbnailSection(_ job: PrintJob) -> some View {
         Group {
-            if let urlString = job.thumbnailUrl,
+            if let gcodeFileId = job.gcodeFileId,
                let baseURL = APIClient.savedBaseURL(),
-               let url = URL(string: urlString, relativeTo: baseURL) {
+               let url = URL(string: "/api/gcode-files/thumbnail/\(gcodeFileId)", relativeTo: baseURL) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):

@@ -107,7 +107,9 @@ struct JobListView: View {
                 router.jobsPath.append(AppDestination.jobDetail(id: uuid))
             }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                jobThumbnail(for: item, size: 48)
+                VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.job.name)
                         .font(.headline)
@@ -144,6 +146,7 @@ struct JobListView: View {
                     }
                 }
             }
+            }
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
@@ -157,7 +160,9 @@ struct JobListView: View {
                 router.jobsPath.append(AppDestination.jobDetail(id: uuid))
             }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                jobThumbnail(for: item, size: 44)
+                VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.job.name)
                         .font(.headline)
@@ -199,6 +204,7 @@ struct JobListView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            }
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
@@ -232,7 +238,9 @@ struct JobListView: View {
                 router.jobsPath.append(AppDestination.jobDetail(id: uuid))
             }
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                jobThumbnail(for: item, size: 36)
+                VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(item.job.name)
                         .font(.subheadline)
@@ -262,6 +270,7 @@ struct JobListView: View {
                         .lineLimit(2)
                 }
             }
+            }
             .padding(.vertical, 2)
         }
         .buttonStyle(.plain)
@@ -288,5 +297,41 @@ struct JobListView: View {
             }
             .foregroundStyle(p == .urgent ? Color.pfError : Color.pfWarning)
         }
+    }
+
+    // MARK: - Thumbnails
+
+    @ViewBuilder
+    private func jobThumbnail(for item: QueuedPrintJobResponse, size: CGFloat = 44) -> some View {
+        let urlString = item.job.thumbnailUrl ?? item.gcodeFile?.thumbnailUrl
+        if let urlString,
+           let baseURL = APIClient.savedBaseURL(),
+           let url = URL(string: urlString, relativeTo: baseURL) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: size, height: size)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                default:
+                    placeholderThumbnail(size: size)
+                }
+            }
+        } else {
+            placeholderThumbnail(size: size)
+        }
+    }
+
+    private func placeholderThumbnail(size: CGFloat = 44) -> some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.pfCard)
+            .frame(width: size, height: size)
+            .overlay(
+                Image(systemName: "cube")
+                    .font(.system(size: size * 0.4))
+                    .foregroundStyle(.tertiary)
+            )
     }
 }
