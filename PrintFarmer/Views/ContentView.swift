@@ -25,6 +25,7 @@ struct ContentView: View {
             PrinterListView()
                 .tabItem { Label("Printers", systemImage: "printer") }
                 .tag(AppTab.printers)
+                .badge(router.pendingReadyCount)
 
             JobListView()
                 .tabItem { Label("Jobs", systemImage: "list.bullet.rectangle") }
@@ -57,7 +58,7 @@ struct ContentView: View {
         return NavigationSplitView(columnVisibility: $router.sidebarVisibility) {
             List {
                 sidebarButton(tab: .dashboard, title: "Dashboard", icon: "square.grid.2x2")
-                sidebarButton(tab: .printers, title: "Printers", icon: "printer")
+                sidebarPrintersButton
                 sidebarButton(tab: .jobs, title: "Jobs", icon: "list.bullet.rectangle")
                 sidebarButton(tab: .inventory, title: "Inventory", icon: "cylinder.fill")
                 sidebarAlertButton
@@ -81,6 +82,27 @@ struct ContentView: View {
         .foregroundStyle(router.selectedTab == tab ? Color.accentColor : .primary)
     }
 
+    private var sidebarPrintersButton: some View {
+        Button {
+            router.selectedTab = .printers
+        } label: {
+            HStack {
+                Label("Printers", systemImage: "printer")
+                Spacer()
+                if router.pendingReadyCount > 0 {
+                    Text("\(router.pendingReadyCount)")
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.pfWarning, in: Capsule())
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .listRowBackground(router.selectedTab == .printers ? Color.accentColor.opacity(0.15) : nil)
+        .foregroundStyle(router.selectedTab == .printers ? Color.accentColor : .primary)
+    }
+    
     private var sidebarAlertButton: some View {
         Button {
             router.selectedTab = .notifications

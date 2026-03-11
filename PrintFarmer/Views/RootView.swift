@@ -7,15 +7,31 @@ import SwiftUI
 /// SwiftUI reliably re-renders when `isAuthenticated` changes.
 struct RootView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(AppRouter.self) private var router
+    @Environment(ServiceContainer.self) private var services
+    @State private var pendingReadyMonitor = PendingReadyMonitor()
 
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
                 ContentView()
+                    .task {
+                        pendingReadyMonitor.configure(autoPrintService: services.autoPrintService)
+                        pendingReadyMonitor.startMonitoring()
+                    }
+                    .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
+                        router.pendingReadyCount = newValue
+                    }
             } else if !authViewModel.hasCheckedAuth {
                 launchScreen
             } else {
                 LoginView()
+            }
+        }
+        .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
+            if !isAuthenticated {
+                pendingReadyMonitor.stopMonitoring()
+                router.pendingReadyCount = 0
             }
         }
     }
