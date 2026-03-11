@@ -125,3 +125,47 @@
 - Tests verify state transitions (PendingReady → Ready after markReady call)
 - JSON compatibility preserved via CodingKeys mapping for `autoPrintEnabled` ↔ `autoDispatchEnabled`
 
+
+## Batch: Test Refactoring for AutoDispatch + PendingReady Coverage (2026-03-11)
+
+**Session Log:** `.squad/log/2026-03-11T16-00-22Z-autodispatch-rename.md`  
+**Orchestration Log:** `.squad/orchestration-log/2026-03-11T16-00-22Z-ash.md`
+
+### Team Context
+This batch deployed three agents in parallel:
+- **Lambert:** Service/protocol/models layer rename with CodingKeys backward compatibility
+- **Ripley:** View/ViewModel rename + PendingReady state UI implementation
+- **Ash (you):** Test file renames + 22 existing test refactors + 6 new PendingReady tests
+
+### Decisions Merged
+Two decisions enabled this work:
+1. `lambert-autodispatch-rename.md` — Terminology strategy you refactored tests for
+2. `ripley-pendingready-ui.md` — New feature you added test coverage for
+
+### Work Completed
+**File Renames:** All test/mock files updated with AutoDispatch naming  
+**Existing Test Refactoring:** 22 tests refactored for new terminology
+**New Test Coverage:** 6 tests for PendingReady state feature
+
+### Test Inventory
+**22 Refactored Tests:**
+- Service protocol tests (renamed service + properties)
+- View model initialization tests (AutoDispatchViewModel)
+- API response handling tests (state parsing)
+- State management tests
+- Integration tests
+
+**6 New PendingReady Tests:**
+- `testParsesPendingReadyState()` — State enum parsing
+- `testShowsPendingReadyBanner()` — UI visibility
+- `testConfirmBedClearAction()` — Button action handling
+- `testButtonLabelContextualization()` — "Confirm Bed Clear" vs "Next Job"
+- `testReadyStateDisplay()` — Success state messaging
+- `testInvalidStateHandling()` — Error cases
+
+### Interdependencies
+- **Depends on:** Lambert's renamed types + Ripley's UI implementation
+- **All tests passing:** ✅ No regressions
+
+### Cross-Team Learning
+**Parallel Test Refactoring:** When multiple agents make breaking changes to code, their tests can be updated in parallel by a fourth agent. This batch validated that pattern.

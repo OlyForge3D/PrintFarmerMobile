@@ -443,3 +443,27 @@ Fixed xcodebuild archive hang (was 1.5+ hours) via standard GitHub Actions iOS k
 - `PrintFarmer/Services/ServiceContainer.swift` — Updated dependency injection
 - `PrintFarmer/Models/Models.swift` — Renamed AutoDispatchState enum
 - `PrintFarmer/ViewModels/AutoDispatchViewModel.swift` — ViewModel using new types
+
+## Batch: AutoDispatch Terminology Rename (2026-03-11)
+
+**Session Log:** `.squad/log/2026-03-11T16-00-22Z-autodispatch-rename.md`  
+**Orchestration Log:** `.squad/orchestration-log/2026-03-11T16-00-22Z-lambert.md`
+
+### Team Context
+This batch deployed three agents in parallel:
+- **Lambert (you):** Service/protocol/models layer rename with CodingKeys backward compatibility
+- **Ripley:** View/ViewModel rename + PendingReady state UI implementation
+- **Ash:** Test file renames + 28 test updates (22 refactored + 6 new PendingReady tests)
+
+### Decision Merged
+Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Rename"
+- Rationale: Platform alignment with React frontend
+- Strategy: CodingKeys for API backward compatibility
+- Impact: Zero breaking changes, terminology now consistent across iOS/React
+
+### Related Agent Work
+- **Ripley (Interdependent):** Used your renamed types for AutoDispatchViewModel + AutoDispatchSection
+- **Ash (Dependent):** Refactored tests after your file renames; added coverage for Ripley's PendingReady state
+
+### Cross-Team Learning
+**CodingKeys Pattern for API Compatibility:** This approach (rename Swift types, use CodingKeys for backward compat) can be applied to future terminology migrations without backend changes. Document this pattern in team runbook.

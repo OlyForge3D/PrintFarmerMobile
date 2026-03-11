@@ -350,3 +350,41 @@ Applied to 7 view files; also fixed LoginView height:22 bug during migration.
   - Context-aware button tint: warning color for bed-clear, accent color for regular dispatch
 - **Files modified:** AutoDispatchViewModel.swift, AutoDispatchSection.swift, PrinterDetailView.swift, PrinterDetailViewModel.swift
 - **Note:** ServiceContainer still has `autoPrintService` property name (not `autoDispatchService`) — waiting on Lambert's container rename
+
+## Batch: AutoDispatch Terminology + PendingReady State UI (2026-03-11)
+
+**Session Log:** `.squad/log/2026-03-11T16-00-22Z-autodispatch-rename.md`  
+**Orchestration Log:** `.squad/orchestration-log/2026-03-11T16-00-22Z-ripley.md`
+
+### Team Context
+This batch deployed three agents in parallel:
+- **Lambert:** Service/protocol/models layer rename with CodingKeys
+- **Ripley (you):** View/ViewModel rename + PendingReady state UI (contextual banners, state-aware buttons)
+- **Ash:** Test file renames + 28 test updates (22 refactored + 6 new for PendingReady)
+
+### Decision Merged
+Documented in `.squad/decisions.md`: "AutoDispatch PendingReady State UI Design"
+- Context: Three auto-dispatch states (None, PendingReady, Ready) need user-facing UI
+- Design: State-specific views with contextual buttons and visual hierarchy
+- Impact: Operators have clear guidance when bed-clear confirmation is needed
+
+### Interdependencies
+- **Depends on:** Lambert's type renames (AutoDispatchViewModel, AutoDispatchSection use renamed types)
+- **Enables:** Ash's test coverage for PendingReady state transitions and button interactions
+
+### Key Design Decisions
+1. **If/else vs switch:** Used conditional for Optional<AutoDispatchState> to avoid Swift ambiguity with Optional.none
+2. **Button contextualization:** Same action ("Confirm Bed Clear" in PendingReady, "Next Job" elsewhere) reduces cognitive load
+3. **Visual hierarchy:** Warning banner uses `.pfWarning` (stands out without being alarming)
+
+### Cross-Team Learning
+**State-Aware UI Pattern:** This approach (enum-based state with contextual computed views) is reusable for other multi-state features. Consider extracting as a generic pattern.
+
+### Test Coverage
+6 new tests added by Ash:
+- PendingReady state parsing
+- Warning banner visibility
+- Button label contextualization
+- Ready state success messaging
+- State transitions
+- Invalid state handling

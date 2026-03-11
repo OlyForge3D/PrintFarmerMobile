@@ -1024,3 +1024,184 @@ Changed NFCScanButton's non-compact variant from `.fullWidthActionButton()` to `
 - Any view embedding NFCScanButton in an HStack now gets correct even splitting
 - Standalone NFCScanButton usage is visually unchanged
 - Touch target remains ≥44pt
+
+---
+
+### Decision: Decouple CI Keychain Password from Match Secret (Dallas)
+
+**Author:** Dallas (iOS Dev)  
+**Date:** 2026-03-09  
+**Status:** Implemented  
+**Commit:** `fix: decouple CI keychain password from match secret in TestFlight workflow`
+
+#### Context
+The TestFlight CI workflow (`.github/workflows/testflight-beta.yml`) used `secrets.MATCH_PASSWORD` for two unrelated purposes:
+1. As the ephemeral CI keychain password (create/unlock/partition-list)
+2. As the fastlane match passphrase to decrypt certificates from the match git repo
+
+When `MATCH_PASSWORD` was deleted from GitHub Secrets, the workflow broke at the keychain setup step — before it even reached the match decryption step.
+
+#### Decision
+Decouple the CI keychain password from the match secret:
+- **CI keychain:** Use a hardcoded temp password (`"ci-keychain-temp-password"`) since the keychain is ephemeral — created at the start of the run and destroyed in the cleanup step. No security risk.
+- **Match decryption:** Continue using `secrets.MATCH_PASSWORD` exclusively for `fastlane match --keychain_password` (the encryption passphrase for the certificates repo).
+
+#### Rationale
+- The CI keychain is a throwaway artifact — it exists only for the duration of the build and is deleted in the `Cleanup keychain` step (`security delete-keychain`).
+- Using a secret for throwaway infrastructure adds unnecessary coupling and failure modes.
+- This eliminates one dependency on `secrets.MATCH_PASSWORD`, making the workflow more resilient.
+
+#### Required Secrets (documented in workflow header)
+
+| Secret | Purpose |
+|--------|---------|
+| `MATCH_PASSWORD` | Passphrase for fastlane match certificate decryption |
+| `MATCH_GIT_URL` | URL of the private certificates repo |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | Base64-encoded `username:token` for cert repo access |
+| `APP_STORE_CONNECT_API_KEY_ID` | App Store Connect API key ID |
+| `APP_STORE_CONNECT_API_ISSUER_ID` | App Store Connect API issuer ID |
+| `APP_STORE_CONNECT_API_KEY_CONTENT` | .p8 private key content (raw or base64) |
+
+---
+
+### Decision: AutoPrint → AutoDispatch Terminology Rename (Lambert)
+
+**Author:** Lambert (Networking / API Integration)  
+**Date:** 2025-03-11  
+**Status:** Implemented
+
+#### Context
+The backend frontend (React) renamed the concept from "AutoPrint" to "AutoDispatch" to better reflect its role as a dispatch queue automation system. The iOS client needed to align with this terminology for consistency across platforms.
+
+#### Decision
+Rename all client-side types, files, and references from "AutoPrint" to "AutoDispatch" while maintaining full backward compatibility with the existing API.
+
+#### Implementation Strategy
+
+1. **File Renames:** Use `git mv` to rename all files, preserving git history
+2. **Type Renames:** Update all Swift types to use "AutoDispatch" terminology
+3. **Property Name Decoupling:** Use `CodingKeys` to map Swift property names to API JSON keys
+4. **API Endpoint Preservation:** Keep all API URLs as `/api/autoprint/...` (unchanged backend)
+
+#### Key Technical Decisions
+
+##### Property Naming Convention
+- **Swift property:** `autoDispatchEnabled` (user-facing terminology)
+- **JSON key:** `autoPrintEnabled` (backend contract)
+- **Rationale:** Decouples client naming from backend API, prevents need for backend migration
+
+Example:
+```swift
+struct AutoDispatchStatus: Codable, Sendable {
+    let autoDispatchEnabled: Bool
+    
+    private enum CodingKeys: String, CodingKey {
+        case autoDispatchEnabled = "autoPrintEnabled"
+    }
+}
+```
+
+##### Files vs Types Renamed
+- ✅ **Renamed:** All client files, types, protocols, classes
+- ❌ **Unchanged:** API endpoint URLs, JSON field names
+
+#### Impact
+- **Scope:** Networking layer, models, services, view models, views, tests
+- **Breaking Changes:** None (API compatibility maintained)
+- **Team Alignment:** iOS now matches React frontend terminology
+- **Future Proofing:** If backend later renames endpoints, only URL strings change (types already updated)
+
+#### Files Changed
+- Models: `AutoDispatchModels.swift`, `Models.swift`
+- Services: `AutoDispatchService.swift`, `AutoDispatchServiceProtocol.swift`, `ServiceContainer.swift`
+- ViewModels: `AutoDispatchViewModel.swift`, `PrinterDetailViewModel.swift`
+- Views: `AutoDispatchSection.swift`, `PrinterDetailView.swift`
+- Tests: `MockAutoDispatchService.swift`, `AutoDispatchViewModelTests.swift`
+- Project: `project.pbxproj`
+
+#### Considerations for Future
+- If backend API endpoints ever change from `/api/autoprint/` to `/api/autodispatch/`, only the service layer URL strings need updating
+- If backend renames JSON fields, update the `CodingKeys` mapping
+- This pattern (CodingKeys for API compatibility) can be applied to other terminology migrations
+
+---
+
+### Decision: AutoDispatch PendingReady State UI Design (Ripley)
+
+**Author:** Ripley (iOS Developer)  
+**Date:** 2026-03-11  
+**Status:** Implemented
+
+#### Context
+The auto-dispatch system has three states (`None`, `PendingReady`, `Ready`) but the UI was only showing a generic state string. When a print completes with auto-dispatch enabled, the printer enters `PendingReady` state — waiting for operator confirmation that the bed is clear before dispatching the next job.
+
+#### Decision
+Implemented state-specific UI with three distinct presentations:
+
+##### 1. PendingReady State (Bed Clear Required)
+- **Visual:** Warning banner with exclamation triangle icon + `.pfWarning` color
+- **Message:** "🔔 Bed Clear Required" with subtitle
+- **Primary action:** "Confirm Bed Clear" button (prominent, warning-colored)
+- **Secondary action:** "Skip" button (bordered)
+- **Additional info:** Queue count if available
+
+##### 2. Ready State (Dispatching)
+- **Visual:** Success indicator with checkmark icon + `.pfSuccess` color
+- **Message:** "✅ Bed cleared — dispatching next job..."
+- **Additional info:** Filament check result + next job name
+- **No actions:** System is handling dispatch
+
+##### 3. None State (Idle)
+- **Visual:** Simple state indicator
+- **Message:** Current state string ("Unknown", etc.)
+- **Actions:** Standard "Next Job" + "Skip" buttons
+
+#### Design Rationale
+
+##### State Handling
+- Used **if/else conditional** instead of switch for Optional<AutoDispatchState>
+  - Cleaner than exhaustive switch with separate nil and .none cases
+  - Swift treats `.none` as ambiguous between enum case and Optional.none
+
+##### Button Contextualization
+- Same "mark ready" action, different labels based on state:
+  - PendingReady: "Confirm Bed Clear" (urgent, warning tint)
+  - Other states: "Next Job" (standard, accent tint)
+- Reduces cognitive load: one primary action per state
+
+##### Visual Hierarchy
+- Warning banner stands out but isn't alarming (not error red)
+- Banner padding (12pt) and corner radius (10pt) match existing card style
+- Full banner width with internal HStack layout
+
+#### Technical Implementation
+
+**AutoDispatchViewModel:**
+```swift
+var parsedState: AutoDispatchState? {
+    guard let stateStr = status?.state else { return nil }
+    return AutoDispatchState(rawValue: stateStr)
+}
+```
+
+**AutoDispatchSection:**
+- Three computed views: `pendingReadyView`, `readyView`, `idleView`
+- One `actionButtons` view with context-aware button text/tint
+- State icon/color helpers use enum cases instead of string lowercasing
+
+#### Alternatives Considered
+
+1. **Switch statement for state:** Rejected due to Optional enum exhaustiveness issues
+2. **Separate buttons for each state:** Rejected to avoid UI layout shifts
+3. **Error-colored banner:** Rejected as PendingReady is normal operation, not failure
+
+#### Impact
+- **UX:** Operators have clear guidance on when bed-clear is needed
+- **Performance:** No additional API calls; uses existing status data
+- **Maintenance:** State-specific views are isolated and testable
+- **Consistency:** Follows existing color token usage (`.pfWarning`, `.pfSuccess`, `.pfAccent`)
+
+#### Related Files
+- `PrintFarmer/ViewModels/AutoDispatchViewModel.swift`
+- `PrintFarmer/Views/Printers/AutoDispatchSection.swift`
+- `PrintFarmer/Models/Models.swift` (AutoDispatchState enum)
