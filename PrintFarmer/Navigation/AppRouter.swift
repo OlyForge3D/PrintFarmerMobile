@@ -10,6 +10,7 @@ final class AppRouter {
     var inventoryPath = NavigationPath()
     var maintenancePath = NavigationPath()
     var notificationBadgeCount: Int = 0
+    var pendingReadyCount: Int = 0
     var sidebarVisibility: NavigationSplitViewVisibility = .automatic
     var pendingNFCReadyPrinterId: UUID?
     var pendingSpoolHighlightId: Int?

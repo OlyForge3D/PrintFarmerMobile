@@ -47,6 +47,7 @@
 		4BF27ADE0992B441FDBEAD6E /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B45A5C9AA17194A8ED47D1F /* MockURLProtocol.swift */; };
 		4D9D08DD59DF23C812B2963C /* SignalRModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6208E685EEDD0498124C143A /* SignalRModels.swift */; };
 		4F679582C671B972DF8C69C5 /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8090CB206CE8E8AE1084796 /* NotificationsViewModel.swift */; };
+		0D7D6FE112414AE495990773 /* PendingReadyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61A5AAA3D1E4BAD9CA3FE7D /* PendingReadyMonitor.swift */; };
 		4FFB267499981D7206071A85 /* AddSpoolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013F7A319FAE93072F4272D2 /* AddSpoolView.swift */; };
 		50223C7434476DC0B6673E8B /* SignalRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45FDB4137FE34914C387AE17 /* SignalRService.swift */; };
 		57E23E107ED77369284AF9D4 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E45A19848758E2DB8543C2A /* StatusBadge.swift */; };
@@ -264,6 +265,7 @@
 		C5B16CA4D9FC52BF34ADB51B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		C7A8B9D0E1F2A3B4C5D6E7F8 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		C8090CB206CE8E8AE1084796 /* NotificationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewModel.swift; sourceTree = "<group>"; };
+		E61A5AAA3D1E4BAD9CA3FE7D /* PendingReadyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingReadyMonitor.swift; sourceTree = "<group>"; };
 		C832D8E0EECDD622BBEB9A68 /* NotificationsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewModelTests.swift; sourceTree = "<group>"; };
 		CA22CAC2DD8479E1B2EE791A /* ModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsTests.swift; sourceTree = "<group>"; };
 		CAA04408A2539F908022484D /* JobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobService.swift; sourceTree = "<group>"; };
@@ -695,6 +697,7 @@
 				1A0CD24EBD01E5889869039C /* JobListViewModel.swift */,
 				DAFDAD6E115B4CFF2CCC862D /* LoginViewModel.swift */,
 				C8090CB206CE8E8AE1084796 /* NotificationsViewModel.swift */,
+				E61A5AAA3D1E4BAD9CA3FE7D /* PendingReadyMonitor.swift */,
 				4AB0049295C7EA8B4B2FF0CA /* PrinterDetailViewModel.swift */,
 				4F5C0DDAD4063D1EA8540264 /* PrinterListViewModel.swift */,
 				C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */,
@@ -919,6 +922,7 @@
 				6FB5573AA419B929334A449D /* JobListViewModel.swift in Sources */,
 				8A0E52A04D22061CB28D06BE /* LoginViewModel.swift in Sources */,
 				4F679582C671B972DF8C69C5 /* NotificationsViewModel.swift in Sources */,
+				0D7D6FE112414AE495990773 /* PendingReadyMonitor.swift in Sources */,
 				AF352938B522CA875FCD9E66 /* PrinterDetailViewModel.swift in Sources */,
 				69BA22247633D68EB315F6C3 /* PrinterListViewModel.swift in Sources */,
 				5E141422FB3849E6169FA79E /* ContentView.swift in Sources */,
