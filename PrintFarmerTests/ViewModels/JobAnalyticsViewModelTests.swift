@@ -124,15 +124,16 @@ final class JobAnalyticsViewModelTests: XCTestCase {
             totalQueued: 10,
             totalPrinting: 3,
             totalPaused: 1,
-            averageWaitTimeMinutes: 45.5,
+            averageWaitTimeMinutes: 45,
             byModel: []
         )
         let modelStats = [
             QueuePrinterModelStats(
-                model: "Prusa MK3S",
+                modelName: "Prusa MK3S",
                 totalQueued: 5,
-                totalPrinting: 2,
-                averageWaitTimeMinutes: 40.0
+                currentlyPrinting: 2,
+                oldestQueuedAtUtc: nil,
+                averageQueueWaitMinutes: 40
             )
         ]
         mockJobAnalyticsService.statsToReturn = stats
@@ -144,7 +145,7 @@ final class JobAnalyticsViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.stats?.totalQueued, 10)
         XCTAssertEqual(viewModel.stats?.totalPrinting, 3)
         XCTAssertEqual(viewModel.modelStats.count, 1)
-        XCTAssertEqual(viewModel.modelStats.first?.model, "Prusa MK3S")
+        XCTAssertEqual(viewModel.modelStats.first?.modelName, "Prusa MK3S")
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
     }

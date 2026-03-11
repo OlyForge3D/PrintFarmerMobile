@@ -19,6 +19,18 @@ struct JobFailurePrediction: Codable, Sendable {
     let riskLevel: String
     let factors: [PredictionFactor]
 
+    init(printerId: UUID? = nil, material: String? = nil, estimatedDurationMinutes: Double? = nil,
+         failureProbability: Double, predictedFailureLikelihood: Double? = nil,
+         riskLevel: String, factors: [PredictionFactor] = []) {
+        self.printerId = printerId
+        self.material = material
+        self.estimatedDurationMinutes = estimatedDurationMinutes
+        self.failureProbability = failureProbability
+        self.predictedFailureLikelihood = predictedFailureLikelihood
+        self.riskLevel = riskLevel
+        self.factors = factors
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         printerId = try c.decodeIfPresent(UUID.self, forKey: .printerId)
@@ -38,6 +50,12 @@ struct PredictionFactor: Codable, Sendable {
     let value: Double
     let weight: Double
 
+    init(name: String, value: Double, weight: Double) {
+        self.name = name
+        self.value = value
+        self.weight = weight
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Unknown"
@@ -52,6 +70,12 @@ struct MaintenanceForecast: Codable, Sendable {
     let printerId: UUID?
     let printerName: String
     let upcomingTasks: [ForecastTask]
+
+    init(printerId: UUID? = nil, printerName: String, upcomingTasks: [ForecastTask] = []) {
+        self.printerId = printerId
+        self.printerName = printerName
+        self.upcomingTasks = upcomingTasks
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -68,6 +92,12 @@ struct ForecastTask: Codable, Sendable {
     let estimatedDaysUntilDue: Int
     let priority: String
 
+    init(taskName: String, estimatedDaysUntilDue: Int, priority: String) {
+        self.taskName = taskName
+        self.estimatedDaysUntilDue = estimatedDaysUntilDue
+        self.priority = priority
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         taskName = try c.decodeIfPresent(String.self, forKey: .taskName) ?? "Unknown"
@@ -83,6 +113,13 @@ struct PredictiveAlert: Codable, Sendable {
     let severity: String
     let message: String
     let recommendedAction: String
+
+    init(alertType: String, severity: String, message: String, recommendedAction: String) {
+        self.alertType = alertType
+        self.severity = severity
+        self.message = message
+        self.recommendedAction = recommendedAction
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)

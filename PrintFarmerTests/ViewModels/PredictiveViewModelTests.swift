@@ -180,7 +180,7 @@ final class PredictiveViewModelTests: XCTestCase {
             riskLevel: "low",
             factors: []
         )
-        XCTAssertEqual(viewModel.riskPercentage, 0.0)
+        XCTAssertEqual(viewModel.riskPercentage, 0)
         
         viewModel.prediction = JobFailurePrediction(
             printerId: testPrinterId,
@@ -191,7 +191,7 @@ final class PredictiveViewModelTests: XCTestCase {
             riskLevel: "low",
             factors: []
         )
-        XCTAssertEqual(viewModel.riskPercentage, 25.0)
+        XCTAssertEqual(viewModel.riskPercentage, 25)
         
         viewModel.prediction = JobFailurePrediction(
             printerId: testPrinterId,
@@ -202,7 +202,7 @@ final class PredictiveViewModelTests: XCTestCase {
             riskLevel: "moderate",
             factors: []
         )
-        XCTAssertEqual(viewModel.riskPercentage, 50.0)
+        XCTAssertEqual(viewModel.riskPercentage, 50)
         
         viewModel.prediction = JobFailurePrediction(
             printerId: testPrinterId,
@@ -213,7 +213,7 @@ final class PredictiveViewModelTests: XCTestCase {
             riskLevel: "high",
             factors: []
         )
-        XCTAssertEqual(viewModel.riskPercentage, 75.0)
+        XCTAssertEqual(viewModel.riskPercentage, 75)
         
         viewModel.prediction = JobFailurePrediction(
             printerId: testPrinterId,
@@ -224,13 +224,13 @@ final class PredictiveViewModelTests: XCTestCase {
             riskLevel: "critical",
             factors: []
         )
-        XCTAssertEqual(viewModel.riskPercentage, 100.0)
+        XCTAssertEqual(viewModel.riskPercentage, 100)
     }
     
     func testRiskPercentageReturnsZeroWhenNoPrediction() {
         viewModel.prediction = nil
         
-        XCTAssertEqual(viewModel.riskPercentage, 0.0)
+        XCTAssertEqual(viewModel.riskPercentage, 0)
     }
     
     func testRiskLevelReturnsCorrectLevel() {

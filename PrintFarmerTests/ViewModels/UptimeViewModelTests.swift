@@ -51,11 +51,16 @@ final class UptimeViewModelTests: XCTestCase {
         let fleetStat = FleetPrinterStatistics(
             printerId: UUID(),
             printerName: "Prusa MK3",
+            manufacturerName: nil,
+            modelName: nil,
             isOnline: true,
             inMaintenance: false,
             totalPrintHours: 180.5,
             totalJobsCompleted: 145,
             totalJobsFailed: 5,
+            totalFilamentUsedGrams: nil,
+            totalFilamentUsedMeters: nil,
+            lastSyncTime: nil,
             daysUntilNextMaintenance: nil,
             nextMaintenanceTask: nil
         )
