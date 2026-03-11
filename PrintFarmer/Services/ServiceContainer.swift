@@ -14,7 +14,7 @@ final class ServiceContainer: @unchecked Sendable {
     let signalRService: SignalRService
     let spoolService: SpoolService
     let maintenanceService: MaintenanceService
-    let autoPrintService: AutoPrintService
+    let autoPrintService: AutoDispatchService
     let jobAnalyticsService: JobAnalyticsService
     let predictiveService: PredictiveService
     let dispatchService: DispatchService
@@ -36,7 +36,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.notificationService = NotificationService(apiClient: apiClient)
         self.spoolService = SpoolService(apiClient: apiClient)
         self.maintenanceService = MaintenanceService(apiClient: apiClient)
-        self.autoPrintService = AutoPrintService(apiClient: apiClient)
+        self.autoPrintService = AutoDispatchService(apiClient: apiClient)
         self.jobAnalyticsService = JobAnalyticsService(apiClient: apiClient)
         self.predictiveService = PredictiveService(apiClient: apiClient)
         self.dispatchService = DispatchService(apiClient: apiClient)

@@ -125,7 +125,7 @@ enum PrintJobPriority: String, Codable, Sendable {
     }
 }
 
-enum AutoPrintState: String, Codable, Sendable {
+enum AutoDispatchState: String, Codable, Sendable {
     case none = "None"
     case pendingReady = "PendingReady"
     case ready = "Ready"

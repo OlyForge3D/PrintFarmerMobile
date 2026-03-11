@@ -1,0 +1,73 @@
+import Foundation
+import os
+
+@MainActor @Observable
+final class AutoDispatchViewModel {
+    var status: AutoDispatchStatus?
+    var readyResult: AutoDispatchReadyResult?
+    var isLoading = false
+    var error: String?
+
+    private let logger = Logger(subsystem: "com.printfarmer.ios", category: "AutoDispatch")
+    private var autoDispatchService: (any AutoDispatchServiceProtocol)?
+
+    func configure(autoDispatchService: any AutoDispatchServiceProtocol) {
+        self.autoDispatchService = autoDispatchService
+    }
+
+    func loadStatus(printerId: UUID) async {
+        guard let autoDispatchService else { return }
+        isLoading = true
+        error = nil
+
+        do {
+            status = try await autoDispatchService.getStatus(printerId: printerId)
+        } catch {
+            self.error = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func markReady(printerId: UUID) async {
+        guard let autoDispatchService else { return }
+        do {
+            readyResult = try await autoDispatchService.markReady(printerId: printerId)
+            await loadStatus(printerId: printerId)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func skip(printerId: UUID) async {
+        guard let autoDispatchService else { return }
+        do {
+            status = try await autoDispatchService.skip(printerId: printerId)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func toggleEnabled(printerId: UUID) async {
+        guard let autoDispatchService else { return }
+        let currentlyEnabled = status?.autoDispatchEnabled ?? false
+        do {
+            status = try await autoDispatchService.setEnabled(
+                printerId: printerId,
+                request: SetAutoDispatchEnabledRequest(enabled: !currentlyEnabled)
+            )
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    // MARK: - Computed
+
+    var isEnabled: Bool { status?.autoDispatchEnabled ?? false }
+    var currentState: String { status?.state ?? "Unknown" }
+    
+    var parsedState: AutoDispatchState? {
+        guard let stateStr = status?.state else { return nil }
+        return AutoDispatchState(rawValue: stateStr)
+    }
+}

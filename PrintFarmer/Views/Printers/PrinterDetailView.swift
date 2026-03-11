@@ -60,7 +60,7 @@ struct PrinterDetailView: View {
             #if canImport(UIKit)
             viewModel.configureNFCScanner(services.nfcService)
             #endif
-            viewModel.configureAutoPrint(services.autoPrintService)
+            viewModel.configureAutoDispatch(services.autoPrintService)
             await viewModel.loadPrinter()
 
             // Handle NFC "mark ready" deep link
@@ -260,7 +260,7 @@ struct PrinterDetailView: View {
 
                     cameraSection(printer)
                     filamentSection(printer)
-                    AutoPrintSection(printerId: printer.id)
+                    AutoDispatchSection(printerId: printer.id)
 
                     NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
                         HStack {
@@ -296,7 +296,7 @@ struct PrinterDetailView: View {
                 headerSection(printer)
                 temperatureSection(printer)
                 filamentSection(printer)
-                AutoPrintSection(printerId: printer.id)
+                AutoDispatchSection(printerId: printer.id)
 
                 NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
                     HStack {

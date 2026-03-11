@@ -8,12 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		G1C5E77D0F5644239382149E /* MockMaintenanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G15023AB18C74D619A437C5B /* MockMaintenanceService.swift */; };
-		G1B2DE97C03D425FABD4BDD4 /* MockAutoPrintService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1A0D67EA5BA48C685032FBA /* MockAutoPrintService.swift */; };
+		G1B2DE97C03D425FABD4BDD4 /* MockAutoDispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1A0D67EA5BA48C685032FBA /* MockAutoDispatchService.swift */; };
 		G1D0E211DA844BED9C0F19BD /* MockJobAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1A233F477344637B2AC9E9C /* MockJobAnalyticsService.swift */; };
 		G1B41151FD1F4B23ABEC59AE /* MockPredictiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1FDD71A064346A897BF9641 /* MockPredictiveService.swift */; };
 		G1C2B28DFB034685948B821C /* MockDispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1F98AD41C304A60BBBD3F43 /* MockDispatchService.swift */; };
 		G1B1DA79316F4F3D80379370 /* MaintenanceViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G12FAAFBDCE94613835D3E58 /* MaintenanceViewModelTests.swift */; };
-		G1A3398318B240EABC22E536 /* AutoPrintViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G182EDAEF7D149C4935156CB /* AutoPrintViewModelTests.swift */; };
+		G1A3398318B240EABC22E536 /* AutoDispatchViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G182EDAEF7D149C4935156CB /* AutoDispatchViewModelTests.swift */; };
 		G1FA23A10AE54780B6CF1B3F /* JobAnalyticsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1E89C5DD6EE494193525CAA /* JobAnalyticsViewModelTests.swift */; };
 		G1DB496BA05449D7B73D5824 /* JobHistoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G1ABD0C2A6934D9D81A7CC12 /* JobHistoryViewModelTests.swift */; };
 		G13C385F68A34608B4182DD2 /* PredictiveViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = G126761F6D6E49CEA681556E /* PredictiveViewModelTests.swift */; };
@@ -132,7 +132,7 @@
 		07E8DD5AB6382882B9BE9D03 /* DispatchServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D2C93E6A6018200655B52C /* DispatchServiceProtocol.swift */; };
 		0973EF4B9E55C43285DFC914 /* UptimeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172262D3DBDD4FAE8DC919EE /* UptimeViewModel.swift */; };
 		0B3949F0DF6634129AE4352E /* MaintenanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7BCA96F36B67682F5623A0 /* MaintenanceModels.swift */; };
-		106D6F84978B35EC277D9AF9 /* AutoPrintService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49036340D262B04245686D66 /* AutoPrintService.swift */; };
+		106D6F84978B35EC277D9AF9 /* AutoDispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49036340D262B04245686D66 /* AutoDispatchService.swift */; };
 		186EEE6749F7CA935D146200 /* JobAnalyticsServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F71C63D5F55C65B1826BCF /* JobAnalyticsServiceProtocol.swift */; };
 		1A941E0522AA90DC39B225DA /* MaintenanceAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C763BA7EA2D471405E47959 /* MaintenanceAnalyticsView.swift */; };
 		1FA5B5ADDBE8376D1A607E06 /* JobStatsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FEB78EDB93736282BDCB0B /* JobStatsCard.swift */; };
@@ -142,11 +142,11 @@
 		49AC71FD7934C59CB7ACEA1B /* MaintenanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E393ECB4303DE4FE8DD482E8 /* MaintenanceService.swift */; };
 		5B9EEBAC73AA153E37C05095 /* JobAnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 051CF8A25906AE585EC15D70 /* JobAnalyticsModels.swift */; };
 		5D81245E04D496024C95D742 /* PredictiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2AEDF58431DDF97E25F237 /* PredictiveService.swift */; };
-		6B8B43A62528D0D7D70BD718 /* AutoPrintSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C419E5042E5AB2FD54B88C0F /* AutoPrintSection.swift */; };
-		6BC8FAF604CD9AFD2639F9E8 /* AutoPrintServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE23E12C23FE0D3C5476AD0 /* AutoPrintServiceProtocol.swift */; };
+		6B8B43A62528D0D7D70BD718 /* AutoDispatchSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C419E5042E5AB2FD54B88C0F /* AutoDispatchSection.swift */; };
+		6BC8FAF604CD9AFD2639F9E8 /* AutoDispatchServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE23E12C23FE0D3C5476AD0 /* AutoDispatchServiceProtocol.swift */; };
 		8855CAA8B03D9060F787E0D5 /* JobAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBAB4E32C97D1AF42242DDB2 /* JobAnalyticsView.swift */; };
 		8DB374A80F52F95C2FD9C301 /* DispatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41071C4C16F36811B173CFA6 /* DispatchViewModel.swift */; };
-		8FF4E0F3F7650B6BC5AFABE1 /* AutoPrintViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD07002330FE33D4DA7BEEF /* AutoPrintViewModel.swift */; };
+		8FF4E0F3F7650B6BC5AFABE1 /* AutoDispatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD07002330FE33D4DA7BEEF /* AutoDispatchViewModel.swift */; };
 		951F2280C4D89B65EF64D26B /* PredictiveServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8899CF6F69FA4326C4DD166 /* PredictiveServiceProtocol.swift */; };
 		9D31AD58644A85D673FB5422 /* PredictiveModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE816C8D542C6E41C7743FF9 /* PredictiveModels.swift */; };
 		A6461309B0A8AB96457CE924 /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2DC48D9E2512C6FD68D6E3 /* MaintenanceView.swift */; };
@@ -159,7 +159,7 @@
 		D99CD2AB46AD4834B0BC33CA /* PredictiveInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B82175969F41E18F12CE414 /* PredictiveInsightsView.swift */; };
 		DADAA45CEF6DEBFEFF5B983D /* UptimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9613964BDF412E866655E27 /* UptimeView.swift */; };
 		DFD2A0FB3DC489F94A8CA1D8 /* MaintenanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF6960887D6BE3947D944C8 /* MaintenanceViewModel.swift */; };
-		E02BCD8D6DB753506D437BF5 /* AutoPrintModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D1020247C4116936C828DD /* AutoPrintModels.swift */; };
+		E02BCD8D6DB753506D437BF5 /* AutoDispatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D1020247C4116936C828DD /* AutoDispatchModels.swift */; };
 		E36958254468F349BCE07693 /* JobAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E5245051668A52E97EA4A9 /* JobAnalyticsService.swift */; };
 /* End PBXBuildFile section */
 
@@ -175,12 +175,12 @@
 
 /* Begin PBXFileReference section */
 		G15023AB18C74D619A437C5B /* MockMaintenanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMaintenanceService.swift; sourceTree = "<group>"; };
-		G1A0D67EA5BA48C685032FBA /* MockAutoPrintService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutoPrintService.swift; sourceTree = "<group>"; };
+		G1A0D67EA5BA48C685032FBA /* MockAutoDispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutoDispatchService.swift; sourceTree = "<group>"; };
 		G1A233F477344637B2AC9E9C /* MockJobAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockJobAnalyticsService.swift; sourceTree = "<group>"; };
 		G1FDD71A064346A897BF9641 /* MockPredictiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPredictiveService.swift; sourceTree = "<group>"; };
 		G1F98AD41C304A60BBBD3F43 /* MockDispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDispatchService.swift; sourceTree = "<group>"; };
 		G12FAAFBDCE94613835D3E58 /* MaintenanceViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceViewModelTests.swift; sourceTree = "<group>"; };
-		G182EDAEF7D149C4935156CB /* AutoPrintViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintViewModelTests.swift; sourceTree = "<group>"; };
+		G182EDAEF7D149C4935156CB /* AutoDispatchViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchViewModelTests.swift; sourceTree = "<group>"; };
 		G1E89C5DD6EE494193525CAA /* JobAnalyticsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAnalyticsViewModelTests.swift; sourceTree = "<group>"; };
 		G1ABD0C2A6934D9D81A7CC12 /* JobHistoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobHistoryViewModelTests.swift; sourceTree = "<group>"; };
 		G126761F6D6E49CEA681556E /* PredictiveViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictiveViewModelTests.swift; sourceTree = "<group>"; };
@@ -301,23 +301,23 @@
 		051CF8A25906AE585EC15D70 /* JobAnalyticsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAnalyticsModels.swift; sourceTree = "<group>"; };
 		172262D3DBDD4FAE8DC919EE /* UptimeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UptimeViewModel.swift; sourceTree = "<group>"; };
 		3B2AEDF58431DDF97E25F237 /* PredictiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictiveService.swift; sourceTree = "<group>"; };
-		3CD07002330FE33D4DA7BEEF /* AutoPrintViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintViewModel.swift; sourceTree = "<group>"; };
+		3CD07002330FE33D4DA7BEEF /* AutoDispatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchViewModel.swift; sourceTree = "<group>"; };
 		41071C4C16F36811B173CFA6 /* DispatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchViewModel.swift; sourceTree = "<group>"; };
 		43FEB78EDB93736282BDCB0B /* JobStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatsCard.swift; sourceTree = "<group>"; };
-		49036340D262B04245686D66 /* AutoPrintService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintService.swift; sourceTree = "<group>"; };
+		49036340D262B04245686D66 /* AutoDispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchService.swift; sourceTree = "<group>"; };
 		4D2DC48D9E2512C6FD68D6E3 /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceView.swift; sourceTree = "<group>"; };
 		4EF6960887D6BE3947D944C8 /* MaintenanceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceViewModel.swift; sourceTree = "<group>"; };
 		5C763BA7EA2D471405E47959 /* MaintenanceAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceAnalyticsView.swift; sourceTree = "<group>"; };
 		6B82175969F41E18F12CE414 /* PredictiveInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictiveInsightsView.swift; sourceTree = "<group>"; };
-		6EE23E12C23FE0D3C5476AD0 /* AutoPrintServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintServiceProtocol.swift; sourceTree = "<group>"; };
+		6EE23E12C23FE0D3C5476AD0 /* AutoDispatchServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchServiceProtocol.swift; sourceTree = "<group>"; };
 		97D2C93E6A6018200655B52C /* DispatchServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchServiceProtocol.swift; sourceTree = "<group>"; };
 		989568D96F467DF4CCAC381E /* JobAnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAnalyticsViewModel.swift; sourceTree = "<group>"; };
 		9D7AFE879AABAE41D24CBF24 /* DispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchService.swift; sourceTree = "<group>"; };
 		B61F8B5ADAF667F7D1B0CFFE /* JobTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTimelineView.swift; sourceTree = "<group>"; };
-		B7D1020247C4116936C828DD /* AutoPrintModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintModels.swift; sourceTree = "<group>"; };
+		B7D1020247C4116936C828DD /* AutoDispatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchModels.swift; sourceTree = "<group>"; };
 		B7F71C63D5F55C65B1826BCF /* JobAnalyticsServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAnalyticsServiceProtocol.swift; sourceTree = "<group>"; };
 		BBCA4460CCEAE8000D68EC31 /* JobHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobHistoryView.swift; sourceTree = "<group>"; };
-		C419E5042E5AB2FD54B88C0F /* AutoPrintSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPrintSection.swift; sourceTree = "<group>"; };
+		C419E5042E5AB2FD54B88C0F /* AutoDispatchSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDispatchSection.swift; sourceTree = "<group>"; };
 		C82B536DAB8128A0A3905EBE /* DispatchDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchDashboardView.swift; sourceTree = "<group>"; };
 		C9D4245B619F049D2AF6364C /* JobHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobHistoryViewModel.swift; sourceTree = "<group>"; };
 		CA7BCA96F36B67682F5623A0 /* MaintenanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceModels.swift; sourceTree = "<group>"; };
@@ -391,7 +391,7 @@
 				F1F6A7B8C9D0E1F2A3B4C5D6 /* MockScannerService.swift */,
 				F1D0E1F2A3B4C5D6E7F8A9B0 /* MockSpoolService.swift */,
 				G15023AB18C74D619A437C5B /* MockMaintenanceService.swift */,
-				G1A0D67EA5BA48C685032FBA /* MockAutoPrintService.swift */,
+				G1A0D67EA5BA48C685032FBA /* MockAutoDispatchService.swift */,
 				G1A233F477344637B2AC9E9C /* MockJobAnalyticsService.swift */,
 				G1FDD71A064346A897BF9641 /* MockPredictiveService.swift */,
 				G1F98AD41C304A60BBBD3F43 /* MockDispatchService.swift */,
@@ -425,7 +425,7 @@
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* NFCService.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* QRSpoolScannerService.swift */,
 				07BDD1556443A5859F5EE43F /* StatisticsService.swift */,
-				49036340D262B04245686D66 /* AutoPrintService.swift */,
+				49036340D262B04245686D66 /* AutoDispatchService.swift */,
 				9D7AFE879AABAE41D24CBF24 /* DispatchService.swift */,
 				F9E5245051668A52E97EA4A9 /* JobAnalyticsService.swift */,
 				E393ECB4303DE4FE8DD482E8 /* MaintenanceService.swift */,
@@ -455,7 +455,7 @@
 				B8D7C5C4CE62E9F3684E5B1F /* Models.swift */,
 				62BAD7F52A9EFEE471AA461C /* RequestModels.swift */,
 				6208E685EEDD0498124C143A /* SignalRModels.swift */,
-				B7D1020247C4116936C828DD /* AutoPrintModels.swift */,
+				B7D1020247C4116936C828DD /* AutoDispatchModels.swift */,
 				CEDC1F2F6909E556EA2FB598 /* DispatchModels.swift */,
 				051CF8A25906AE585EC15D70 /* JobAnalyticsModels.swift */,
 				CA7BCA96F36B67682F5623A0 /* MaintenanceModels.swift */,
@@ -475,7 +475,7 @@
 				D21023EEB533787E494E2B82 /* SpoolServiceProtocol.swift */,
 				EOXFREPV2L15HYWN1T3VOVNC /* SpoolScannerProtocol.swift */,
 				10120F9FBE4ED41F47B5FDBB /* StatisticsServiceProtocol.swift */,
-				6EE23E12C23FE0D3C5476AD0 /* AutoPrintServiceProtocol.swift */,
+				6EE23E12C23FE0D3C5476AD0 /* AutoDispatchServiceProtocol.swift */,
 				97D2C93E6A6018200655B52C /* DispatchServiceProtocol.swift */,
 				B7F71C63D5F55C65B1826BCF /* JobAnalyticsServiceProtocol.swift */,
 				F4A621DD81EC9966336CD261 /* MaintenanceServiceProtocol.swift */,
@@ -507,7 +507,7 @@
 				F1B8C9D0E1F2A3B4C5D6E7F8 /* SpoolPickerViewModelScanTests.swift */,
 				F2D1E2F3A4B5C6D7E8F9A0B1 /* SpoolInventoryViewModelTests.swift */,
 				G12FAAFBDCE94613835D3E58 /* MaintenanceViewModelTests.swift */,
-				G182EDAEF7D149C4935156CB /* AutoPrintViewModelTests.swift */,
+				G182EDAEF7D149C4935156CB /* AutoDispatchViewModelTests.swift */,
 				G1E89C5DD6EE494193525CAA /* JobAnalyticsViewModelTests.swift */,
 				G1ABD0C2A6934D9D81A7CC12 /* JobHistoryViewModelTests.swift */,
 				G126761F6D6E49CEA681556E /* PredictiveViewModelTests.swift */,
@@ -522,7 +522,7 @@
 			children = (
 				B0630DF455D4C1F4FA86F892 /* PrinterDetailView.swift */,
 				3E94D9CC41318FFA43B8B260 /* PrinterListView.swift */,
-				C419E5042E5AB2FD54B88C0F /* AutoPrintSection.swift */,
+				C419E5042E5AB2FD54B88C0F /* AutoDispatchSection.swift */,
 				6B82175969F41E18F12CE414 /* PredictiveInsightsView.swift */,
 			);
 			path = Printers;
@@ -699,7 +699,7 @@
 				4F5C0DDAD4063D1EA8540264 /* PrinterListViewModel.swift */,
 				C2510EA192FD0D4DA2159C88 /* SpoolInventoryViewModel.swift */,
 				03EF6ADCC3760C1BFE7D60FB /* SpoolPickerViewModel.swift */,
-				3CD07002330FE33D4DA7BEEF /* AutoPrintViewModel.swift */,
+				3CD07002330FE33D4DA7BEEF /* AutoDispatchViewModel.swift */,
 				41071C4C16F36811B173CFA6 /* DispatchViewModel.swift */,
 				989568D96F467DF4CCAC381E /* JobAnalyticsViewModel.swift */,
 				C9D4245B619F049D2AF6364C /* JobHistoryViewModel.swift */,
@@ -837,12 +837,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				G1C5E77D0F5644239382149E /* MockMaintenanceService.swift in Sources */,
-				G1B2DE97C03D425FABD4BDD4 /* MockAutoPrintService.swift in Sources */,
+				G1B2DE97C03D425FABD4BDD4 /* MockAutoDispatchService.swift in Sources */,
 				G1D0E211DA844BED9C0F19BD /* MockJobAnalyticsService.swift in Sources */,
 				G1B41151FD1F4B23ABEC59AE /* MockPredictiveService.swift in Sources */,
 				G1C2B28DFB034685948B821C /* MockDispatchService.swift in Sources */,
 				G1B1DA79316F4F3D80379370 /* MaintenanceViewModelTests.swift in Sources */,
-				G1A3398318B240EABC22E536 /* AutoPrintViewModelTests.swift in Sources */,
+				G1A3398318B240EABC22E536 /* AutoDispatchViewModelTests.swift in Sources */,
 				G1FA23A10AE54780B6CF1B3F /* JobAnalyticsViewModelTests.swift in Sources */,
 				G1DB496BA05449D7B73D5824 /* JobHistoryViewModelTests.swift in Sources */,
 				G13C385F68A34608B4182DD2 /* PredictiveViewModelTests.swift in Sources */,
@@ -961,22 +961,22 @@
 				E1A1B2C3D4E5F6A7B8C9D0E1 /* QRScannerView.swift in Sources */,
 				E1C3D4E5F6A7B8C9D0E1F2A3 /* NFCScanButton.swift in Sources */,
 				E1E5F6A7B8C9D0E1F2A3B4C5 /* NFCWriteView.swift in Sources */,
-				E02BCD8D6DB753506D437BF5 /* AutoPrintModels.swift in Sources */,
+				E02BCD8D6DB753506D437BF5 /* AutoDispatchModels.swift in Sources */,
 				C31B17605CE275A98D53A86C /* DispatchModels.swift in Sources */,
 				5B9EEBAC73AA153E37C05095 /* JobAnalyticsModels.swift in Sources */,
 				0B3949F0DF6634129AE4352E /* MaintenanceModels.swift in Sources */,
 				9D31AD58644A85D673FB5422 /* PredictiveModels.swift in Sources */,
-				6BC8FAF604CD9AFD2639F9E8 /* AutoPrintServiceProtocol.swift in Sources */,
+				6BC8FAF604CD9AFD2639F9E8 /* AutoDispatchServiceProtocol.swift in Sources */,
 				07E8DD5AB6382882B9BE9D03 /* DispatchServiceProtocol.swift in Sources */,
 				186EEE6749F7CA935D146200 /* JobAnalyticsServiceProtocol.swift in Sources */,
 				4513626386D331DFA6D2FAD6 /* MaintenanceServiceProtocol.swift in Sources */,
 				951F2280C4D89B65EF64D26B /* PredictiveServiceProtocol.swift in Sources */,
-				106D6F84978B35EC277D9AF9 /* AutoPrintService.swift in Sources */,
+				106D6F84978B35EC277D9AF9 /* AutoDispatchService.swift in Sources */,
 				CCE5C88ED5A47C0CDE718088 /* DispatchService.swift in Sources */,
 				E36958254468F349BCE07693 /* JobAnalyticsService.swift in Sources */,
 				49AC71FD7934C59CB7ACEA1B /* MaintenanceService.swift in Sources */,
 				5D81245E04D496024C95D742 /* PredictiveService.swift in Sources */,
-				8FF4E0F3F7650B6BC5AFABE1 /* AutoPrintViewModel.swift in Sources */,
+				8FF4E0F3F7650B6BC5AFABE1 /* AutoDispatchViewModel.swift in Sources */,
 				8DB374A80F52F95C2FD9C301 /* DispatchViewModel.swift in Sources */,
 				BC2A4BC1111BE82007CCADCA /* JobAnalyticsViewModel.swift in Sources */,
 				AD2ACF1F2711B8FF40DDA099 /* JobHistoryViewModel.swift in Sources */,
@@ -992,7 +992,7 @@
 				1A941E0522AA90DC39B225DA /* MaintenanceAnalyticsView.swift in Sources */,
 				A6461309B0A8AB96457CE924 /* MaintenanceView.swift in Sources */,
 				DADAA45CEF6DEBFEFF5B983D /* UptimeView.swift in Sources */,
-				6B8B43A62528D0D7D70BD718 /* AutoPrintSection.swift in Sources */,
+				6B8B43A62528D0D7D70BD718 /* AutoDispatchSection.swift in Sources */,
 				D99CD2AB46AD4834B0BC33CA /* PredictiveInsightsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

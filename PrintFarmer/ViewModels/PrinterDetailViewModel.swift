@@ -52,7 +52,7 @@ final class PrinterDetailViewModel {
     var showNFCReadyConfirmation = false
 
     private var nfcScanner: (any SpoolScannerProtocol)?
-    private var autoPrintService: (any AutoPrintServiceProtocol)?
+    private var autoDispatchService: (any AutoDispatchServiceProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -72,8 +72,8 @@ final class PrinterDetailViewModel {
         self.nfcScanner = scanner
     }
 
-    func configureAutoPrint(_ service: any AutoPrintServiceProtocol) {
-        self.autoPrintService = service
+    func configureAutoDispatch(_ service: any AutoDispatchServiceProtocol) {
+        self.autoDispatchService = service
     }
 
     // MARK: - NFC Printer Tag Writing
@@ -100,14 +100,14 @@ final class PrinterDetailViewModel {
     // MARK: - Mark Ready (NFC Deep Link)
 
     func markPrinterReady() async {
-        guard let autoPrintService else {
-            actionError = "Auto-print service not available."
+        guard let autoDispatchService else {
+            actionError = "Auto-dispatch service not available."
             return
         }
         isPerformingAction = true
         actionError = nil
         do {
-            _ = try await autoPrintService.markReady(printerId: printerId)
+            _ = try await autoDispatchService.markReady(printerId: printerId)
             await loadPrinter()
         } catch {
             actionError = error.localizedDescription
