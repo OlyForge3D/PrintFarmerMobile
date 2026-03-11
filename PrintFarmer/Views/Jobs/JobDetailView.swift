@@ -60,6 +60,9 @@ struct JobDetailView: View {
     private func jobContent(_ job: PrintJob) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Thumbnail
+                thumbnailSection(job)
+
                 // Status + Progress
                 statusSection(job)
 
@@ -73,6 +76,36 @@ struct JobDetailView: View {
                 actionSection(job)
             }
             .padding()
+        }
+    }
+
+    // MARK: - Thumbnail
+
+    private func thumbnailSection(_ job: PrintJob) -> some View {
+        Group {
+            if let urlString = job.thumbnailUrl,
+               let baseURL = APIClient.savedBaseURL(),
+               let url = URL(string: urlString, relativeTo: baseURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxHeight: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .frame(maxWidth: .infinity)
+                    case .failure:
+                        EmptyView()
+                    case .empty:
+                        ProgressView()
+                            .frame(height: 120)
+                            .frame(maxWidth: .infinity)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            }
         }
     }
 

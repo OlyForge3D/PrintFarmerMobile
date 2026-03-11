@@ -22,6 +22,7 @@ struct QueuedJobAnalytics: Codable, Sendable, Identifiable {
     let printerName: String?
     let printerModel: String?
     let fileName: String?
+    let thumbnailUrl: String?
     let createdAt: Date
     let startedAt: Date?
     let completedAt: Date?
@@ -29,6 +30,7 @@ struct QueuedJobAnalytics: Codable, Sendable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, status, priority, queuePosition
         case assignedPrinterId, printerName, printerModel, fileName
+        case thumbnailUrl
         case createdAt = "createdAtUtc"
         case startedAt = "actualStartTimeUtc"
         case completedAt = "actualEndTimeUtc"
@@ -42,6 +44,7 @@ struct GcodeFileMeta: Codable, Sendable, Identifiable {
     let fileName: String
     let materialType: String?
     let nozzleDiameter: Double?
+    let thumbnailUrl: String?
 }
 
 // MARK: - Printer Meta
