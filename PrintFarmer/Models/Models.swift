@@ -457,6 +457,7 @@ struct PrintJob: Codable, Identifiable, Sendable {
     let completedCopies: Int
     let remainingCopies: Int
     let projectFileId: UUID?
+    let thumbnailUrl: String?
 
     var name: String { gcodeFileName }
 

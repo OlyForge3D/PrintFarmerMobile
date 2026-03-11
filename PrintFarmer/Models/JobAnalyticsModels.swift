@@ -22,9 +22,19 @@ struct QueuedJobAnalytics: Codable, Sendable, Identifiable {
     let printerName: String?
     let printerModel: String?
     let fileName: String?
+    let thumbnailUrl: String?
     let createdAt: Date
     let startedAt: Date?
     let completedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, status, priority, queuePosition
+        case assignedPrinterId, printerName, printerModel, fileName
+        case thumbnailUrl
+        case createdAt = "createdAtUtc"
+        case startedAt = "actualStartTimeUtc"
+        case completedAt = "actualEndTimeUtc"
+    }
 }
 
 // MARK: - GCode File Meta
@@ -34,6 +44,7 @@ struct GcodeFileMeta: Codable, Sendable, Identifiable {
     let fileName: String
     let materialType: String?
     let nozzleDiameter: Double?
+    let thumbnailUrl: String?
 }
 
 // MARK: - Printer Meta
@@ -42,6 +53,11 @@ struct PrinterMeta: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let model: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case model = "modelName"
+    }
 }
 
 // MARK: - Queue Stats
@@ -83,6 +99,12 @@ struct QueueHistoryEntry: Codable, Sendable, Identifiable {
     let status: String
     let completedAt: Date?
     let durationSeconds: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, jobName, printerName, status
+        case completedAt = "completedAtUtc"
+        case durationSeconds = "actualPrintTimeSeconds"
+    }
 }
 
 // MARK: - Queue History Stats
@@ -90,7 +112,7 @@ struct QueueHistoryEntry: Codable, Sendable, Identifiable {
 struct QueueHistoryStats: Codable, Sendable {
     let totalCompleted: Int
     let totalFailed: Int
-    let avgDurationSeconds: Double?
+    let averageDurationMinutes: Int?
 }
 
 // MARK: - Timeline Event
