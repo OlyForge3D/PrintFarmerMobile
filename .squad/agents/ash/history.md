@@ -91,3 +91,37 @@
 - Tests should verify: button visibility depends on `effectiveSpoolInfo` (not direct `printer.spoolInfo`), fallback to local override when server data unavailable, cleared on spool eject
 - Test fixture: `PrinterSpoolInfo` requires memberwise init (already available in Models.swift)
 
+### AutoPrint → AutoDispatch Rename with PendingReady State Tests (2026-03-11)
+**Requested by:** Jeff Papiez  
+**Parallel work:** Lambert and Ripley renamed production code; Ash renamed test/mock files  
+**Completed:**
+1. **Renamed test files** using git mv:
+   - `MockAutoPrintService.swift` → `MockAutoDispatchService.swift`
+   - `AutoPrintViewModelTests.swift` → `AutoDispatchViewModelTests.swift`
+2. **Updated all type references** in test files:
+   - `MockAutoPrintService` → `MockAutoDispatchService`
+   - `AutoPrintServiceProtocol` → `AutoDispatchServiceProtocol`
+   - `AutoPrintStatus` → `AutoDispatchStatus`
+   - `AutoPrintReadyResult` → `AutoDispatchReadyResult`
+   - `AutoPrintNextJob` → `AutoDispatchNextJob`
+   - `SetAutoPrintEnabledRequest` → `SetAutoDispatchEnabledRequest`
+   - `AutoPrintViewModel` → `AutoDispatchViewModel`
+   - `autoPrintEnabled` → `autoDispatchEnabled` (with CodingKeys mapping for JSON compatibility)
+3. **Added 6 new test cases** for PendingReady state:
+   - `testParsedStateReturnsPendingReady()` — Verifies parsedState returns `.pendingReady` for "PendingReady" string
+   - `testParsedStateReturnsReady()` — Verifies parsedState returns `.ready` for "Ready" string
+   - `testParsedStateReturnsNone()` — Verifies parsedState returns `.none` for "None" string
+   - `testParsedStateReturnsNilWhenNoStatus()` — Verifies parsedState returns nil when status is nil
+   - `testMarkReadyFromPendingReadyTransitionsToReady()` — Verifies markReady() transitions from PendingReady to Ready state
+   - `testCurrentStateReturnsNilWhenStatusIsNil()` — Verifies currentState returns nil when status is nil
+4. **Updated Xcode project** to reference renamed files (28 references updated in project.pbxproj)
+5. **Production code coordination:** Lambert renamed service/model layer; Ripley added `parsedState` computed property to ViewModel
+
+**Key patterns:**
+- ViewModel now has `parsedState: AutoDispatchState?` computed property that parses string state into enum
+- `currentState` returns `String?` (optional) instead of non-optional
+- `isEnabled` returns `Bool?` (optional)
+- New `AutoDispatchState` enum in Models.swift includes `.pendingReady`, `.ready`, `.none` cases
+- Tests verify state transitions (PendingReady → Ready after markReady call)
+- JSON compatibility preserved via CodingKeys mapping for `autoPrintEnabled` ↔ `autoDispatchEnabled`
+

@@ -333,3 +333,20 @@ Applied to 7 view files; also fixed LoginView height:22 bug during migration.
 - NFCScanButton needed its modifier changed from `.fullWidthActionButton()` to `.frame(maxWidth: .infinity, minHeight: 44)` to work properly in both standalone and HStack contexts — the modifier was forcing full-width which breaks even splitting in HStack
 - Shorter labels improve button density in side-by-side layouts while SF Symbol icons maintain clarity
 - All touch targets remain ≥44pt compliant
+
+### AutoDispatch Rename & PendingReady UI (2026-03-11)
+- **Task:** Renamed AutoPrint feature to AutoDispatch + added PendingReady bed-clear UI
+- **Collaboration:** Lambert handled service/protocol/model layer rename in commit b968fd5; I added PendingReady UI enhancement
+- **Key additions:**
+  - `AutoDispatchViewModel.parsedState` computed property parsing state string to `AutoDispatchState` enum
+  - Three-state UI: `.pendingReady` (bed-clear banner), `.ready` (dispatching indicator), `.none` (idle)
+  - PendingReady banner with urgent-but-not-alarming warning styling (`.pfWarning`)
+  - Context-aware "Confirm Bed Clear" button (changes to "Next Job" in other states)
+  - Queue count display in PendingReady state
+  - Next job name display in Ready state
+- **Design patterns:**
+  - Used if/else instead of switch for Optional enum state handling (cleaner than exhaustive switch with nil case)
+  - State-specific view composition with computed properties (`pendingReadyView`, `readyView`, `idleView`)
+  - Context-aware button tint: warning color for bed-clear, accent color for regular dispatch
+- **Files modified:** AutoDispatchViewModel.swift, AutoDispatchSection.swift, PrinterDetailView.swift, PrinterDetailViewModel.swift
+- **Note:** ServiceContainer still has `autoPrintService` property name (not `autoDispatchService`) — waiting on Lambert's container rename
