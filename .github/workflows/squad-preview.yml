@@ -1,18 +1,15 @@
-name: Squad CI
-# Project type was not detected — configure build/test commands below
+name: Squad Preview Validation
+# Project type was not detected — configure build, test, and validation commands below
 
 on:
-  pull_request:
-    branches: [dev, preview, main, insider]
-    types: [opened, synchronize, reopened]
   push:
-    branches: [dev, insider]
+    branches: [preview]
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,4 +22,9 @@ jobs:
           # .NET:          dotnet test
           # Java (Maven):  mvn test
           # Java (Gradle): ./gradlew test
-          echo "No build commands configured — update squad-ci.yml"
+          echo "No build commands configured — update squad-preview.yml"
+
+      - name: Validate
+        run: |
+          # TODO: Add pre-release validation commands here
+          echo "No validation commands configured — update squad-preview.yml"

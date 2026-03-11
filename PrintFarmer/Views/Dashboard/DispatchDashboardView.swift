@@ -61,57 +61,161 @@ struct DispatchDashboardView: View {
             Text("Queue Status")
                 .font(.title2.bold())
 
-            let columns = sizeClass == .regular
-                ? Array(repeating: GridItem(.flexible()), count: 4)
-                : Array(repeating: GridItem(.flexible()), count: 2)
+            let twoColumns = Array(repeating: GridItem(.flexible()), count: 2)
+            let threeColumns = sizeClass == .regular
+                ? Array(repeating: GridItem(.flexible()), count: 3)
+                : Array(repeating: GridItem(.flexible()), count: 3)
 
-            LazyVGrid(columns: columns, spacing: 12) {
+            // Row 1 — Queue Overview
+            LazyVGrid(columns: twoColumns, spacing: 12) {
                 dispatchCard(
-                    title: "Pending",
-                    count: viewModel.pendingJobCount,
+                    title: "Queued Jobs",
+                    value: "\(viewModel.totalQueuedJobs)",
+                    subtitle: "Unassigned: \(viewModel.pendingJobCount)",
                     icon: "tray.full",
                     color: .pfSecondaryAccent
                 )
 
                 dispatchCard(
-                    title: "Idle Printers",
-                    count: viewModel.idlePrinterCount,
+                    title: "Printers",
+                    value: "\(viewModel.idlePrinterCount + viewModel.busyPrinterCount)",
+                    subtitle: "\(viewModel.idlePrinterCount) Idle · \(viewModel.busyPrinterCount) Busy",
                     icon: "printer",
+                    color: .pfAccent
+                )
+            }
+
+            // Row 2 — Dispatch Stats (24h)
+            Text("Last 24 Hours")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            LazyVGrid(columns: threeColumns, spacing: 12) {
+                dispatchCard(
+                    title: "Dispatched",
+                    value: "\(viewModel.dispatchedLast24h)",
+                    icon: "checkmark.circle",
                     color: .pfSuccess
                 )
 
                 dispatchCard(
-                    title: "Busy Printers",
-                    count: viewModel.busyPrinterCount,
-                    icon: "printer.fill",
-                    color: .pfAccent
+                    title: "Auto",
+                    value: "\(viewModel.autoDispatchedLast24h)",
+                    icon: "bolt.circle",
+                    color: .pfSecondaryAccent
                 )
 
-                if let status = viewModel.queueStatus {
-                    dispatchCard(
-                        title: "Dispatched (24h)",
-                        count: status.stats.dispatchesLast24Hours,
-                        icon: "checkmark.circle",
-                        color: .pfSuccess
-                    )
-                }
+                dispatchCard(
+                    title: "Failed",
+                    value: "\(viewModel.failedLast24h)",
+                    icon: "xmark.circle",
+                    color: viewModel.failedLast24h > 0 ? .pfWarning : .secondary
+                )
+            }
+
+            // Average Score
+            if viewModel.averageScoreLast24h > 0 {
+                averageScoreCard
+            }
+
+            // Printer Queue Depths
+            if let depths = viewModel.queueStatus?.printerQueueDepths, !depths.isEmpty {
+                printerQueueDepthsSection(depths)
             }
         }
     }
 
-    private func dispatchCard(title: String, count: Int, icon: String, color: Color) -> some View {
+    private var averageScoreCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "gauge.medium")
+                .font(.title3)
+                .foregroundStyle(Color.pfAccent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Avg Dispatch Score (24h)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(String(format: "%.1f", viewModel.averageScoreLast24h))
+                    .font(.title3.bold().monospacedDigit())
+            }
+
+            Spacer()
+
+            ProgressView(value: min(viewModel.averageScoreLast24h / 100.0, 1.0))
+                .tint(.pfAccent)
+                .frame(width: 80)
+        }
+        .padding(12)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
+        )
+    }
+
+    private func printerQueueDepthsSection(_ depths: [PrinterQueueDepth]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Printer Queues")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            ForEach(depths, id: \.printerId) { printer in
+                HStack(spacing: 10) {
+                    Image(systemName: printer.isPrinting ? "printer.fill" : "printer")
+                        .foregroundStyle(printer.isAvailable ? Color.pfSuccess : .secondary)
+
+                    Text(printer.printerName)
+                        .font(.subheadline)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(printer.queueDepth) queued")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+
+                    Circle()
+                        .fill(printer.isPrinting ? Color.pfAccent : (printer.isAvailable ? .pfSuccess : .secondary))
+                        .frame(width: 8, height: 8)
+                }
+                .padding(10)
+                .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.pfBorder, lineWidth: 1)
+                )
+            }
+        }
+    }
+
+    private func dispatchCard(
+        title: String,
+        value: String,
+        subtitle: String? = nil,
+        icon: String,
+        color: Color
+    ) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(color)
 
-            Text("\(count)")
+            Text(value)
                 .font(.title2.bold().monospacedDigit())
 
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

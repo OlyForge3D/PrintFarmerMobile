@@ -38,19 +38,19 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testLoadHistoryPopulatesData() async {
         let entry = QueueHistoryEntry(
-            jobId: 1,
+            id: "1",
             jobName: "test_print.gcode",
-            
             printerName: "Prusa MK3",
             status: "completed",
             completedAt: Date(),
             durationSeconds: 3600
         )
         let page = QueueHistoryPage(
-            items: [entry],
+            entries: [entry],
             totalCount: 1,
-            limit: 30,
-            offset: 0
+            currentPage: 1,
+            pageSize: 30,
+            stats: nil
         )
         mockJobAnalyticsService.historyPageToReturn = page
         
@@ -58,14 +58,14 @@ final class JobHistoryViewModelTests: XCTestCase {
         
         XCTAssertNotNil(viewModel.historyPage)
         XCTAssertEqual(viewModel.historyPage?.entries.count, 1)
-        XCTAssertEqual(viewModel.historyPage?.entries.first?.jobId, 1)
+        XCTAssertEqual(viewModel.historyPage?.entries.first?.id, "1")
         XCTAssertEqual(viewModel.historyPage?.totalCount, 1)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
     }
     
     func testLoadHistoryUsesDefaultParameters() async {
-        let page = QueueHistoryPage(items: [], totalCount: 0, limit: 30, offset: 0)
+        let page = QueueHistoryPage(entries: [], totalCount: 0, currentPage: 1, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = page
         
         await viewModel.loadHistory()
@@ -96,10 +96,11 @@ final class JobHistoryViewModelTests: XCTestCase {
         
         mockJobAnalyticsService.errorToThrow = nil
         mockJobAnalyticsService.historyPageToReturn = QueueHistoryPage(
-            items: [],
+            entries: [],
             totalCount: 0,
-            limit: 30,
-            offset: 0
+            currentPage: 1,
+            pageSize: 30,
+            stats: nil
         )
         
         await viewModel.loadHistory()
@@ -111,18 +112,16 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testLoadMoreAppendsEntries() async {
         let entry1 = QueueHistoryEntry(
-            jobId: 1,
+            id: "1",
             jobName: "first.gcode",
-            
             printerName: "Prusa MK3",
             status: "completed",
             completedAt: Date(),
             durationSeconds: 3600
         )
         let entry2 = QueueHistoryEntry(
-            jobId: 2,
+            id: "2",
             jobName: "second.gcode",
-            
             printerName: "Prusa MK3",
             status: "completed",
             completedAt: Date(),
@@ -130,20 +129,20 @@ final class JobHistoryViewModelTests: XCTestCase {
         )
         
         // Load initial page
-        let firstPage = QueueHistoryPage(items: [entry1], totalCount: 2, limit: 30, offset: 0)
+        let firstPage = QueueHistoryPage(entries: [entry1], totalCount: 2, currentPage: 1, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = firstPage
         await viewModel.loadHistory()
         XCTAssertEqual(viewModel.historyPage?.entries.count, 1)
         XCTAssertEqual(viewModel.currentOffset, 0)
         
         // Load more
-        let secondPage = QueueHistoryPage(items: [entry2], totalCount: 2, limit: 30, offset: 30)
+        let secondPage = QueueHistoryPage(entries: [entry2], totalCount: 2, currentPage: 2, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = secondPage
         
         await viewModel.loadMore()
         
         XCTAssertEqual(viewModel.historyPage?.entries.count, 2)
-        XCTAssertEqual(viewModel.historyPage?.entries.first?.jobId, 1)
+        XCTAssertEqual(viewModel.historyPage?.entries.first?.id, "1")
         XCTAssertEqual(viewModel.historyPage?.entries.last?.id, "2")
         XCTAssertEqual(viewModel.currentOffset, 30)
         XCTAssertFalse(viewModel.isLoadingMore)
@@ -151,11 +150,11 @@ final class JobHistoryViewModelTests: XCTestCase {
     }
     
     func testLoadMoreIncrementsOffsetBy30() async {
-        let page1 = QueueHistoryPage(items: [], totalCount: 100, limit: 30, offset: 0)
+        let page1 = QueueHistoryPage(entries: [], totalCount: 100, currentPage: 1, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = page1
         await viewModel.loadHistory()
         
-        let page2 = QueueHistoryPage(items: [], totalCount: 100, limit: 30, offset: 30)
+        let page2 = QueueHistoryPage(entries: [], totalCount: 100, currentPage: 2, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = page2
         await viewModel.loadMore()
         
@@ -165,7 +164,7 @@ final class JobHistoryViewModelTests: XCTestCase {
     }
     
     func testLoadMoreDoesNothingWhenNoMoreData() async {
-        let page = QueueHistoryPage(items: [], totalCount: 5, limit: 30, offset: 0)
+        let page = QueueHistoryPage(entries: [], totalCount: 5, currentPage: 1, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = page
         await viewModel.loadHistory()
         
@@ -179,7 +178,7 @@ final class JobHistoryViewModelTests: XCTestCase {
     }
     
     func testLoadMoreHandlesError() async {
-        let page = QueueHistoryPage(items: [], totalCount: 100, limit: 30, offset: 0)
+        let page = QueueHistoryPage(entries: [], totalCount: 100, currentPage: 1, pageSize: 30, stats: nil)
         mockJobAnalyticsService.historyPageToReturn = page
         await viewModel.loadHistory()
         
@@ -195,12 +194,15 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testLoadTimelinePopulatesData() async {
         let event = TimelineEvent(
-            jobId: 1,
+            jobId: "1",
             jobName: "test_print.gcode",
-            
             printerName: "Prusa MK3",
             state: "printing",
-            timestamp: Date()
+            enteredAtUtc: Date(),
+            exitedAtUtc: nil,
+            durationSeconds: nil,
+            estimatedDurationSeconds: nil,
+            variancePercent: nil
         )
         mockJobAnalyticsService.timelineToReturn = [event]
         
@@ -210,7 +212,7 @@ final class JobHistoryViewModelTests: XCTestCase {
         await viewModel.loadTimeline(dateFrom: dateFrom, dateTo: dateTo)
         
         XCTAssertEqual(viewModel.timeline.count, 1)
-        XCTAssertEqual(viewModel.timeline.first?.jobId, 1)
+        XCTAssertEqual(viewModel.timeline.first?.jobId, "1")
         XCTAssertEqual(viewModel.timeline.first?.state, "printing")
         XCTAssertNil(viewModel.error)
         
@@ -232,39 +234,42 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testLoadJobStateHistoryPopulatesData() async {
         let history = JobStateHistory(
-            jobId: 1,
+            jobId: "1",
             jobName: "test_print.gcode",
-            states: [
+            transitions: [
                 StateTransition(
                     state: "queued",
-                    startTime: Date().addingTimeInterval(-7200),
-                    endTime: Date().addingTimeInterval(-3600),
+                    enteredAt: Date().addingTimeInterval(-7200),
+                    exitedAt: Date().addingTimeInterval(-3600),
                     durationSeconds: 3600
                 ),
                 StateTransition(
                     state: "printing",
-                    startTime: Date().addingTimeInterval(-3600),
-                    endTime: Date(),
+                    enteredAt: Date().addingTimeInterval(-3600),
+                    exitedAt: Date(),
                     durationSeconds: 3600
                 )
-            ]
+            ],
+            totalDurationSeconds: 7200,
+            estimatedDurationSeconds: 7000,
+            variancePercent: 2.86
         )
         mockJobAnalyticsService.jobStateHistoryToReturn = history
         
-        await viewModel.loadJobStateHistory(jobId: 1)
+        await viewModel.loadJobStateHistory(jobId: "1")
         
         XCTAssertNotNil(viewModel.selectedJobHistory)
-        XCTAssertEqual(viewModel.selectedJobHistory?.jobId, 1)
-        XCTAssertEqual(viewModel.selectedJobHistory?.states.count, 2)
-        XCTAssertEqual(viewModel.selectedJobHistory?.states.first?.state, "queued")
+        XCTAssertEqual(viewModel.selectedJobHistory?.jobId, "1")
+        XCTAssertEqual(viewModel.selectedJobHistory?.transitions.count, 2)
+        XCTAssertEqual(viewModel.selectedJobHistory?.transitions.first?.state, "queued")
         XCTAssertNil(viewModel.error)
-        XCTAssertEqual(mockJobAnalyticsService.getJobStateHistoryCalledWith, 1)
+        XCTAssertEqual(mockJobAnalyticsService.getJobStateHistoryCalledWith, "1")
     }
     
     func testLoadJobStateHistoryHandlesError() async {
         mockJobAnalyticsService.errorToThrow = TestError.generic
         
-        await viewModel.loadJobStateHistory(jobId: 1)
+        await viewModel.loadJobStateHistory(jobId: "1")
         
         XCTAssertNil(viewModel.selectedJobHistory)
         XCTAssertNotNil(viewModel.error)
@@ -274,23 +279,23 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testHistoryItemsReturnsEntriesFromPage() {
         let entry = QueueHistoryEntry(
-            jobId: 1,
+            id: "1",
             jobName: "test_print.gcode",
-            
             printerName: "Prusa MK3",
             status: "completed",
             completedAt: Date(),
             durationSeconds: 3600
         )
         viewModel.historyPage = QueueHistoryPage(
-            items: [entry],
+            entries: [entry],
             totalCount: 1,
-            limit: 30,
-            offset: 0
+            currentPage: 1,
+            pageSize: 30,
+            stats: nil
         )
         
         XCTAssertEqual(viewModel.historyItems.count, 1)
-        XCTAssertEqual(viewModel.historyItems.first?.jobId, 1)
+        XCTAssertEqual(viewModel.historyItems.first?.id, "1")
     }
     
     func testHistoryItemsReturnsEmptyWhenPageIsNil() {
@@ -301,18 +306,18 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testCanLoadMoreReturnsTrueWhenMoreDataExists() {
         viewModel.historyPage = QueueHistoryPage(
-            items: Array(repeating: QueueHistoryEntry(
-                jobId: 1,
+            entries: Array(repeating: QueueHistoryEntry(
+                id: "1",
                 jobName: "test.gcode",
-                
                 printerName: "Prusa MK3",
                 status: "completed",
                 completedAt: Date(),
                 durationSeconds: 3600
             ), count: 30),
             totalCount: 100,
-            limit: 30,
-            offset: 0
+            currentPage: 1,
+            pageSize: 30,
+            stats: nil
         )
         viewModel.currentOffset = 0
         
@@ -321,10 +326,11 @@ final class JobHistoryViewModelTests: XCTestCase {
     
     func testCanLoadMoreReturnsFalseWhenNoMoreData() {
         viewModel.historyPage = QueueHistoryPage(
-            items: [],
+            entries: [],
             totalCount: 5,
-            limit: 30,
-            offset: 0
+            currentPage: 1,
+            pageSize: 30,
+            stats: nil
         )
         viewModel.currentOffset = 0
         

@@ -58,7 +58,7 @@ final class PredictiveViewModel {
     // MARK: - Computed
 
     var riskPercentage: Int {
-        Int((prediction?.failureProbability ?? 0) * 100)
+        Int(prediction?.predictedFailureLikelihood ?? 0)
     }
 
     var riskLevel: String {

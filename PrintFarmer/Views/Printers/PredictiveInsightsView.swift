@@ -116,7 +116,7 @@ struct PredictiveInsightsView: View {
 
                         Spacer()
 
-                        Text(String(format: "%.0f%%", factor.value * 100))
+                        Text(String(format: "%.0f%%", factor.value))
                             .font(.caption.weight(.bold).monospacedDigit())
                             .foregroundStyle(Color.pfWarning)
                     }

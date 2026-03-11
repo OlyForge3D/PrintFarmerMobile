@@ -8,7 +8,7 @@ final class MockDispatchService: DispatchServiceProtocol, @unchecked Sendable {
     
     // Call tracking
     var getQueueStatusCalled = false
-    var getHistoryCalledWith: (page: Int, pageSize: Int)?
+    var getHistoryCalledWith: (page: Int?, pageSize: Int?)?
     
     func getQueueStatus() async throws -> DispatchQueueStatus {
         getQueueStatusCalled = true

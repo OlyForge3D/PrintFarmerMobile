@@ -1,35 +1,35 @@
 import Foundation
 
-// MARK: - AutoPrint Service
+// MARK: - AutoDispatch Service
 
-actor AutoPrintService: AutoPrintServiceProtocol {
+actor AutoDispatchService: AutoDispatchServiceProtocol {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
 
-    func getAllStatus() async throws -> [AutoPrintStatus] {
+    func getAllStatus() async throws -> [AutoDispatchStatus] {
         try await apiClient.get("/api/autoprint/status")
     }
 
-    func getStatus(printerId: UUID) async throws -> AutoPrintStatus {
+    func getStatus(printerId: UUID) async throws -> AutoDispatchStatus {
         try await apiClient.get("/api/autoprint/\(printerId)/status")
     }
 
-    func markReady(printerId: UUID) async throws -> AutoPrintReadyResult {
+    func markReady(printerId: UUID) async throws -> AutoDispatchReadyResult {
         try await apiClient.post("/api/autoprint/\(printerId)/ready")
     }
 
-    func skip(printerId: UUID) async throws -> AutoPrintStatus {
+    func skip(printerId: UUID) async throws -> AutoDispatchStatus {
         try await apiClient.post("/api/autoprint/\(printerId)/skip")
     }
 
-    func cancel(printerId: UUID) async throws -> AutoPrintStatus {
+    func cancel(printerId: UUID) async throws -> AutoDispatchStatus {
         try await apiClient.post("/api/autoprint/\(printerId)/cancel")
     }
 
-    func setEnabled(printerId: UUID, request: SetAutoPrintEnabledRequest) async throws -> AutoPrintStatus {
+    func setEnabled(printerId: UUID, request: SetAutoDispatchEnabledRequest) async throws -> AutoDispatchStatus {
         try await apiClient.put("/api/autoprint/\(printerId)/enabled", body: request)
     }
 }

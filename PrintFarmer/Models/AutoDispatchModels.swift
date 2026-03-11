@@ -1,25 +1,32 @@
 import Foundation
 
-// MARK: - AutoPrint Status
+// MARK: - AutoDispatch Status
 
-struct AutoPrintStatus: Codable, Sendable {
+struct AutoDispatchStatus: Codable, Sendable {
     let printerId: UUID
-    let autoPrintEnabled: Bool
+    let autoDispatchEnabled: Bool
     let state: String
     let queuedJobCount: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case printerId
+        case autoDispatchEnabled = "autoPrintEnabled"
+        case state
+        case queuedJobCount
+    }
 }
 
-// MARK: - AutoPrint Ready Result
+// MARK: - AutoDispatch Ready Result
 
-struct AutoPrintReadyResult: Codable, Sendable {
-    let status: AutoPrintStatus
-    let nextJob: AutoPrintNextJob?
+struct AutoDispatchReadyResult: Codable, Sendable {
+    let status: AutoDispatchStatus
+    let nextJob: AutoDispatchNextJob?
     let filamentCheck: FilamentCheckResult?
 }
 
-// MARK: - AutoPrint Next Job
+// MARK: - AutoDispatch Next Job
 
-struct AutoPrintNextJob: Codable, Sendable, Identifiable {
+struct AutoDispatchNextJob: Codable, Sendable, Identifiable {
     let id: UUID
     let name: String
     let estimatedFilamentUsageG: Double?
@@ -41,6 +48,6 @@ struct FilamentCheckResult: Codable, Sendable {
 
 // MARK: - Request Models
 
-struct SetAutoPrintEnabledRequest: Encodable, Sendable {
+struct SetAutoDispatchEnabledRequest: Encodable, Sendable {
     let enabled: Bool
 }

@@ -26,7 +26,7 @@ final class DispatchViewModelTests: XCTestCase {
     
     func testInitialState() {
         XCTAssertNil(viewModel.queueStatus)
-        XCTAssertNil(viewModel.history)
+        XCTAssertTrue(viewModel.history.isEmpty)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
     }
@@ -130,11 +130,10 @@ final class DispatchViewModelTests: XCTestCase {
         
         await viewModel.loadHistory()
         
-        XCTAssertNotNil(viewModel.history)
-        XCTAssertEqual(viewModel.history?.items.count, 1)
-        XCTAssertEqual(viewModel.history?.items.first?.jobName, "test_print.gcode")
-        XCTAssertEqual(viewModel.history?.items.first?.action, "auto_dispatch")
-        XCTAssertEqual(viewModel.history?.items.first?.score, 92.5)
+        XCTAssertEqual(viewModel.history.count, 1)
+        XCTAssertEqual(viewModel.history.first?.jobName, "test_print.gcode")
+        XCTAssertEqual(viewModel.history.first?.action, "auto_dispatch")
+        XCTAssertEqual(viewModel.history.first?.score, 92.5)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
         

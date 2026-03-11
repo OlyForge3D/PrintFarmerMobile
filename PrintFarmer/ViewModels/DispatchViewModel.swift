@@ -42,6 +42,11 @@ final class DispatchViewModel {
     // MARK: - Computed
 
     var pendingJobCount: Int { queueStatus?.pendingUnassignedJobs ?? 0 }
+    var totalQueuedJobs: Int { queueStatus?.totalQueuedJobs ?? 0 }
     var idlePrinterCount: Int { queueStatus?.idlePrinters ?? 0 }
     var busyPrinterCount: Int { queueStatus?.busyPrinters ?? 0 }
+    var dispatchedLast24h: Int { queueStatus?.stats.dispatchesLast24Hours ?? 0 }
+    var autoDispatchedLast24h: Int { queueStatus?.stats.autoDispatchesLast24Hours ?? 0 }
+    var failedLast24h: Int { queueStatus?.stats.failedDispatchesLast24Hours ?? 0 }
+    var averageScoreLast24h: Double { queueStatus?.stats.averageScoreLast24Hours ?? 0 }
 }
