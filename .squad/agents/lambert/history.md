@@ -398,3 +398,48 @@ Fixed xcodebuild archive hang (was 1.5+ hours) via standard GitHub Actions iOS k
 **Fix:** Added `message: String?` to `APIError` and updated the `clientError` description fallback chain to `detail → message → title → "Client error (code)"`.
 
 **Key Insight:** The backend uses two different error body shapes — `ProblemDetails` (ASP.NET validation) and `CommandResult` (printer operations). The `APIError` model must handle both. This is a general pattern: any endpoint using `MapCommandResult()` can return `CommandResult` bodies on 400.
+
+
+### AutoPrint → AutoDispatch Terminology Rename (2025-03-11)
+
+**Context:** The backend frontend renamed the concept from "AutoPrint" to "AutoDispatch" to better reflect its role in the dispatch system. The iOS client needed to match this terminology while preserving API compatibility.
+
+**Changes Made:**
+- **File Renames (via `git mv`):**
+  - `AutoPrintModels.swift` → `AutoDispatchModels.swift`
+  - `AutoPrintServiceProtocol.swift` → `AutoDispatchServiceProtocol.swift`
+  - `AutoPrintService.swift` → `AutoDispatchService.swift`
+  - `AutoPrintViewModel.swift` → `AutoDispatchViewModel.swift`
+  - `AutoPrintSection.swift` → `AutoDispatchSection.swift`
+  - Test/mock files also renamed
+
+- **Type Renames:**
+  - `AutoPrintStatus` → `AutoDispatchStatus`
+  - `AutoPrintReadyResult` → `AutoDispatchReadyResult`
+  - `AutoPrintNextJob` → `AutoDispatchNextJob`
+  - `SetAutoPrintEnabledRequest` → `SetAutoDispatchEnabledRequest`
+  - `AutoPrintServiceProtocol` → `AutoDispatchServiceProtocol`
+  - `AutoPrintService` → `AutoDispatchService`
+  - `AutoPrintState` → `AutoDispatchState` (in Models.swift)
+
+- **API Compatibility:**
+  - Added `CodingKeys` to `AutoDispatchStatus` to map `autoDispatchEnabled` (Swift property) to `autoPrintEnabled` (JSON key from API)
+  - All API endpoint URLs remain `/api/autoprint/...` (backend API unchanged)
+
+- **Files Updated:**
+  - Models: `AutoDispatchModels.swift`, `Models.swift`
+  - Services: `AutoDispatchService.swift`, `AutoDispatchServiceProtocol.swift`, `ServiceContainer.swift`
+  - ViewModels: `AutoDispatchViewModel.swift`, `PrinterDetailViewModel.swift`
+  - Views: `AutoDispatchSection.swift`, `PrinterDetailView.swift`
+  - Tests: `MockAutoDispatchService.swift`, `AutoDispatchViewModelTests.swift`
+  - Xcode project: `project.pbxproj` (file references updated)
+
+**Key Decision:** Property naming convention — Swift property is `autoDispatchEnabled` (user-facing terminology) while JSON key is `autoPrintEnabled` (backend contract). This decouples client-side naming from backend API changes and prevents the need for backend migration.
+
+**Files:**
+- `PrintFarmer/Models/AutoDispatchModels.swift` — Renamed types and models
+- `PrintFarmer/Services/AutoDispatchService.swift` — Service implementation
+- `PrintFarmer/Protocols/AutoDispatchServiceProtocol.swift` — Service protocol
+- `PrintFarmer/Services/ServiceContainer.swift` — Updated dependency injection
+- `PrintFarmer/Models/Models.swift` — Renamed AutoDispatchState enum
+- `PrintFarmer/ViewModels/AutoDispatchViewModel.swift` — ViewModel using new types
