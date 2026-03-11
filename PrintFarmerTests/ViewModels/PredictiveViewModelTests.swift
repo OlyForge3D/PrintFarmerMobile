@@ -40,13 +40,12 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: "PLA",
             estimatedDurationMinutes: 60.0,
-            failureProbability: 0.65,
-            predictedFailureLikelihood: 0.65,
+            predictedFailureLikelihood: 65.0,
             riskLevel: "high",
             factors: [
                 PredictionFactor(
                     name: "Nozzle Wear",
-                    value: 0.8,
+                    value: 80.0,
                     weight: 0.4
                 )
             ]
@@ -57,7 +56,7 @@ final class PredictiveViewModelTests: XCTestCase {
         
         XCTAssertNotNil(viewModel.prediction)
         XCTAssertEqual(viewModel.prediction?.printerId, testPrinterId)
-        XCTAssertEqual(viewModel.prediction?.failureProbability, 0.65)
+        XCTAssertEqual(viewModel.prediction?.predictedFailureLikelihood, 65.0)
         XCTAssertEqual(viewModel.prediction?.riskLevel, "high")
         XCTAssertEqual(viewModel.prediction?.factors.count, 1)
         XCTAssertFalse(viewModel.isLoading)
@@ -89,8 +88,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.2,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 20.0,
             riskLevel: "low",
             factors: []
         )
@@ -175,8 +173,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.0,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 0.0,
             riskLevel: "low",
             factors: []
         )
@@ -186,8 +183,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.25,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 25.0,
             riskLevel: "low",
             factors: []
         )
@@ -197,8 +193,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.50,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 50.0,
             riskLevel: "moderate",
             factors: []
         )
@@ -208,8 +203,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.75,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 75.0,
             riskLevel: "high",
             factors: []
         )
@@ -219,8 +213,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 1.0,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 100.0,
             riskLevel: "critical",
             factors: []
         )
@@ -238,8 +231,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.10,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 10.0,
             riskLevel: "low",
             factors: []
         )
@@ -249,8 +241,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.30,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 30.0,
             riskLevel: "moderate",
             factors: []
         )
@@ -260,8 +251,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.60,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 60.0,
             riskLevel: "high",
             factors: []
         )
@@ -271,8 +261,7 @@ final class PredictiveViewModelTests: XCTestCase {
             printerId: testPrinterId,
             material: nil,
             estimatedDurationMinutes: nil,
-            failureProbability: 0.85,
-            predictedFailureLikelihood: nil,
+            predictedFailureLikelihood: 85.0,
             riskLevel: "critical",
             factors: []
         )

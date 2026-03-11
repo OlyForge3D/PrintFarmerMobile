@@ -14,18 +14,16 @@ struct JobFailurePrediction: Codable, Sendable {
     let printerId: UUID?
     let material: String?
     let estimatedDurationMinutes: Double?
-    let failureProbability: Double
     let predictedFailureLikelihood: Double?
     let riskLevel: String
     let factors: [PredictionFactor]
 
     init(printerId: UUID? = nil, material: String? = nil, estimatedDurationMinutes: Double? = nil,
-         failureProbability: Double, predictedFailureLikelihood: Double? = nil,
+         predictedFailureLikelihood: Double? = nil,
          riskLevel: String, factors: [PredictionFactor] = []) {
         self.printerId = printerId
         self.material = material
         self.estimatedDurationMinutes = estimatedDurationMinutes
-        self.failureProbability = failureProbability
         self.predictedFailureLikelihood = predictedFailureLikelihood
         self.riskLevel = riskLevel
         self.factors = factors
@@ -36,7 +34,6 @@ struct JobFailurePrediction: Codable, Sendable {
         printerId = try c.decodeIfPresent(UUID.self, forKey: .printerId)
         material = try c.decodeIfPresent(String.self, forKey: .material)
         estimatedDurationMinutes = try c.decodeIfPresent(Double.self, forKey: .estimatedDurationMinutes)
-        failureProbability = try c.decodeIfPresent(Double.self, forKey: .failureProbability) ?? 0
         predictedFailureLikelihood = try c.decodeIfPresent(Double.self, forKey: .predictedFailureLikelihood)
         riskLevel = try c.decodeIfPresent(String.self, forKey: .riskLevel) ?? "Unknown"
         factors = try c.decodeIfPresent([PredictionFactor].self, forKey: .factors) ?? []

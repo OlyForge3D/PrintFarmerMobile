@@ -169,3 +169,27 @@ Two decisions enabled this work:
 
 ### Cross-Team Learning
 **Parallel Test Refactoring:** When multiple agents make breaking changes to code, their tests can be updated in parallel by a fourth agent. This batch validated that pattern.
+
+### Test Compilation Error Fixes (2026-03-11)
+**Task:** Fixed all test compilation errors across 6 test files caused by production model changes.
+
+**Key patterns found and fixed:**
+1. **Models with custom decoders need memberwise inits for tests:** Production structs that only have `init(from decoder:)` cannot be instantiated in tests using memberwise syntax. Added convenience memberwise initializers to 5 PredictiveModels structs (JobFailurePrediction, PredictionFactor, MaintenanceForecast, ForecastTask, PredictiveAlert) to enable clean test fixture creation.
+
+2. **ViewModel property type mismatches in tests:** `DispatchViewModel.history` is `[DispatchHistoryEntry]` (non-optional array), but tests treated it as optional `DispatchHistoryPage?`. Fixed by checking `.isEmpty` instead of nil checks.
+
+3. **Mock service parameter types must match protocols:** `MockDispatchService.getHistoryCalledWith` was `(Int, Int)` but protocol takes `Int?` params. Changed to `(Int?, Int?)?` to match signature.
+
+4. **Model property name changes require test updates:** 
+   - `QueuePrinterModelStats`: `model` → `modelName`, `totalPrinting` → `currentlyPrinting`, added `oldestQueuedAtUtc` param
+   - `QueueStats.averageWaitTimeMinutes` is `Int` not `Double`
+   - `QueueHistoryEntry`: `jobId: Int` → `id: String`
+   - `QueueHistoryPage`: `items` → `entries`, `page`/`limit`/`offset` → `currentPage`/`pageSize`, added `stats` param
+   - `FleetPrinterStatistics`: added `manufacturerName`, `modelName`, `totalFilamentUsedGrams`, `totalFilamentUsedMeters`, `lastSyncTime` params
+   - `JobStateHistory`: `states` → `transitions`, added `totalDurationSeconds`, `estimatedDurationSeconds`, `variancePercent` params
+   - `StateTransition`: `startTime`/`endTime` → `enteredAt`/`exitedAt`
+   - `TimelineEvent`: `jobId: Int` → `jobId: String`, `timestamp` → `enteredAtUtc`, added several optional params
+
+5. **Type mismatches in assertions:** `PredictiveViewModel.riskPercentage` is `Int` not `Double`; updated all XCTAssertEqual calls to use integer literals.
+
+**Build verification:** All tests now compile successfully. Used `xcodebuild build-for-testing` to verify no remaining compilation errors.
