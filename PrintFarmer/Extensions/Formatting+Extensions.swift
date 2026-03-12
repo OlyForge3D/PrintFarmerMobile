@@ -31,6 +31,23 @@ extension TimeInterval {
         }
         return "\(minutes)m"
     }
+
+    /// Formats ETA as a time (e.g., "2:45 PM" for today, "Tomorrow 10:00 AM" for tomorrow).
+    var etaFormatted: String {
+        let eta = Date.now.addingTimeInterval(self)
+        let calendar = Calendar.current
+        if calendar.isDateInToday(eta) {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: eta)
+        } else if calendar.isDateInTomorrow(eta) {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return "Tomorrow \(formatter.string(from: eta))"
+        } else {
+            return eta.relativeFormatted
+        }
+    }
 }
 
 extension String {

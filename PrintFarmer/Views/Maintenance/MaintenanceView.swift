@@ -5,6 +5,7 @@ struct MaintenanceView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = MaintenanceViewModel()
+    @State private var currentPage = 0
 
     var body: some View {
         @Bindable var router = router
@@ -25,7 +26,24 @@ struct MaintenanceView: View {
                         }
                     }
                 } else {
-                    mainContent
+                    // iPhone: swipeable pages
+                    if sizeClass == .compact {
+                        VStack(spacing: 0) {
+                            TabView(selection: $currentPage) {
+                                AlertsPage()
+                                    .tag(0)
+                                TasksPage()
+                                    .tag(1)
+                            }
+                            .tabViewStyle(.page(indexDisplayMode: .never))
+                            
+                            PageIndicator(currentPage: $currentPage, pageCount: 2, labels: ["Alerts", "Tasks"])
+                                .padding(.bottom, 8)
+                        }
+                    } else {
+                        // iPad: keep existing ScrollView layout
+                        mainContent
+                    }
                 }
             }
             .navigationTitle("Maintenance")
@@ -38,6 +56,56 @@ struct MaintenanceView: View {
         }
         .task {
             viewModel.configure(maintenanceService: services.maintenanceService)
+            await viewModel.loadData()
+        }
+    }
+    
+    // MARK: - iPhone Pages
+    
+    @ViewBuilder
+    private func AlertsPage() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if !viewModel.activeAlerts.isEmpty {
+                    alertsSection
+                }
+                
+                analyticsLink
+                
+                uptimeLink
+                
+                if viewModel.activeAlerts.isEmpty {
+                    EmptyStateView(
+                        icon: "checkmark.seal",
+                        title: "No Active Alerts",
+                        message: "All clear — no maintenance alerts at this time."
+                    )
+                }
+            }
+            .padding()
+        }
+        .refreshable {
+            await viewModel.loadData()
+        }
+    }
+    
+    @ViewBuilder
+    private func TasksPage() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if !viewModel.sortedUpcomingTasks.isEmpty {
+                    upcomingSection
+                } else {
+                    EmptyStateView(
+                        icon: "checkmark.seal",
+                        title: "No Upcoming Tasks",
+                        message: "No scheduled maintenance tasks at this time."
+                    )
+                }
+            }
+            .padding()
+        }
+        .refreshable {
             await viewModel.loadData()
         }
     }

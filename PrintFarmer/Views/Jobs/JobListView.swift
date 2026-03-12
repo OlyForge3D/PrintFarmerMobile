@@ -3,7 +3,9 @@ import SwiftUI
 struct JobListView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = JobListViewModel()
+    @State private var currentPage = 0
 
     var body: some View {
         @Bindable var router = router
@@ -30,25 +32,29 @@ struct JobListView: View {
                         message: "No jobs in the queue. Jobs will appear here when queued."
                     )
                 } else {
-                    jobList
+                    // iPhone: swipeable pages
+                    if sizeClass == .compact {
+                        VStack(spacing: 0) {
+                            TabView(selection: $currentPage) {
+                                PrintingPage()
+                                    .tag(0)
+                                QueuePage()
+                                    .tag(1)
+                                RecentPage()
+                                    .tag(2)
+                            }
+                            .tabViewStyle(.page(indexDisplayMode: .never))
+                            
+                            PageIndicator(currentPage: $currentPage, pageCount: 3, labels: ["Printing", "Queue", "Recent"])
+                                .padding(.bottom, 8)
+                        }
+                    } else {
+                        // iPad: keep existing List layout
+                        jobList
+                    }
                 }
             }
             .navigationTitle("Jobs")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    NavigationLink(value: AppDestination.jobAnalytics) {
-                        Image(systemName: "chart.bar")
-                    }
-                    .accessibilityLabel("Job Analytics")
-                }
-
-                ToolbarItem(placement: .primaryAction) {
-                    NavigationLink(value: AppDestination.jobHistory) {
-                        Image(systemName: "clock.arrow.circlepath")
-                    }
-                    .accessibilityLabel("Job History")
-                }
-            }
             .refreshable {
                 await viewModel.loadJobs()
             }
@@ -59,6 +65,80 @@ struct JobListView: View {
         .task {
             viewModel.configure(jobService: services.jobService)
             await viewModel.loadJobs()
+        }
+    }
+    
+    // MARK: - iPhone Pages
+    
+    @ViewBuilder
+    private func PrintingPage() -> some View {
+        Group {
+            if viewModel.activeJobs.isEmpty {
+                EmptyStateView(
+                    icon: "tray",
+                    title: "No Active Jobs",
+                    message: "No jobs currently printing."
+                )
+                .padding()
+            } else {
+                List {
+                    ForEach(viewModel.activeJobs) { item in
+                        activeJobRow(item)
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.loadJobs()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func QueuePage() -> some View {
+        Group {
+            if viewModel.queuedJobs.isEmpty {
+                EmptyStateView(
+                    icon: "tray",
+                    title: "Queue Empty",
+                    message: "No jobs waiting to print."
+                )
+                .padding()
+            } else {
+                List {
+                    ForEach(viewModel.queuedJobs) { item in
+                        queuedJobRow(item)
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.loadJobs()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func RecentPage() -> some View {
+        Group {
+            if viewModel.recentJobs.isEmpty {
+                EmptyStateView(
+                    icon: "clock",
+                    title: "No Recent Jobs",
+                    message: "Completed jobs will appear here."
+                )
+                .padding()
+            } else {
+                List {
+                    ForEach(viewModel.recentJobs.prefix(10)) { item in
+                        recentJobRow(item)
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.loadJobs()
+                }
+            }
         }
     }
 

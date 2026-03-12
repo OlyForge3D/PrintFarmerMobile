@@ -8,49 +8,39 @@ struct PrinterCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             headerSection
 
-            // Body
+            // Body — always show all elements for consistent card sizing
             VStack(alignment: .leading, spacing: 10) {
-                // Temperature row
-                if printer.isOnline {
-                    HStack(spacing: 16) {
-                        if let temp = printer.hotendTemp {
-                            Label {
-                                Text(temp.temperatureFormatted)
-                                    .monospacedDigit()
-                            } icon: {
-                                NozzleIcon()
-                                    .fill(Color.pfNotHomed)
-                                    .frame(width: 14, height: 14)
-                            }
-                            .font(.caption)
-                        }
+                // Job info + progress (above temps, matching web UI order)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(printer.fileName ?? printer.jobName ?? "---")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
 
-                        if let temp = printer.bedTemp {
-                            Label {
-                                Text(temp.temperatureFormatted)
-                                    .monospacedDigit()
-                            } icon: {
-                                RadiatorIcon()
-                                    .fill(Color.pfHomed)
-                                    .frame(width: 14, height: 14)
-                            }
-                            .font(.caption)
-                        }
-                    }
+                    PrintProgressBar(progress: printer.progress ?? 0, height: 6)
                 }
 
-                // Job progress (only when actively printing or paused)
-                if let jobName = printer.fileName ?? printer.jobName, let progress = printer.progress,
-                   let state = printer.state?.lowercased(),
-                   state == "printing" || state == "paused" {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(jobName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        PrintProgressBar(progress: progress, height: 6)
+                // Temperature row — always visible with placeholders
+                HStack(spacing: 16) {
+                    Label {
+                        temperatureText(current: printer.hotendTemp, target: printer.hotendTarget)
+                    } icon: {
+                        NozzleIcon()
+                            .fill(hotendIconColor)
+                            .frame(width: 14, height: 14)
                     }
+                    .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Label {
+                        temperatureText(current: printer.bedTemp, target: printer.bedTarget)
+                    } icon: {
+                        RadiatorIcon()
+                            .fill(bedIconColor)
+                            .frame(width: 14, height: 14)
+                    }
+                    .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(14)
@@ -129,6 +119,36 @@ struct PrinterCardView: View {
         case "paused": return .pfWarning
         case "error": return .pfError
         default: return .pfSuccess
+        }
+    }
+
+    private func temperatureText(current: Double?, target: Double?) -> some View {
+        HStack(spacing: 2) {
+            Text(current.map { String(format: "%.0f°C", $0) } ?? "---°C")
+                .monospacedDigit()
+            if let target, target > 0 {
+                Text("→")
+                    .foregroundStyle(.tertiary)
+                Text(String(format: "%.0f°C", target))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var hotendIconColor: Color {
+        if let target = printer.hotendTarget, target > 0 {
+            return .red
+        } else {
+            return .red.opacity(0.35)
+        }
+    }
+
+    private var bedIconColor: Color {
+        if let target = printer.bedTarget, target > 0 {
+            return .blue
+        } else {
+            return .blue.opacity(0.35)
         }
     }
 }
