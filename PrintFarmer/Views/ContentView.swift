@@ -57,14 +57,38 @@ struct ContentView: View {
 
         return NavigationSplitView(columnVisibility: $router.sidebarVisibility) {
             List {
-                sidebarButton(tab: .dashboard, title: "Dashboard", icon: "square.grid.2x2")
-                sidebarPrintersButton
-                sidebarButton(tab: .jobs, title: "Jobs", icon: "list.bullet.rectangle")
-                sidebarButton(tab: .inventory, title: "Inventory", icon: "cylinder.fill")
-                sidebarAlertButton
-                sidebarButton(tab: .maintenance, title: "Maintenance", icon: "wrench.adjustable")
-                sidebarButton(tab: .settings, title: "Settings", icon: "gear")
+                // Operations
+                Section {
+                    sidebarButton(tab: .dashboard, title: "Dashboard", icon: "house")
+                    sidebarPrintersButton
+                    sidebarButton(tab: .jobs, title: "Print Queue", icon: "tray.full")
+                } header: {
+                    Text("Operations")
+                }
+
+                // Hardware
+                Section {
+                    sidebarButton(tab: .inventory, title: "Filament Inventory", icon: "cylinder.fill")
+                } header: {
+                    Text("Hardware")
+                }
+
+                // Management
+                Section {
+                    sidebarButton(tab: .maintenance, title: "Maintenance", icon: "wrench.and.screwdriver")
+                    sidebarAlertButton
+                } header: {
+                    Text("Management")
+                }
+
+                // Settings
+                Section {
+                    sidebarButton(tab: .settings, title: "Settings", icon: "gear")
+                } header: {
+                    Text("Settings")
+                }
             }
+            .listStyle(.sidebar)
             .navigationTitle("PrintFarmer")
         } detail: {
             tabContentView(for: router.selectedTab)

@@ -138,29 +138,49 @@ struct AutoDispatchSection: View {
         }
     }
     
+    private var isActionInProgress: Bool {
+        viewModel.isMarkingReady || viewModel.isSkipping
+    }
+
     private var actionButtons: some View {
         HStack(spacing: 8) {
             Button {
                 Task { await viewModel.markReady(printerId: printerId) }
             } label: {
-                Label(
-                    viewModel.parsedState == .pendingReady ? "Confirm Bed Clear" : "Next Job",
-                    systemImage: "play.fill"
-                )
+                HStack(spacing: 6) {
+                    if viewModel.isMarkingReady {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "play.fill")
+                    }
+                    Text(viewModel.parsedState == .pendingReady ? "Confirm Bed Clear" : "Next Job")
+                }
                 .font(.subheadline.weight(.medium))
                 .fullWidthActionButton()
             }
             .buttonStyle(.borderedProminent)
             .tint(viewModel.parsedState == .pendingReady ? Color.pfWarning : Color.pfAccent)
+            .disabled(isActionInProgress)
 
             Button {
                 Task { await viewModel.skip(printerId: printerId) }
             } label: {
-                Label("Skip", systemImage: "forward.fill")
-                    .font(.subheadline.weight(.medium))
-                    .fullWidthActionButton()
+                HStack(spacing: 6) {
+                    if viewModel.isSkipping {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "forward.fill")
+                    }
+                    Text("Skip")
+                }
+                .font(.subheadline.weight(.medium))
+                .fullWidthActionButton()
             }
             .buttonStyle(.bordered)
+            .disabled(isActionInProgress)
         }
     }
 

@@ -33,11 +33,20 @@ struct DashboardView: View {
                             // Fleet summary cards
                             summarySection
 
-                            // Active jobs
-                            activeJobsSection
-
-                            // Dispatch link
-                            dispatchLink
+                            // iPad: 2-column layout for active jobs + dispatch
+                            if sizeClass == .regular {
+                                HStack(alignment: .top, spacing: 16) {
+                                    activeJobsSection
+                                        .frame(maxWidth: .infinity)
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        dispatchLink
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                            } else {
+                                activeJobsSection
+                                dispatchLink
+                            }
                         }
                     }
                 }
@@ -66,18 +75,19 @@ struct DashboardView: View {
     private var summarySection: some View {
         let columnCount = sizeClass == .regular ? 6 : 3
         let columns = Array(repeating: GridItem(.flexible()), count: columnCount)
+        let isIPad = sizeClass == .regular
 
         return VStack(alignment: .leading, spacing: 12) {
             Text("Fleet Overview")
                 .font(.title2.bold())
 
             LazyVGrid(columns: columns, spacing: 12) {
-                SummaryCard(title: "Total", count: viewModel.printers.count, icon: "printer", color: .pfTextPrimary)
-                SummaryCard(title: "Online", count: viewModel.onlineCount, icon: "wifi", color: .pfSuccess)
-                SummaryCard(title: "Printing", count: viewModel.printingCount, icon: "printer.fill", color: .pfSecondaryAccent)
-                SummaryCard(title: "Paused", count: viewModel.pausedCount, icon: "pause.circle", color: .pfWarning)
-                SummaryCard(title: "Offline", count: viewModel.offlineCount, icon: "wifi.slash", color: .pfTextTertiary)
-                SummaryCard(title: "Error", count: viewModel.errorCount, icon: "exclamationmark.triangle", color: .pfError)
+                SummaryCard(title: "Total", count: viewModel.printers.count, icon: "printer", color: .pfTextPrimary, isLarge: isIPad)
+                SummaryCard(title: "Online", count: viewModel.onlineCount, icon: "wifi", color: .pfSuccess, isLarge: isIPad)
+                SummaryCard(title: "Printing", count: viewModel.printingCount, icon: "printer.fill", color: .pfSecondaryAccent, isLarge: isIPad)
+                SummaryCard(title: "Paused", count: viewModel.pausedCount, icon: "pause.circle", color: .pfWarning, isLarge: isIPad)
+                SummaryCard(title: "Offline", count: viewModel.offlineCount, icon: "wifi.slash", color: .pfTextTertiary, isLarge: isIPad)
+                SummaryCard(title: "Error", count: viewModel.errorCount, icon: "exclamationmark.triangle", color: .pfError, isLarge: isIPad)
             }
         }
     }
@@ -248,22 +258,23 @@ private struct SummaryCard: View {
     let count: Int
     let icon: String
     let color: Color
+    var isLarge: Bool = false
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: isLarge ? 10 : 6) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(isLarge ? .title2 : .title3)
                 .foregroundStyle(color)
 
             Text("\(count)")
-                .font(.title2.bold().monospacedDigit())
+                .font(isLarge ? .title.bold().monospacedDigit() : .title2.bold().monospacedDigit())
 
             Text(title)
-                .font(.caption)
+                .font(isLarge ? .subheadline : .caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, isLarge ? 20 : 14)
         .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)

@@ -405,3 +405,38 @@ Documented in `.squad/decisions.md`: "AutoDispatch PendingReady State UI Design"
   - Used `#if canImport(UserNotifications)` guards for cross-platform safety
   - Notification category `PENDING_READY` used to distinguish local bed-clear notifications from remote push notifications in the delegate
   - Notification dedup pattern: track notified IDs, intersect with current set each poll cycle
+
+### Bed Clear UX & Notification Fixes (2026-03-12)
+- **Issue 1 — Bed Clear Button UX:**
+  - Added `isMarkingReady` and `isSkipping` flags to `AutoDispatchViewModel`
+  - Buttons now disable immediately on tap and show ProgressView spinner while action is in progress
+  - Both buttons disabled during either action (prevents double-tap / conflicting actions)
+  - Optimistic state transition to "Ready" still clears the banner after API success; loading flag cleared before the 2-second delayed reload
+  - Error re-enables buttons via flag reset in catch block
+  - Used `HStack` with conditional `ProgressView`/`Image` instead of `Label` to support spinner replacement
+- **Issue 2 — Local Notifications & Badge Count:**
+  - `PendingReadyMonitor.sendLocalNotification()` now sets `content.badge = NSNumber(value: pendingReadyCount)`
+  - Added `updateBadgeCount(_:)` method using `UNUserNotificationCenter.setBadgeCount()` (iOS 16+)
+  - Badge count updated every poll cycle and cleared (set to 0) when monitoring stops (logout)
+  - `willPresent` delegate was already implemented in PushNotificationManager — foreground banners were working
+  - Key learning: iOS suppresses local notification banners in foreground unless `UNUserNotificationCenterDelegate.willPresent` returns `.banner` — already handled by PushNotificationManager
+- **Files modified:** AutoDispatchViewModel.swift, AutoDispatchSection.swift, PendingReadyMonitor.swift
+
+### iPad Layout Redesign (2026-07)
+- **Rich iPad Printer Cards:**
+  - Created `iPadPrinterCardView.swift` — full-width card for iPad with state-tinted header gradient, current+target temps (nozzle/bed), filament info row with spool color dot, job progress bar with percentage, and bed-clear banner for PendingReady state
+  - `PrinterListView` iPad path changed from 2-column LazyVGrid of PrinterCardView to single-column ForEach of iPadPrinterCardView
+  - headerGradient returns `some ShapeStyle` (not LinearGradient directly) for SwiftUI type compatibility
+- **Sectioned Sidebar:**
+  - ContentView iPad sidebar restructured with Section headers: Operations (Dashboard/Printers/Print Queue), Hardware (Filament Inventory), Management (Maintenance/Alerts), Settings
+  - Added `.listStyle(.sidebar)` for proper section collapsibility
+  - Updated icons: house, tray.full, wrench.and.screwdriver
+- **Dashboard iPad Enhancements:**
+  - SummaryCard now accepts `isLarge` parameter — iPad gets taller cards with larger text/icons
+  - Lower section uses HStack 2-column layout on iPad (Active Jobs left, Dispatch right)
+- **Key learnings:**
+  - AutoDispatch/queue data not on Printer model — requires separate API calls per printer, too heavy for list cards
+  - Xcode pbxproj IDs must be verified unique before insertion (collision risk with hardcoded IDs)
+  - `some ShapeStyle` return type works for `.background()` modifier but must be consistent
+- **Files created:** iPadPrinterCardView.swift
+- **Files modified:** PrinterListView.swift, ContentView.swift, DashboardView.swift, project.pbxproj
