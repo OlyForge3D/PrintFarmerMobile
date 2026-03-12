@@ -572,42 +572,37 @@ struct PrinterDetailView: View {
                 // Contextual actions based on state
                 if viewModel.isPrinting {
                     HStack(spacing: 12) {
-                        actionButton("Pause", icon: "pause.fill", color: .pfWarning) {
+                        actionButton("Pause", icon: "pause.fill") {
                             await viewModel.pausePrinter()
                         }
                         .disabled(viewModel.isPerformingAction)
-                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
 
-                        actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
+                        actionButton("Cancel", icon: "xmark.circle.fill", role: .destructive) {
                             viewModel.requestCancel()
                         }
                         .disabled(viewModel.isPerformingAction)
-                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                     }
                 }
 
                 if viewModel.isPaused {
                     HStack(spacing: 12) {
-                        actionButton("Resume", icon: "play.fill", color: .pfSuccess) {
+                        actionButton("Resume", icon: "play.fill") {
                             await viewModel.resumePrinter()
                         }
                         .disabled(viewModel.isPerformingAction)
-                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
 
-                        actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
+                        actionButton("Cancel", icon: "xmark.circle.fill", role: .destructive) {
                             viewModel.requestCancel()
                         }
                         .disabled(viewModel.isPerformingAction)
-                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                     }
                 }
 
                 if viewModel.isPrinting || viewModel.isPaused {
-                    actionButton("Stop", icon: "stop.fill", color: .pfWarning) {
+                    actionButton("Stop", icon: "stop.fill", role: .destructive) {
                         await viewModel.stopPrinter()
                     }
                     .disabled(viewModel.isPerformingAction)
-                    .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                 }
 
                 // Maintenance toggle
@@ -622,7 +617,6 @@ struct PrinterDetailView: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(viewModel.isPerformingAction || viewModel.isPrinting || viewModel.isPaused)
-                .opacity((viewModel.isPerformingAction || viewModel.isPrinting || viewModel.isPaused) ? 0.4 : 1.0)
                 .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
 
                 #if canImport(UIKit)
@@ -634,9 +628,7 @@ struct PrinterDetailView: View {
                         .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
-                .tint(Color.pfAccent)
                 .disabled(viewModel.isPerformingAction)
-                .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                 .accessibilityLabel("Write NFC printer identification tag")
                 #endif
 
@@ -658,16 +650,15 @@ struct PrinterDetailView: View {
     private func actionButton(
         _ title: String,
         icon: String,
-        color: Color,
+        role: ButtonRole? = nil,
         action: @escaping () async -> Void
     ) -> some View {
-        Button {
+        Button(role: role) {
             Task { await action() }
         } label: {
             Label(title, systemImage: icon)
                 .fullWidthActionButton()
         }
         .buttonStyle(.bordered)
-        .tint(color)
     }
 }
