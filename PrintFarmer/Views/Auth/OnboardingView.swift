@@ -45,9 +45,11 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             Spacer()
             
-            Image(systemName: "cube.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(Color.pfAccent)
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             
             Text("Monitor Your Farm")
                 .font(.title)

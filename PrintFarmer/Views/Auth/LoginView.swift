@@ -46,9 +46,11 @@ struct LoginView: View {
 
     private var brandingSection: some View {
         VStack(spacing: 12) {
-            Image(systemName: "printer.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.pfAccent)
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Text("PrintFarmer")
                 .font(.largeTitle.bold())

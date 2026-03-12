@@ -136,5 +136,16 @@ final class DashboardViewModel {
 
     var activePrintingPrinters: [Printer] {
         printers.filter { $0.state?.lowercased() == "printing" }
+            .sorted { sortPriority($0) < sortPriority($1) }
+    }
+    
+    private func sortPriority(_ printer: Printer) -> Int {
+        guard printer.isOnline else { return 100 }
+        switch printer.state?.lowercased() {
+        case "pendingready": return 0
+        case "printing": return 1
+        case "ready", "idle": return 2
+        default: return 3
+        }
     }
 }

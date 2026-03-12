@@ -52,9 +52,11 @@ struct RootView: View {
     /// Shown briefly while `restoreSession()` checks for a saved token.
     private var launchScreen: some View {
         VStack(spacing: 16) {
-            Image(systemName: "printer.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.pfAccent)
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Text("PrintFarmer")
                 .font(.largeTitle.bold())

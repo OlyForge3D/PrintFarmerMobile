@@ -258,7 +258,7 @@ struct iPadPrinterCardView: View {
         case "printing": return Color(hex: "#1d4ed8")
         case "paused": return Color(hex: "#b45309")
         case "error": return Color(hex: "#dc2626")
-        case "pendingready": return Color(hex: "#b45309")
+        case "pendingready": return Color(hex: "#eab308")
         default: return Color(hex: "#059669")
         }
     }

@@ -2,6 +2,56 @@
 
 ## Learnings
 
+### Onboarding Screens Implementation (2026-03-12)
+**Files Created:**
+- `PrintFarmer/Views/Auth/OnboardingView.swift`
+
+**Files Modified:**
+- `PrintFarmer/Views/RootView.swift`
+- `PrintFarmer.xcodeproj/project.pbxproj`
+
+**Feature Added:**
+Implemented 3-page swipeable onboarding flow shown before login on first app launch using the existing TabView paging pattern and PageIndicator component.
+
+**Implementation:**
+1. **OnboardingView Structure:**
+   - 3 swipeable pages using `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`
+   - Reused existing `PageIndicator` component for dots + labels
+   - Each page: large SF Symbol icon (72pt), headline (`.title .bold`), body text (`.body .pfTextSecondary`)
+   - Page 1: "Monitor Your Farm" — `cube.fill` icon
+   - Page 2: "Smart Job Queue" — `tray.full.fill` icon  
+   - Page 3: "Stay Informed" — `bell.badge.fill` icon + "Get Started" button
+   - "Skip" button in top-right corner on all pages
+
+2. **First-Launch State Tracking:**
+   - Added `@AppStorage("hasSeenOnboarding")` boolean in RootView
+   - Defaults to `false` (show onboarding)
+   - Set to `true` when user taps "Get Started" or "Skip"
+   - Persists across app restarts via UserDefaults
+
+3. **RootView Integration:**
+   - Added onboarding check: `else if !hasSeenOnboarding { OnboardingView(hasSeenOnboarding: $hasSeenOnboarding) }`
+   - Flow: launch screen → onboarding (if `!hasSeenOnboarding` + `hasCheckedAuth` + `!isAuthenticated`) → login → main app
+   - Onboarding shown before login, after auth check completes
+
+**Key Patterns:**
+- TabView paging pattern consistent with DashboardView, JobListView, MaintenanceView
+- PageIndicator component reused (no new UI components needed)
+- @AppStorage for simple boolean persistence (UserDefaults wrapper)
+- Binding passed to child view to update parent state: `OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)`
+
+**Design Consistency:**
+- Icons: 72pt, `.pfAccent` color
+- Headlines: `.title .bold`
+- Body text: `.body`, `.pfTextSecondary`, centered, 32pt horizontal padding
+- "Get Started" button: `.borderedProminent`, `.tint(.pfAccent)`
+- "Skip" button: `.plain` style, `.pfTextSecondary`, top-right placement
+- Layout: centered VStack with `Spacer()` for vertical centering
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
 ### SignalR Real-Time Updates for Dashboard (2026-03-12)
 **Files Modified:**
 - `PrintFarmer/ViewModels/DashboardViewModel.swift`
@@ -244,3 +294,108 @@ With SwiftUI's `.task` modifier, tasks are automatically cancelled when the view
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
 
+
+---
+
+### App Icon Branding Integration (2026-03-12)
+**Assets Created:**
+- `PrintFarmer/Assets.xcassets/AppLogo.imageset/` (new image set)
+- `PrintFarmer/Assets.xcassets/AppLogo.imageset/AppLogo.png` (1024x1024 PNG)
+- `PrintFarmer/Assets.xcassets/AppLogo.imageset/Contents.json`
+
+**Files Modified:**
+- `PrintFarmer/Views/Auth/LoginView.swift`
+- `PrintFarmer/Views/Auth/OnboardingView.swift`
+- `PrintFarmer/Views/RootView.swift`
+
+**Changes Made:**
+Replaced generic SF Symbol placeholder icons (`printer.fill`, `cube.fill`) with the actual PrintFarmer app icon across all pre-authentication screens:
+
+1. **Login Screen (`LoginView.swift`):**
+   - Changed from `Image(systemName: "printer.fill")` with 56pt font
+   - Changed to `Image("AppLogo")` with 56pt frame, rounded corners (12pt radius)
+   - Removed `.foregroundStyle(Color.pfAccent)` since app logo has its own colors
+
+2. **Onboarding Page 1 (`OnboardingView.swift`):**
+   - Changed from `Image(systemName: "cube.fill")` with 72pt font
+   - Changed to `Image("AppLogo")` with 72pt frame, rounded corners (16pt radius)
+   - Pages 2 and 3 kept their feature-specific SF Symbols (`tray.full.fill`, `bell.badge.fill`)
+
+3. **Launch Screen (`RootView.swift`):**
+   - Changed from `Image(systemName: "printer.fill")` with 56pt font
+   - Changed to `Image("AppLogo")` with 56pt frame, rounded corners (12pt radius)
+   - Consistent branding during auth session restore
+
+**Implementation:**
+Created separate `AppLogo.imageset` because iOS `AppIcon` asset catalogs cannot be directly loaded in SwiftUI views via `Image("AppIcon")`. The AppLogo image set references the same 1024x1024 app icon PNG, making it accessible in-app.
+
+**Image Modifiers:**
+- `.resizable()` — allows scaling
+- `.scaledToFit()` — maintains aspect ratio
+- `.frame(width:height:)` — explicit sizing (56pt or 72pt depending on screen)
+- `.clipShape(RoundedRectangle(cornerRadius:))` — iOS-standard rounded app icon corners (12pt for small, 16pt for large)
+
+**Key Pattern:**
+For in-app use of the app icon, create a separate image set (e.g., `AppLogo.imageset`) that references the same PNG file as `AppIcon.appiconset`. This enables `Image("AppLogo")` to work in SwiftUI views while keeping the standard AppIcon for system use (home screen, app switcher, etc.).
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### PendingReady Visual Prominence and Sorting (2026-03-12)
+**Files Modified:**
+- `PrintFarmer/Views/Components/PrinterCardView.swift` (iPhone card)
+- `PrintFarmer/Views/Components/iPadPrinterCardView.swift` (iPad card)
+- `PrintFarmer/ViewModels/PrinterListViewModel.swift` (list sorting)
+- `PrintFarmer/ViewModels/DashboardViewModel.swift` (dashboard sorting)
+- `PrintFarmer/Views/Dashboard/DashboardView.swift` (active jobs sorting)
+
+**Feature Added:**
+Made printers in `pendingready` state visually obvious with bright yellow headers and sorted them to the top of all printer lists.
+
+**Changes Made:**
+1. **Header Color Change - PendingReady → Yellow:**
+   - Changed `headerBaseColor` for `pendingready` state from brown `#b45309` to bright yellow `#eab308`
+   - Applied to both iPhone and iPad printer card views
+   - Matches the warning/attention color scheme — visually distinct from printing (blue), paused (brown), error (red), ready (green)
+
+2. **Printer List Sorting:**
+   - Added `sortPriority()` function to `PrinterListViewModel`
+   - Priority order: PendingReady (0) → Printing (1) → Ready/Idle (2) → Everything else (3) → Offline (100)
+   - Applied to `filteredPrinters` computed property via `.sorted { sortPriority($0) < sortPriority($1) }`
+   - Ensures PendingReady printers always appear at the top of the list, demanding attention
+
+3. **Dashboard Sorting:**
+   - Added identical `sortPriority()` function to `DashboardViewModel` for `activePrintingPrinters`
+   - Added `sortPriority()` function to `DashboardView` for local `activeJobsSection` filtering
+   - Updated `activeJobsSection` filter to include `"pendingready"` alongside `"printing"` and `"paused"`
+   - Ensures PendingReady printers show in "Active Jobs" section and sort to top
+
+**Priority Logic:**
+```swift
+private func sortPriority(_ printer: Printer) -> Int {
+    guard printer.isOnline else { return 100 }
+    switch printer.state?.lowercased() {
+    case "pendingready": return 0  // Top priority
+    case "printing": return 1
+    case "ready", "idle": return 2
+    default: return 3
+    }
+}
+```
+
+**Color Reference:**
+- PendingReady: `#eab308` (bright yellow — attention-grabbing)
+- Printing: `#1d4ed8` (blue)
+- Paused: `#b45309` (brown/amber)
+- Error: `#dc2626` (red)
+- Ready/Idle: `#059669` (green)
+- Offline: `#4b5563` (gray)
+
+**Key Decisions:**
+- Used bright yellow (`#eab308`) instead of `.pfWarning` (`#d97706`) for higher contrast and visibility
+- Sorted across all printer display contexts (PrinterListView, DashboardView active jobs) for consistency
+- PendingReady printers now included in "Active Jobs" section since they need user action
+- Offline printers always sorted last (priority 100) regardless of state
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator

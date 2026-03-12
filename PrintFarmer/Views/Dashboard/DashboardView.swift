@@ -185,11 +185,12 @@ struct DashboardView: View {
     // MARK: - Active Jobs (printers currently printing)
 
     private var activeJobsSection: some View {
-        let activeStates: Set<String> = ["printing", "paused"]
+        let activeStates: Set<String> = ["printing", "paused", "pendingready"]
         let printingPrinters = viewModel.printers.filter { printer in
             guard let state = printer.state?.lowercased() else { return false }
             return activeStates.contains(state)
         }
+        .sorted { sortPriority($0) < sortPriority($1) }
         let topPrinters = Array(printingPrinters.prefix(5))
 
         return VStack(alignment: .leading, spacing: 12) {
@@ -569,6 +570,18 @@ struct DashboardView: View {
             Button("Retry") {
                 Task { await viewModel.loadDashboard() }
             }
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private func sortPriority(_ printer: Printer) -> Int {
+        guard printer.isOnline else { return 100 }
+        switch printer.state?.lowercased() {
+        case "pendingready": return 0
+        case "printing": return 1
+        case "ready", "idle": return 2
+        default: return 3
         }
     }
 }
