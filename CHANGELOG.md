@@ -2,6 +2,17 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.12] — 2026-03-12
+
+### Added
+- **Local notifications for PendingReady** — App now sends local "Bed Clear Required" notifications when printers enter PendingReady state. Tracks per-printer to avoid spam; re-notifies if printer re-enters PendingReady.
+
+### Fixed
+- **Entitlements build failure** — Removed hardcoded `aps-environment` from entitlements file. The build system injects it automatically from the provisioning profile, fixing the "entitlements modified during build" Xcode Cloud error.
+
+### Changed
+- **Switched from APNs to local notifications** — PrintFarmer's self-hosted architecture means each installation can't hold centralized Apple credentials. Notifications now use `UNUserNotificationCenter` local notifications instead of APNs push.
+
 ## [v1.0-beta.11] — 2026-03-11
 
 ### Added

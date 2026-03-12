@@ -388,3 +388,20 @@ Documented in `.squad/decisions.md`: "AutoDispatch PendingReady State UI Design"
 - Ready state success messaging
 - State transitions
 - Invalid state handling
+
+### Local Notifications for PendingReady (2026-03-11)
+- **Task:** Wire up local notifications (UNUserNotificationCenter) when printers enter PendingReady state
+- **Verified:** APNs entitlement (`aps-environment`) already removed — only NFC reader session key remains in entitlements
+- **Key changes:**
+  - `PendingReadyMonitor` now tracks `notifiedPrinterIds: Set<UUID>` to avoid spamming
+  - Fires local notification with "Bed Clear Required" title and printer name(s) in body
+  - Resolves printer names via `PrinterServiceProtocol.list()` for human-readable messages
+  - Clears notified set when printers leave PendingReady (so re-entry re-notifies)
+  - `requestNotificationPermission()` called on first authenticated launch from RootView
+  - Tapping notification navigates to Printers tab via `.localNotificationTapped` Notification.Name
+- **Files modified:** PendingReadyMonitor.swift, RootView.swift, PushNotificationManager.swift, PFarmApp.swift
+- **Architecture notes:**
+  - PendingReadyMonitor now takes both `AutoDispatchServiceProtocol` and `PrinterServiceProtocol` in configure()
+  - Used `#if canImport(UserNotifications)` guards for cross-platform safety
+  - Notification category `PENDING_READY` used to distinguish local bed-clear notifications from remote push notifications in the delegate
+  - Notification dedup pattern: track notified IDs, intersect with current set each poll cycle

@@ -161,13 +161,23 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        let category = response.notification.request.content.categoryIdentifier
 
-        // Post notification for deep-link handling by the navigation layer
-        NotificationCenter.default.post(
-            name: .pushNotificationTapped,
-            object: nil,
-            userInfo: userInfo
-        )
+        if category == "PENDING_READY" {
+            // Local bed-clear notification — navigate to Printers tab
+            NotificationCenter.default.post(
+                name: .localNotificationTapped,
+                object: nil,
+                userInfo: ["tab": "printers"]
+            )
+        } else {
+            // Remote push notification — deep-link handling
+            NotificationCenter.default.post(
+                name: .pushNotificationTapped,
+                object: nil,
+                userInfo: userInfo
+            )
+        }
 
         completionHandler()
     }
@@ -177,5 +187,6 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
 
 extension Notification.Name {
     static let pushNotificationTapped = Notification.Name("PFPushNotificationTapped")
+    static let localNotificationTapped = Notification.Name("PFLocalNotificationTapped")
 }
 #endif
