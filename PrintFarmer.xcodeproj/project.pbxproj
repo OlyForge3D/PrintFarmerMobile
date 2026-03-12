@@ -28,6 +28,8 @@
 		1D1B7EDF3FD6B2A17D268882 /* PrinterServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288048764D1B47272B433307 /* PrinterServiceProtocol.swift */; };
 		1DC1666AD87080FDC1140528 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574F629AF29665D4872351E8 /* LoginView.swift */; };
 		BCEF91EF40EA431F928DB79F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C70E99B5CA4E578AF3AAA6 /* OnboardingView.swift */; };
+		FF2EE1DD0CC9BB8AA7F6E5D4 /* LocalNetworkAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1BB2CC3DD4EE5FF6A7B8C9 /* LocalNetworkAuthorization.swift */; };
+		C6B5A4F3E2D1C0B9A8F7E6D5 /* LocalNetworkPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E6F7A8B9C0D1E2F3A4B5C6 /* LocalNetworkPermissionView.swift */; };
 		2007393C70EEAD89185ADC84 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD237969E9A136249F6351A /* AppRouter.swift */; };
 		2145660BC57194889CDBC78A /* JobCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B8E20F526E7CE3E92BE781 /* JobCardView.swift */; };
 		238D3CB78DB178A6F10855ED /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D809C1522119BD07956A1A7 /* AuthService.swift */; };
@@ -229,6 +231,8 @@
 		46DEBCDF7D99C0F2AEFB6AEC /* ActionButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButtonStyle.swift; sourceTree = "<group>"; };
 		574F629AF29665D4872351E8 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		C8C70E99B5CA4E578AF3AAA6 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AA1BB2CC3DD4EE5FF6A7B8C9 /* LocalNetworkAuthorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNetworkAuthorization.swift; sourceTree = "<group>"; };
+		D5E6F7A8B9C0D1E2F3A4B5C6 /* LocalNetworkPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNetworkPermissionView.swift; sourceTree = "<group>"; };
 		57A3A3E21352CC6A4514221E /* PrinterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrinterCardView.swift; sourceTree = "<group>"; };
 		B076B098F30F1506B8E1C983 /* iPadPrinterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadPrinterCardView.swift; sourceTree = "<group>"; };
 		5D49DAAAE1D5A8AC05429321 /* MockAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthService.swift; sourceTree = "<group>"; };
@@ -559,6 +563,7 @@
 			children = (
 				574F629AF29665D4872351E8 /* LoginView.swift */,
 				C8C70E99B5CA4E578AF3AAA6 /* OnboardingView.swift */,
+				D5E6F7A8B9C0D1E2F3A4B5C6 /* LocalNetworkPermissionView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -684,6 +689,7 @@
 				962BFA7750A020B42AECBFA4 /* AppConfig.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* NFCTagParser.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* QRCodeParser.swift */,
+				AA1BB2CC3DD4EE5FF6A7B8C9 /* LocalNetworkAuthorization.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -937,6 +943,8 @@
 				5E141422FB3849E6169FA79E /* ContentView.swift in Sources */,
 				1DC1666AD87080FDC1140528 /* LoginView.swift in Sources */,
 				BCEF91EF40EA431F928DB79F /* OnboardingView.swift in Sources */,
+				FF2EE1DD0CC9BB8AA7F6E5D4 /* LocalNetworkAuthorization.swift in Sources */,
+				C6B5A4F3E2D1C0B9A8F7E6D5 /* LocalNetworkPermissionView.swift in Sources */,
 				D8F9A0B1C2E3D4F5A6B7C8D9 /* RootView.swift in Sources */,
 				0165CA554584E940BBCF8A15 /* EmptyStateView.swift in Sources */,
 				13A9714DB66389EFE231ED4E /* ActionButtonStyle.swift in Sources */,

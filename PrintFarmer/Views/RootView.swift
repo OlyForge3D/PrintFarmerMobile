@@ -11,6 +11,7 @@ struct RootView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var pendingReadyMonitor = PendingReadyMonitor()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage("hasCompletedNetworkPermission") private var hasCompletedNetworkPermission = false
     @State private var minimumSplashElapsed = false
 
     var body: some View {
@@ -41,6 +42,8 @@ struct RootView: View {
                     }
             } else if !hasSeenOnboarding {
                 OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
+            } else if !hasCompletedNetworkPermission {
+                LocalNetworkPermissionView(hasCompletedNetworkPermission: $hasCompletedNetworkPermission)
             } else {
                 LoginView()
             }
