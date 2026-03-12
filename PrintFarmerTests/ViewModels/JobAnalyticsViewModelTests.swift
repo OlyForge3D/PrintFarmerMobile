@@ -49,6 +49,7 @@ final class JobAnalyticsViewModelTests: XCTestCase {
                 printerName: nil,
                 printerModel: nil,
                 fileName: "test_print.gcode",
+                thumbnailUrl: nil,
                 createdAt: Date(),
                 startedAt: nil,
                 completedAt: nil
@@ -57,7 +58,8 @@ final class JobAnalyticsViewModelTests: XCTestCase {
                 id: "gcode1",
                 fileName: "test_print.gcode",
                 materialType: "PLA",
-                nozzleDiameter: 0.4
+                nozzleDiameter: 0.4,
+                thumbnailUrl: nil
             ),
             assignedPrinter: PrinterMeta(
                 id: "printer1",

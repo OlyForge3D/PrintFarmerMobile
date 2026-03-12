@@ -14,6 +14,13 @@ struct AutoDispatchStatus: Codable, Sendable {
         case state
         case queuedJobCount
     }
+
+    init(printerId: UUID, autoDispatchEnabled: Bool, state: String, queuedJobCount: Int) {
+        self.printerId = printerId
+        self.autoDispatchEnabled = autoDispatchEnabled
+        self.state = state
+        self.queuedJobCount = queuedJobCount
+    }
 }
 
 // MARK: - AutoDispatch Ready Result

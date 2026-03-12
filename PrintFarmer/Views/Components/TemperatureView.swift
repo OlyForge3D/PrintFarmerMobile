@@ -5,13 +5,13 @@ struct TemperatureView: View {
     let label: String
     let current: Double?
     let target: Double?
-    let icon: String
+    let icon: TemperatureIcon
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
+            icon.view
                 .foregroundStyle(temperatureColor)
+                .frame(width: 20, height: 20)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {

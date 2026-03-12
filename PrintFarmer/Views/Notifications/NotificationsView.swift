@@ -153,6 +153,7 @@ private struct NotificationRow: View {
         case .jobResumed: "play.fill"
         case .queueAlert: "exclamationmark.triangle.fill"
         case .systemAlert: "info.circle.fill"
+        case .bedClearRequired: "bed.double.fill"
         }
     }
 
@@ -164,6 +165,7 @@ private struct NotificationRow: View {
         case .jobPaused: .pfWarning
         case .queueAlert: .pfWarning
         case .systemAlert: .pfSecondaryAccent
+        case .bedClearRequired: .pfWarning
         }
     }
 }
