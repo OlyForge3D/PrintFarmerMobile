@@ -261,7 +261,7 @@ struct PrinterDetailView: View {
 
                     cameraSection(printer)
                     filamentSection(printer)
-                    AutoDispatchSection(printerId: printer.id)
+                    AutoDispatchSection(printerId: printer.id, isPrinting: viewModel.isPrinting || viewModel.isPaused)
 
                     NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
                         HStack {
@@ -297,7 +297,7 @@ struct PrinterDetailView: View {
                 headerSection(printer)
                 temperatureSection(printer)
                 filamentSection(printer)
-                AutoDispatchSection(printerId: printer.id)
+                AutoDispatchSection(printerId: printer.id, isPrinting: viewModel.isPrinting || viewModel.isPaused)
 
                 NavigationLink(value: AppDestination.predictiveInsights(printerId: printer.id)) {
                     HStack {
@@ -575,10 +575,14 @@ struct PrinterDetailView: View {
                         actionButton("Pause", icon: "pause.fill", color: .pfWarning) {
                             await viewModel.pausePrinter()
                         }
+                        .disabled(viewModel.isPerformingAction)
+                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
 
                         actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
                             viewModel.requestCancel()
                         }
+                        .disabled(viewModel.isPerformingAction)
+                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                     }
                 }
 
@@ -587,10 +591,14 @@ struct PrinterDetailView: View {
                         actionButton("Resume", icon: "play.fill", color: .pfSuccess) {
                             await viewModel.resumePrinter()
                         }
+                        .disabled(viewModel.isPerformingAction)
+                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
 
                         actionButton("Cancel", icon: "xmark.circle.fill", color: .pfError) {
                             viewModel.requestCancel()
                         }
+                        .disabled(viewModel.isPerformingAction)
+                        .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                     }
                 }
 
@@ -598,6 +606,8 @@ struct PrinterDetailView: View {
                     actionButton("Stop", icon: "stop.fill", color: .pfWarning) {
                         await viewModel.stopPrinter()
                     }
+                    .disabled(viewModel.isPerformingAction)
+                    .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                 }
 
                 // Maintenance toggle
@@ -611,6 +621,8 @@ struct PrinterDetailView: View {
                     .fullWidthActionButton()
                 }
                 .buttonStyle(.bordered)
+                .disabled(viewModel.isPerformingAction || viewModel.isPrinting || viewModel.isPaused)
+                .opacity((viewModel.isPerformingAction || viewModel.isPrinting || viewModel.isPaused) ? 0.4 : 1.0)
                 .accessibilityLabel(printer.inMaintenance ? "Exit maintenance mode" : "Enter maintenance mode")
 
                 #if canImport(UIKit)
@@ -623,10 +635,12 @@ struct PrinterDetailView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(Color.pfAccent)
+                .disabled(viewModel.isPerformingAction)
+                .opacity(viewModel.isPerformingAction ? 0.4 : 1.0)
                 .accessibilityLabel("Write NFC printer identification tag")
                 #endif
 
-                // Emergency Stop (always available when online)
+                // Emergency Stop — always enabled when online
                 Button(role: .destructive) {
                     viewModel.requestEmergencyStop()
                 } label: {
@@ -638,7 +652,6 @@ struct PrinterDetailView: View {
                 .tint(Color.pfError)
                 .accessibilityLabel("Emergency stop printer")
             }
-            .disabled(viewModel.isPerformingAction)
         }
     }
 
