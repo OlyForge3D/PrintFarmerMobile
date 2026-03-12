@@ -11,6 +11,7 @@ struct RootView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var pendingReadyMonitor = PendingReadyMonitor()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var minimumSplashElapsed = false
 
     var body: some View {
         Group {
@@ -32,8 +33,12 @@ struct RootView: View {
                     .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
                         router.pendingReadyCount = newValue
                     }
-            } else if !authViewModel.hasCheckedAuth {
+            } else if !authViewModel.hasCheckedAuth || !minimumSplashElapsed {
                 launchScreen
+                    .task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        minimumSplashElapsed = true
+                    }
             } else if !hasSeenOnboarding {
                 OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
             } else {
@@ -60,10 +65,12 @@ struct RootView: View {
 
             Text("PrintFarmer")
                 .font(.largeTitle.bold())
+                .foregroundStyle(Color("LaunchText"))
 
             ProgressView()
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("LaunchBackground"))
     }
 }

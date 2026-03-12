@@ -399,3 +399,11 @@ private func sortPriority(_ printer: Printer) -> Int {
 - Offline printers always sorted last (priority 100) regardless of state
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+### LaunchScreen Logo Fix (2025-07-25)
+- Replaced the `UILabel` with 🌾 wheat emoji in `LaunchScreen.storyboard` with a `UIImageView` referencing the `AppLogo` asset from the catalog
+- Added 56×56 explicit size constraints on the image view to match RootView.swift's SwiftUI launch screen
+- Added `<image>` resource declaration and `Image references` capability to storyboard dependencies
+- Kept existing LaunchBackground/LaunchText named colors and centered vertical stack layout
+- Verified RootView.swift SwiftUI launch screen already uses `Image("AppLogo")` correctly — no changes needed there
+- **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
