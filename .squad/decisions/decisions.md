@@ -1034,3 +1034,29 @@ jobs:
 ---
 
 *Decision document prepared by Dallas (Lead). Cross-team impact: Ripley (testing), Lambert (build support), Ash (CI/CD validation).*
+
+---
+
+## UI & Layout
+
+### 18. Unified Colored State Headers + iPad Grid Layout (Ripley, 2026-03-12)
+**Status:** Implemented
+
+The iPad printer card had a colored gradient header indicating printer state (blue=printing, amber=paused, red=error, etc.) but the iPhone card only had a subtle border tint. The iPad list was also single-column despite having screen width for multiple columns.
+
+**Decisions:**
+
+#### 1. iPhone PrinterCardView gets colored header
+- Added `headerSection`, `headerBaseColor`, `headerGradient`, `statusLabel` computed properties mirroring the iPad card pattern
+- iPhone uses slightly compact padding (vertical 8 vs 10) and smaller pill font (caption2 vs caption) for density
+- Old StatusBadge replaced with inline status pill for visual consistency
+
+#### 2. iPad PrinterListView uses LazyVGrid
+- iPad printer list now uses `LazyVGrid` with `.adaptive(minimum: 340)` columns
+- Automatically adjusts column count based on available width
+- iPhone list remains unchanged (single-column LazyVStack)
+
+**Impact:**
+- **Dallas:** No architecture changes needed — purely view-layer
+- **Lambert:** No API changes — same Printer model consumed
+- **Future:** If more card variants appear, the shared color scheme (headerBaseColor values) could be extracted to a shared protocol or extension
