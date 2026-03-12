@@ -53,6 +53,7 @@ final class PrinterDetailViewModel {
 
     private var nfcScanner: (any SpoolScannerProtocol)?
     private var autoDispatchService: (any AutoDispatchServiceProtocol)?
+    private var signalRService: (any SignalRServiceProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -74,6 +75,57 @@ final class PrinterDetailViewModel {
 
     func configureAutoDispatch(_ service: any AutoDispatchServiceProtocol) {
         self.autoDispatchService = service
+    }
+
+    func configureSignalR(_ service: any SignalRServiceProtocol) {
+        self.signalRService = service
+        service.onPrinterUpdated { [weak self] update in
+            guard update.id == self?.printerId else { return }
+            Task { @MainActor [weak self] in
+                self?.applyLiveUpdate(update)
+            }
+        }
+    }
+
+    private func applyLiveUpdate(_ update: PrinterStatusUpdate) {
+        if var p = printer {
+            p.isOnline = update.isOnline
+            if let s = update.state { p.state = s }
+            // Backend sends progress as 0-100; normalize to 0-1.0 for SwiftUI
+            if let prog = update.progress { p.progress = prog / 100.0 }
+            if let name = update.jobName { p.jobName = name }
+            if let thumb = update.thumbnailUrl { p.thumbnailUrl = thumb }
+            if let cam = update.cameraStreamUrl { p.cameraStreamUrl = cam }
+            if let hotend = update.hotendTemp { p.hotendTemp = hotend }
+            if let bed = update.bedTemp { p.bedTemp = bed }
+            if let ht = update.hotendTarget { p.hotendTarget = ht }
+            if let bt = update.bedTarget { p.bedTarget = bt }
+            if let x = update.x { p.x = x }
+            if let y = update.y { p.y = y }
+            if let z = update.z { p.z = z }
+            if let spool = update.spoolInfo { p.spoolInfo = spool }
+            printer = p
+        }
+
+        statusDetail = PrinterStatusDetail(
+            id: update.id,
+            isOnline: update.isOnline,
+            state: update.state ?? statusDetail?.state,
+            progress: update.progress.map { $0 / 100.0 } ?? statusDetail?.progress,
+            jobName: update.jobName ?? statusDetail?.jobName,
+            thumbnailUrl: update.thumbnailUrl ?? statusDetail?.thumbnailUrl,
+            cameraStreamUrl: update.cameraStreamUrl ?? statusDetail?.cameraStreamUrl,
+            cameraSnapshotUrl: statusDetail?.cameraSnapshotUrl,
+            x: update.x ?? statusDetail?.x,
+            y: update.y ?? statusDetail?.y,
+            z: update.z ?? statusDetail?.z,
+            hotendTemp: update.hotendTemp ?? statusDetail?.hotendTemp,
+            bedTemp: update.bedTemp ?? statusDetail?.bedTemp,
+            hotendTarget: update.hotendTarget ?? statusDetail?.hotendTarget,
+            bedTarget: update.bedTarget ?? statusDetail?.bedTarget,
+            spoolInfo: update.spoolInfo ?? statusDetail?.spoolInfo,
+            mmuStatus: update.mmuStatus ?? statusDetail?.mmuStatus
+        )
     }
 
     // MARK: - NFC Printer Tag Writing

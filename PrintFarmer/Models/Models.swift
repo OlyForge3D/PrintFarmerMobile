@@ -156,6 +156,13 @@ enum NotificationType: String, Codable, Sendable {
     case jobResumed = "JobResumed"
     case queueAlert = "QueueAlert"
     case systemAlert = "SystemAlert"
+    case bedClearRequired = "BedClearRequired"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        self = NotificationType(rawValue: rawValue) ?? .systemAlert
+    }
 }
 
 enum NotificationFrequency: String, Codable, Sendable {
@@ -190,26 +197,26 @@ struct Printer: Codable, Identifiable, Sendable {
     let isEnabled: Bool
 
     // Live status (from SignalR cache)
-    let isOnline: Bool
-    let state: String?
-    let progress: Double?
-    let jobName: String?
-    let thumbnailUrl: String?
-    let cameraStreamUrl: String?
-    let cameraSnapshotUrl: String?
+    var isOnline: Bool
+    var state: String?
+    var progress: Double?
+    var jobName: String?
+    var thumbnailUrl: String?
+    var cameraStreamUrl: String?
+    var cameraSnapshotUrl: String?
 
     // Telemetry
-    let x: Double?
-    let y: Double?
-    let z: Double?
-    let hotendTemp: Double?
-    let bedTemp: Double?
-    let hotendTarget: Double?
-    let bedTarget: Double?
-    let homedAxes: String?
+    var x: Double?
+    var y: Double?
+    var z: Double?
+    var hotendTemp: Double?
+    var bedTemp: Double?
+    var hotendTarget: Double?
+    var bedTarget: Double?
+    var homedAxes: String?
 
     // Metadata
-    let spoolInfo: PrinterSpoolInfo?
+    var spoolInfo: PrinterSpoolInfo?
     let backendUrl: String?
     let frontendUrl: String?
     let location: LocationSummary?

@@ -61,6 +61,7 @@ struct PrinterDetailView: View {
             viewModel.configureNFCScanner(services.nfcService)
             #endif
             viewModel.configureAutoDispatch(services.autoPrintService)
+            viewModel.configureSignalR(services.signalRService)
             await viewModel.loadPrinter()
 
             // Handle NFC "mark ready" deep link
@@ -397,7 +398,7 @@ struct PrinterDetailView: View {
                     label: "Hotend",
                     current: hotend,
                     target: hotendTgt,
-                    icon: "flame"
+                    icon: .hotend
                 )
 
                 Divider()
@@ -406,7 +407,7 @@ struct PrinterDetailView: View {
                     label: "Bed",
                     current: bed,
                     target: bedTgt,
-                    icon: "square.stack.3d.up"
+                    icon: .bed
                 )
             }
             .padding()

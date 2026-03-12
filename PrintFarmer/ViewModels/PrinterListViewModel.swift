@@ -21,9 +21,32 @@ final class PrinterListViewModel {
     }
 
     private var printerService: (any PrinterServiceProtocol)?
+    private var signalRService: (any SignalRServiceProtocol)?
 
     func configure(printerService: any PrinterServiceProtocol) {
         self.printerService = printerService
+    }
+
+    func configureSignalR(_ service: any SignalRServiceProtocol) {
+        self.signalRService = service
+        service.onPrinterUpdated { [weak self] update in
+            Task { @MainActor [weak self] in
+                self?.applyListUpdate(update)
+            }
+        }
+    }
+
+    private func applyListUpdate(_ update: PrinterStatusUpdate) {
+        guard let idx = printers.firstIndex(where: { $0.id == update.id }) else { return }
+        printers[idx].isOnline = update.isOnline
+        if let s = update.state { printers[idx].state = s }
+        if let prog = update.progress { printers[idx].progress = prog / 100.0 }
+        if let name = update.jobName { printers[idx].jobName = name }
+        if let hotend = update.hotendTemp { printers[idx].hotendTemp = hotend }
+        if let bed = update.bedTemp { printers[idx].bedTemp = bed }
+        if let ht = update.hotendTarget { printers[idx].hotendTarget = ht }
+        if let bt = update.bedTarget { printers[idx].bedTarget = bt }
+        if let spool = update.spoolInfo { printers[idx].spoolInfo = spool }
     }
 
     func loadPrinters() async {
