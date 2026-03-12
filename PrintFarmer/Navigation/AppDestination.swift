@@ -9,7 +9,6 @@ enum AppDestination: Hashable {
     case maintenanceAnalytics
     case uptimeReliability
     case predictiveInsights(printerId: UUID)
-    case jobAnalytics
     case jobHistory
     case jobTimeline
     case dispatchDashboard
