@@ -47,11 +47,13 @@ struct TemperatureView: View {
     }
 
     private var temperatureColor: Color {
-        guard let current else { return .secondary }
-        if current > 200 { return .pfError }
-        if current > 100 { return .pfWarning }
-        if current > 50 { return .pfTempMild }
-        return .pfHomed
+        let isHeating = (target ?? 0) > 0
+        switch icon {
+        case .hotend:
+            return isHeating ? .red : .red.opacity(0.35)
+        case .bed:
+            return isHeating ? .blue : .blue.opacity(0.35)
+        }
     }
 }
 

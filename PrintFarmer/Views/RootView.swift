@@ -10,6 +10,8 @@ struct RootView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
     @State private var pendingReadyMonitor = PendingReadyMonitor()
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var minimumSplashElapsed = false
 
     var body: some View {
         Group {
@@ -31,8 +33,14 @@ struct RootView: View {
                     .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
                         router.pendingReadyCount = newValue
                     }
-            } else if !authViewModel.hasCheckedAuth {
+            } else if !authViewModel.hasCheckedAuth || !minimumSplashElapsed {
                 launchScreen
+                    .task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        minimumSplashElapsed = true
+                    }
+            } else if !hasSeenOnboarding {
+                OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
             } else {
                 LoginView()
             }
@@ -49,16 +57,20 @@ struct RootView: View {
     /// Shown briefly while `restoreSession()` checks for a saved token.
     private var launchScreen: some View {
         VStack(spacing: 16) {
-            Image(systemName: "printer.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.pfAccent)
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Text("PrintFarmer")
                 .font(.largeTitle.bold())
+                .foregroundStyle(Color("LaunchText"))
 
             ProgressView()
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("LaunchBackground"))
     }
 }

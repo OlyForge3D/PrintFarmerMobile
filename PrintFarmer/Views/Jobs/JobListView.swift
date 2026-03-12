@@ -36,16 +36,16 @@ struct JobListView: View {
                     if sizeClass == .compact {
                         VStack(spacing: 0) {
                             TabView(selection: $currentPage) {
-                                PrintingPage()
-                                    .tag(0)
                                 QueuePage()
+                                    .tag(0)
+                                PrintingPage()
                                     .tag(1)
                                 RecentPage()
                                     .tag(2)
                             }
                             .tabViewStyle(.page(indexDisplayMode: .never))
                             
-                            PageIndicator(currentPage: $currentPage, pageCount: 3, labels: ["Printing", "Queue", "Recent"])
+                            PageIndicator(currentPage: $currentPage, pageCount: 3, labels: ["Queue", "Printing", "Recent"])
                                 .padding(.bottom, 8)
                         }
                     } else {
@@ -146,16 +146,6 @@ struct JobListView: View {
 
     private var jobList: some View {
         List {
-            if !viewModel.activeJobs.isEmpty {
-                Section {
-                    ForEach(viewModel.activeJobs) { item in
-                        activeJobRow(item)
-                    }
-                } header: {
-                    Label("Printing", systemImage: "printer.fill")
-                }
-            }
-
             if !viewModel.queuedJobs.isEmpty {
                 Section {
                     ForEach(viewModel.queuedJobs) { item in
@@ -163,6 +153,16 @@ struct JobListView: View {
                     }
                 } header: {
                     Label("In Queue", systemImage: "tray.full")
+                }
+            }
+
+            if !viewModel.activeJobs.isEmpty {
+                Section {
+                    ForEach(viewModel.activeJobs) { item in
+                        activeJobRow(item)
+                    }
+                } header: {
+                    Label("Printing", systemImage: "printer.fill")
                 }
             }
 
