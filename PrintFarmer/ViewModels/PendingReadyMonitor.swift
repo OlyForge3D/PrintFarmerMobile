@@ -46,6 +46,7 @@ final class PendingReadyMonitor {
         pollingTask?.cancel()
         pollingTask = nil
         notifiedPrinterIds.removeAll()
+        Task { await updateBadgeCount(0) }
     }
 
     // MARK: - Notification Permission
@@ -74,6 +75,9 @@ final class PendingReadyMonitor {
             let currentPendingIds = Set(pendingReadyStatuses.map(\.printerId))
 
             pendingReadyCount = pendingReadyStatuses.count
+
+            // Update app badge count to reflect pending printers
+            await updateBadgeCount(pendingReadyCount)
 
             // Clear notifications for printers that left PendingReady
             notifiedPrinterIds = notifiedPrinterIds.intersection(currentPendingIds)
@@ -105,6 +109,7 @@ final class PendingReadyMonitor {
         }
         content.sound = .default
         content.categoryIdentifier = Self.notificationCategory
+        content.badge = NSNumber(value: pendingReadyCount)
 
         let request = UNNotificationRequest(
             identifier: "pending-ready-\(UUID().uuidString)",
@@ -117,6 +122,18 @@ final class PendingReadyMonitor {
             logger.info("Local notification sent for \(printerIds.count) printer(s)")
         } catch {
             logger.error("Failed to schedule local notification: \(error.localizedDescription)")
+        }
+        #endif
+    }
+
+    // MARK: - Badge Count
+
+    private func updateBadgeCount(_ count: Int) async {
+        #if canImport(UserNotifications)
+        do {
+            try await UNUserNotificationCenter.current().setBadgeCount(count)
+        } catch {
+            logger.error("Failed to update badge count: \(error.localizedDescription)")
         }
         #endif
     }

@@ -6,6 +6,8 @@ final class AutoDispatchViewModel {
     var status: AutoDispatchStatus?
     var readyResult: AutoDispatchReadyResult?
     var isLoading = false
+    var isMarkingReady = false
+    var isSkipping = false
     var error: String?
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "AutoDispatch")
@@ -31,6 +33,8 @@ final class AutoDispatchViewModel {
 
     func markReady(printerId: UUID) async {
         guard let autoDispatchService else { return }
+        isMarkingReady = true
+        error = nil
         do {
             readyResult = try await autoDispatchService.markReady(printerId: printerId)
             // Optimistically transition away from PendingReady — the backend
@@ -44,21 +48,26 @@ final class AutoDispatchViewModel {
                     queuedJobCount: max(s.queuedJobCount - 1, 0)
                 )
             }
+            isMarkingReady = false
             // Reload after a short delay for the authoritative state
             try? await Task.sleep(for: .seconds(2))
             await loadStatus(printerId: printerId)
         } catch {
             self.error = error.localizedDescription
+            isMarkingReady = false
         }
     }
 
     func skip(printerId: UUID) async {
         guard let autoDispatchService else { return }
+        isSkipping = true
+        error = nil
         do {
             status = try await autoDispatchService.skip(printerId: printerId)
         } catch {
             self.error = error.localizedDescription
         }
+        isSkipping = false
     }
 
     func toggleEnabled(printerId: UUID) async {
