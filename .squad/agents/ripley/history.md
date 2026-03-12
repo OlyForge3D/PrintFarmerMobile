@@ -407,3 +407,46 @@ private func sortPriority(_ printer: Printer) -> Int {
 - Kept existing LaunchBackground/LaunchText named colors and centered vertical stack layout
 - Verified RootView.swift SwiftUI launch screen already uses `Image("AppLogo")` correctly — no changes needed there
 - **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### Local Network Permission Step (2026-03-12)
+**Files Created:**
+- `PrintFarmer/Utilities/LocalNetworkAuthorization.swift`
+- `PrintFarmer/Views/Auth/LocalNetworkPermissionView.swift`
+
+**Files Modified:**
+- `PrintFarmer/Views/RootView.swift`
+- `PrintFarmer/Info.plist`
+- `PrintFarmer.xcodeproj/project.pbxproj`
+
+**Bug Fixed:**
+On first launch, signing in to a local-network PrintFarmer server would fail with "No internet connection. Check your network." because the iOS Local Network permission dialog raced with the login HTTP request.
+
+**Root Cause:**
+iOS shows the Local Network permission prompt lazily — only when the app first accesses the local network. The login request fires before the user responds to the dialog, causing URLSession to report `.notConnectedToInternet` which maps to `NetworkError.noConnection`.
+
+**Solution:**
+Added a new step in the first-launch flow (between onboarding and login) that proactively triggers the permission dialog:
+
+1. **LocalNetworkAuthorization** — Uses `NWBrowser` with a `_printfarmer._tcp` Bonjour service type to trigger the system permission prompt. Wrapped in `async/await` with `withCheckedContinuation`. Swift 6 concurrency-safe (`@MainActor`, callbacks dispatched to main queue).
+
+2. **LocalNetworkPermissionView** — Friendly screen with network icon, explanation text, and "Enable Network Access" button. After the system dialog is resolved, button changes to "Continue" to proceed to login.
+
+3. **RootView flow update:** splash → onboarding → **network permission** → login. New `@AppStorage("hasCompletedNetworkPermission")` gate; only shown once.
+
+4. **Info.plist** — Added `NSBonjourServices` array with `_printfarmer._tcp` (required for NWBrowser to trigger the permission dialog).
+
+**Key Patterns:**
+- NWBrowser Bonjour lookup to trigger local network permission (standard iOS pattern)
+- `withCheckedContinuation` to bridge callback-based NWBrowser API to async/await
+- `@AppStorage` boolean for one-time permission gate (same pattern as onboarding)
+- Swift 6 strict concurrency: `DispatchQueue.main.async` wrapper for NWBrowser callbacks to satisfy `@MainActor` isolation
+
+**Design Consistency:**
+- 72pt SF Symbol icon (`network`) with `.pfAccent` color
+- `.title .bold` headline, `.body .pfTextSecondary` description
+- `.borderedProminent` button with `.pfAccent` tint, 32pt horizontal padding
+- Matches onboarding page styling exactly
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
