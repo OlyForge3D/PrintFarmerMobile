@@ -23,24 +23,24 @@ struct PrinterCardView: View {
                 // Temperature row — always visible with placeholders
                 HStack(spacing: 16) {
                     Label {
-                        Text(printer.hotendTemp?.temperatureFormatted ?? "---°C")
-                            .monospacedDigit()
+                        temperatureText(current: printer.hotendTemp, target: printer.hotendTarget)
                     } icon: {
                         NozzleIcon()
-                            .fill(Color.pfNotHomed)
+                            .fill(iconColor(for: printer.hotendTarget))
                             .frame(width: 14, height: 14)
                     }
                     .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     Label {
-                        Text(printer.bedTemp?.temperatureFormatted ?? "---°C")
-                            .monospacedDigit()
+                        temperatureText(current: printer.bedTemp, target: printer.bedTarget)
                     } icon: {
                         RadiatorIcon()
-                            .fill(Color.pfHomed)
+                            .fill(iconColor(for: printer.bedTarget))
                             .frame(width: 14, height: 14)
                     }
                     .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(14)
@@ -119,6 +119,28 @@ struct PrinterCardView: View {
         case "paused": return .pfWarning
         case "error": return .pfError
         default: return .pfSuccess
+        }
+    }
+
+    private func temperatureText(current: Double?, target: Double?) -> some View {
+        HStack(spacing: 2) {
+            Text(current.map { String(format: "%.0f°C", $0) } ?? "---°C")
+                .monospacedDigit()
+            if let target, target > 0 {
+                Text("→")
+                    .foregroundStyle(.tertiary)
+                Text(String(format: "%.0f°C", target))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func iconColor(for target: Double?) -> Color {
+        if let target, target > 0 {
+            return .pfWarning
+        } else {
+            return .pfTextTertiary
         }
     }
 }

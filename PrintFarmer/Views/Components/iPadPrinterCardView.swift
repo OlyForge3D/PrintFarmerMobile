@@ -81,20 +81,22 @@ struct iPadPrinterCardView: View {
                 temperatureText(current: printer.hotendTemp, target: printer.hotendTarget)
             } icon: {
                 NozzleIcon()
-                    .fill(Color.pfNotHomed)
+                    .fill(iconColor(for: printer.hotendTarget))
                     .frame(width: 16, height: 16)
             }
             .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Bed — always visible with placeholder
             Label {
                 temperatureText(current: printer.bedTemp, target: printer.bedTarget)
             } icon: {
                 RadiatorIcon()
-                    .fill(Color.pfHomed)
+                    .fill(iconColor(for: printer.bedTarget))
                     .frame(width: 16, height: 16)
             }
             .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -103,12 +105,20 @@ struct iPadPrinterCardView: View {
             Text(current.map { String(format: "%.0f°C", $0) } ?? "---°C")
                 .monospacedDigit()
             if let target, target > 0 {
-                Text("/")
+                Text("→")
                     .foregroundStyle(.tertiary)
                 Text(String(format: "%.0f°C", target))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private func iconColor(for target: Double?) -> Color {
+        if let target, target > 0 {
+            return .pfWarning
+        } else {
+            return .pfTextTertiary
         }
     }
 
