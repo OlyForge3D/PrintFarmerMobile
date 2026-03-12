@@ -13,12 +13,11 @@ struct iPadPrinterCardView: View {
 
             // Body content
             VStack(alignment: .leading, spacing: 10) {
-                // Temperature + Job row
-                HStack(alignment: .top, spacing: 20) {
-                    temperatureSection
-                    Spacer()
-                    jobSection
-                }
+                // Job info + progress (above temps, matching web UI order)
+                jobSection
+
+                // Temperature row
+                temperatureSection
 
                 // Filament info row
                 if let spool = printer.spoolInfo, spool.hasActiveSpool {
@@ -77,46 +76,36 @@ struct iPadPrinterCardView: View {
 
     private var temperatureSection: some View {
         HStack(spacing: 16) {
-            if printer.isOnline {
-                // Hotend
-                if let temp = printer.hotendTemp {
-                    Label {
-                        temperatureText(current: temp, target: printer.hotendTarget)
-                    } icon: {
-                        NozzleIcon()
-                            .fill(Color.pfNotHomed)
-                            .frame(width: 16, height: 16)
-                    }
-                    .font(.subheadline)
-                }
-
-                // Bed
-                if let temp = printer.bedTemp {
-                    Label {
-                        temperatureText(current: temp, target: printer.bedTarget)
-                    } icon: {
-                        RadiatorIcon()
-                            .fill(Color.pfHomed)
-                            .frame(width: 16, height: 16)
-                    }
-                    .font(.subheadline)
-                }
-            } else {
-                Label("Offline", systemImage: "wifi.slash")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            // Hotend — always visible with placeholder
+            Label {
+                temperatureText(current: printer.hotendTemp, target: printer.hotendTarget)
+            } icon: {
+                NozzleIcon()
+                    .fill(Color.pfNotHomed)
+                    .frame(width: 16, height: 16)
             }
+            .font(.subheadline)
+
+            // Bed — always visible with placeholder
+            Label {
+                temperatureText(current: printer.bedTemp, target: printer.bedTarget)
+            } icon: {
+                RadiatorIcon()
+                    .fill(Color.pfHomed)
+                    .frame(width: 16, height: 16)
+            }
+            .font(.subheadline)
         }
     }
 
-    private func temperatureText(current: Double, target: Double?) -> some View {
+    private func temperatureText(current: Double?, target: Double?) -> some View {
         HStack(spacing: 2) {
-            Text(String(format: "%.0f°", current))
+            Text(current.map { String(format: "%.0f°C", $0) } ?? "---°C")
                 .monospacedDigit()
             if let target, target > 0 {
                 Text("/")
                     .foregroundStyle(.tertiary)
-                Text(String(format: "%.0f°", target))
+                Text(String(format: "%.0f°C", target))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
@@ -125,26 +114,19 @@ struct iPadPrinterCardView: View {
 
     // MARK: - Job Progress
 
-    @ViewBuilder
     private var jobSection: some View {
-        if let jobName = printer.fileName ?? printer.jobName,
-           let progress = printer.progress,
-           let state = printer.state?.lowercased(),
-           state == "printing" || state == "paused" {
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(jobName)
-                    .font(.caption)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(printer.fileName ?? printer.jobName ?? "---")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            HStack(spacing: 6) {
+                PrintProgressBar(progress: printer.progress ?? 0, height: 8)
+
+                Text((printer.progress ?? 0).percentFormatted)
+                    .font(.caption.weight(.medium).monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    PrintProgressBar(progress: progress, height: 8)
-                        .frame(width: 120)
-
-                    Text(progress.percentFormatted)
-                        .font(.caption.weight(.medium).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
             }
         }
     }

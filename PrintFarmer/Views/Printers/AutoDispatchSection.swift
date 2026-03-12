@@ -143,6 +143,11 @@ struct AutoDispatchSection: View {
         viewModel.isMarkingReady || viewModel.isSkipping || isPrinting
     }
 
+    private var hasQueuedJobs: Bool {
+        guard let count = viewModel.status?.queuedJobCount else { return false }
+        return count > 0
+    }
+
     private var actionButtons: some View {
         HStack(spacing: 8) {
             Button {
@@ -163,7 +168,8 @@ struct AutoDispatchSection: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(viewModel.parsedState == .pendingReady ? Color.pfWarning : Color.pfAccent)
-            .disabled(isActionInProgress)
+            .disabled(isActionInProgress || (!hasQueuedJobs && viewModel.parsedState != .pendingReady))
+            .opacity((isActionInProgress || (!hasQueuedJobs && viewModel.parsedState != .pendingReady)) ? 0.4 : 1.0)
 
             Button {
                 Task { await viewModel.skip(printerId: printerId) }
@@ -181,8 +187,8 @@ struct AutoDispatchSection: View {
                 .fullWidthActionButton()
             }
             .buttonStyle(.bordered)
-            .disabled(isActionInProgress)
-            .opacity(isActionInProgress ? 0.4 : 1.0)
+            .disabled(isActionInProgress || !hasQueuedJobs)
+            .opacity((isActionInProgress || !hasQueuedJobs) ? 0.4 : 1.0)
         }
     }
 
