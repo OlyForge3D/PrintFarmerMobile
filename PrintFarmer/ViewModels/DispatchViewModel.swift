@@ -21,11 +21,15 @@ final class DispatchViewModel {
         error = nil
 
         do {
-            queueStatus = try await dispatchService.getQueueStatus()
+            let status = try await dispatchService.getQueueStatus()
+            guard !Task.isCancelled else { return }
+            queueStatus = status
         } catch {
+            guard !Task.isCancelled else { return }
             self.error = error.localizedDescription
         }
 
+        guard !Task.isCancelled else { return }
         isLoading = false
     }
 
@@ -33,8 +37,10 @@ final class DispatchViewModel {
         guard let dispatchService else { return }
         do {
             let page = try await dispatchService.getHistory(page: 1, pageSize: 50)
+            guard !Task.isCancelled else { return }
             history = page.items
         } catch {
+            guard !Task.isCancelled else { return }
             logger.warning("Failed to load dispatch history: \(error.localizedDescription)")
         }
     }
