@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
     @State private var pendingReadyMonitor = PendingReadyMonitor()
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
         Group {
@@ -33,6 +34,8 @@ struct RootView: View {
                     }
             } else if !authViewModel.hasCheckedAuth {
                 launchScreen
+            } else if !hasSeenOnboarding {
+                OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
             } else {
                 LoginView()
             }
