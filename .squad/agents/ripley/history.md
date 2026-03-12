@@ -210,3 +210,37 @@ if sizeClass == .compact {
 - Dark theme compatible
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### Dispatch Page Navigation Crash Fix (2026-03-12)
+**Files Modified:**
+- `PrintFarmer/ViewModels/DispatchViewModel.swift`
+
+**Bug Fixed:**
+App crashed when pressing the back button on the Dispatch Dashboard page (accessed via `AppDestination.dispatchDashboard` from Dashboard).
+
+**Root Cause:**
+The `DispatchViewModel` had async methods (`loadQueueStatus()` and `loadHistory()`) that were called from SwiftUI's `.task` and `.refreshable` modifiers. When the user navigated back while these async operations were in progress, the tasks continued execution after the view was dismissed. This caused property updates on the `@Observable` ViewModel during view tear-down, leading to a crash.
+
+**Solution:**
+Added `Task.isCancelled` checks in both async methods:
+- Check before updating properties after async network calls complete
+- Check before updating state properties like `isLoading` and `error`
+- Early return if task is cancelled, preventing state mutation during view dismissal
+
+**Pattern Applied:**
+```swift
+func loadQueueStatus() async {
+    // ... async network call
+    let status = try await dispatchService.getQueueStatus()
+    guard !Task.isCancelled else { return }
+    queueStatus = status  // Safe: only update if task not cancelled
+}
+```
+
+**Key Insight:**
+With SwiftUI's `.task` modifier, tasks are automatically cancelled when the view disappears. However, async operations that complete *just as* the view is being dismissed can try to mutate `@Observable` properties during tear-down. Always guard property updates with `Task.isCancelled` checks in async methods called from `.task` or `.refreshable`.
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
