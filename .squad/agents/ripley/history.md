@@ -440,3 +440,38 @@ Documented in `.squad/decisions.md`: "AutoDispatch PendingReady State UI Design"
   - `some ShapeStyle` return type works for `.background()` modifier but must be consistent
 - **Files created:** iPadPrinterCardView.swift
 - **Files modified:** PrinterListView.swift, ContentView.swift, DashboardView.swift, project.pbxproj
+
+---
+
+## Latest Work: Button State Improvements (2026-03-12)
+
+**Status:** Complete and built successfully  
+**Task:** Fix AutoDispatch button states and improve visual clarity for disabled action buttons
+
+### Changes
+
+1. **AutoDispatchSection.swift** (`/PrintFarmer/Views/Printers/AutoDispatchSection.swift`):
+   - Added `isPrinting: Bool` parameter to the view struct
+   - Modified `isActionInProgress` computed property to include `isPrinting` check
+   - Added `.opacity(0.4)` modifier to Skip button when disabled for clearer visual distinction
+
+2. **PrinterDetailView.swift** (`/PrintFarmer/Views/Printers/PrinterDetailView.swift`):
+   - Updated both AutoDispatchSection call sites (iPhone and iPad layouts) to pass `isPrinting: viewModel.isPrinting || viewModel.isPaused`
+   - Added `.opacity(0.4)` modifiers to all bordered action buttons (Pause, Cancel, Resume, Stop, Maintenance, Write Tag) when `viewModel.isPerformingAction` is true
+   - borderedProminent buttons (Emergency Stop, Next Job/Confirm Bed Clear) left with SwiftUI's default disabled appearance
+
+### Pattern Learned
+- **Button state clarity:** SwiftUI's default `.disabled()` opacity reduction on `.bordered` buttons with tint colors doesn't provide enough visual contrast. Adding explicit `.opacity(0.4)` when disabled makes the distinction much clearer without affecting enabled state vibrancy.
+- **Composite printer states:** AutoDispatch should be disabled during both "printing" and "paused" states, since in both cases the printer has an active job and user shouldn't manually intervene with the queue.
+
+### File Paths
+- `/Users/jpapiez/s/PFarm-Ios/PrintFarmer/Views/Printers/AutoDispatchSection.swift`
+- `/Users/jpapiez/s/PFarm-Ios/PrintFarmer/Views/Printers/PrinterDetailView.swift`
+
+### iPhone Colored Header + iPad Grid (2026-07-25)
+- **Task:** Added colored state header to PrinterCardView (iPhone) matching iPad pattern; converted iPad printer list to LazyVGrid
+- **Key changes:**
+  - `PrinterCardView.swift`: Replaced plain header HStack with `headerSection` using `headerGradient` background, white text, status pill (caption2 weight). Outer VStack spacing changed to 0, body content wrapped in padded VStack. Added `clipShape(RoundedRectangle)`.
+  - `PrinterListView.swift`: iPad section now uses `LazyVGrid(columns: iPadColumns)` with `.adaptive(minimum: 340)` for multi-column layout. iPhone layout untouched.
+- **Pattern:** Both iPhone and iPad cards now share the same color scheme for state headers (`Color(hex:)` values). iPhone uses slightly compact padding (vertical 8 vs iPad's 10) and smaller pill font (caption2 vs caption).
+- **Architecture:** `headerBaseColor`, `headerGradient`, `statusLabel` computed properties mirror iPad card's pattern — could be extracted to shared protocol in future if more card variants appear.

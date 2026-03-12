@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AutoDispatchSection: View {
     let printerId: UUID
+    let isPrinting: Bool
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel = AutoDispatchViewModel()
 
@@ -139,7 +140,7 @@ struct AutoDispatchSection: View {
     }
     
     private var isActionInProgress: Bool {
-        viewModel.isMarkingReady || viewModel.isSkipping
+        viewModel.isMarkingReady || viewModel.isSkipping || isPrinting
     }
 
     private var actionButtons: some View {
@@ -181,6 +182,7 @@ struct AutoDispatchSection: View {
             }
             .buttonStyle(.bordered)
             .disabled(isActionInProgress)
+            .opacity(isActionInProgress ? 0.4 : 1.0)
         }
     }
 

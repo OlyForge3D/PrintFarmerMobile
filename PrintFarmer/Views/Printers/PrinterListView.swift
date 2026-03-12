@@ -6,6 +6,10 @@ struct PrinterListView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = PrinterListViewModel()
 
+    private var iPadColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 340))]
+    }
+
     var body: some View {
         @Bindable var router = router
 
@@ -69,16 +73,18 @@ struct PrinterListView: View {
                     ContentUnavailableView.search(text: viewModel.searchText)
                         .padding(.top, 40)
                 } else if sizeClass == .regular {
-                    // iPad: full-width horizontal cards
-                    ForEach(viewModel.filteredPrinters) { printer in
-                        NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
-                            iPadPrinterCardView(printer: printer)
+                    // iPad: adaptive grid of cards
+                    LazyVGrid(columns: iPadColumns, spacing: 12) {
+                        ForEach(viewModel.filteredPrinters) { printer in
+                            NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
+                                iPadPrinterCardView(printer: printer)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(
+                                "\(printer.name), \(printer.state ?? "unknown") status"
+                                + "\(printer.isOnline ? ", online" : ", offline")"
+                            )
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(
-                            "\(printer.name), \(printer.state ?? "unknown") status"
-                            + "\(printer.isOnline ? ", online" : ", offline")"
-                        )
                     }
                 } else {
                     ForEach(viewModel.filteredPrinters) { printer in
