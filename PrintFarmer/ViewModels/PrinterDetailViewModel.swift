@@ -94,6 +94,7 @@ final class PrinterDetailViewModel {
             // Backend sends progress as 0-100; normalize to 0-1.0 for SwiftUI
             if let prog = update.progress { p.progress = prog / 100.0 }
             if let name = update.jobName { p.jobName = name }
+            if let fn = update.fileName { p.fileName = fn }
             if let thumb = update.thumbnailUrl { p.thumbnailUrl = thumb }
             if let cam = update.cameraStreamUrl { p.cameraStreamUrl = cam }
             if let hotend = update.hotendTemp { p.hotendTemp = hotend }

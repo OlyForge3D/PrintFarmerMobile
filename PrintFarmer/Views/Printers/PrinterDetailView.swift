@@ -253,7 +253,7 @@ struct PrinterDetailView: View {
                     headerSection(printer)
                     temperatureSection(printer)
 
-                    if let jobName = printer.jobName,
+                    if let jobName = printer.fileName ?? printer.jobName,
                        let state = printer.state?.lowercased(),
                        state == "printing" || state == "paused" {
                         currentJobSection(jobName: jobName, progress: printer.progress)
@@ -327,7 +327,7 @@ struct PrinterDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 cameraSection(printer)
 
-                if let jobName = printer.jobName,
+                if let jobName = printer.fileName ?? printer.jobName,
                    let state = printer.state?.lowercased(),
                    state == "printing" || state == "paused" {
                     currentJobSection(jobName: jobName, progress: printer.progress)

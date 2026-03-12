@@ -56,7 +56,7 @@ struct PrinterCardView: View {
             }
 
             // Job progress (only when actively printing or paused)
-            if let jobName = printer.jobName, let progress = printer.progress,
+            if let jobName = printer.fileName ?? printer.jobName, let progress = printer.progress,
                let state = printer.state?.lowercased(),
                state == "printing" || state == "paused" {
                 VStack(alignment: .leading, spacing: 4) {

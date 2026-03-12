@@ -201,6 +201,7 @@ struct Printer: Codable, Identifiable, Sendable {
     var state: String?
     var progress: Double?
     var jobName: String?
+    var fileName: String?
     var thumbnailUrl: String?
     var cameraStreamUrl: String?
     var cameraSnapshotUrl: String?
@@ -227,7 +228,7 @@ struct Printer: Codable, Identifiable, Sendable {
         case manufacturerId, manufacturerName, modelId, modelName, motionType
         case backend, apiKey, originalServerUrl, backendPort, frontendPort
         case inMaintenance, isEnabled
-        case isOnline, state, progress, jobName, thumbnailUrl
+        case isOnline, state, progress, jobName, fileName, thumbnailUrl
         case cameraStreamUrl, cameraSnapshotUrl
         case x, y, z, hotendTemp, bedTemp, hotendTarget, bedTarget, homedAxes
         case spoolInfo, backendUrl, frontendUrl, location
@@ -258,6 +259,7 @@ struct Printer: Codable, Identifiable, Sendable {
         // Backend sends progress as 0-100; normalize to 0-1.0 for SwiftUI
         progress = try c.decodeIfPresent(Double.self, forKey: .progress).map { $0 / 100.0 }
         jobName = try c.decodeIfPresent(String.self, forKey: .jobName)
+        fileName = try c.decodeIfPresent(String.self, forKey: .fileName)
         thumbnailUrl = try c.decodeIfPresent(String.self, forKey: .thumbnailUrl)
         cameraStreamUrl = try c.decodeIfPresent(String.self, forKey: .cameraStreamUrl)
         cameraSnapshotUrl = try c.decodeIfPresent(String.self, forKey: .cameraSnapshotUrl)

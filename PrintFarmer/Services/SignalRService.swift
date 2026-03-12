@@ -286,6 +286,9 @@ final class SignalRService: @unchecked Sendable, SignalRServiceProtocol {
                 logger.warning("Failed to decode jobqueueupdate: \(error.localizedDescription)")
             }
 
+        case "toolheadupdate", "extruderupdate", "heaterbedupdate":
+            break
+
         default:
             logger.debug("Unhandled SignalR event: \(target)")
         }

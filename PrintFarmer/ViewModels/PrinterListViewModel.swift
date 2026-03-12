@@ -42,6 +42,7 @@ final class PrinterListViewModel {
         if let s = update.state { printers[idx].state = s }
         if let prog = update.progress { printers[idx].progress = prog / 100.0 }
         if let name = update.jobName { printers[idx].jobName = name }
+        if let fn = update.fileName { printers[idx].fileName = fn }
         if let hotend = update.hotendTemp { printers[idx].hotendTemp = hotend }
         if let bed = update.bedTemp { printers[idx].bedTemp = bed }
         if let ht = update.hotendTarget { printers[idx].hotendTarget = ht }
