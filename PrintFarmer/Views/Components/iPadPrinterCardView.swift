@@ -81,7 +81,7 @@ struct iPadPrinterCardView: View {
                 temperatureText(current: printer.hotendTemp, target: printer.hotendTarget)
             } icon: {
                 NozzleIcon()
-                    .fill(iconColor(for: printer.hotendTarget))
+                    .fill(hotendIconColor)
                     .frame(width: 16, height: 16)
             }
             .font(.subheadline)
@@ -92,7 +92,7 @@ struct iPadPrinterCardView: View {
                 temperatureText(current: printer.bedTemp, target: printer.bedTarget)
             } icon: {
                 RadiatorIcon()
-                    .fill(iconColor(for: printer.bedTarget))
+                    .fill(bedIconColor)
                     .frame(width: 16, height: 16)
             }
             .font(.subheadline)
@@ -114,11 +114,19 @@ struct iPadPrinterCardView: View {
         }
     }
 
-    private func iconColor(for target: Double?) -> Color {
-        if let target, target > 0 {
-            return .pfWarning
+    private var hotendIconColor: Color {
+        if let target = printer.hotendTarget, target > 0 {
+            return .red
         } else {
-            return .pfTextTertiary
+            return .red.opacity(0.35)
+        }
+    }
+
+    private var bedIconColor: Color {
+        if let target = printer.bedTarget, target > 0 {
+            return .blue
+        } else {
+            return .blue.opacity(0.35)
         }
     }
 

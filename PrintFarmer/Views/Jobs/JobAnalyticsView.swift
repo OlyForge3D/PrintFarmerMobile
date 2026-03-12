@@ -59,9 +59,6 @@ struct JobAnalyticsView: View {
                 if !viewModel.modelStats.isEmpty {
                     modelStatsSection
                 }
-
-                // Filtered job list
-                filteredJobList
             }
             .padding()
         }
@@ -154,84 +151,4 @@ struct JobAnalyticsView: View {
         }
     }
 
-    // MARK: - Filtered Job List
-
-    private var filteredJobList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Jobs")
-                    .font(.title2.bold())
-
-                Text("\(viewModel.jobs.count)")
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.pfAccent.opacity(0.15), in: Capsule())
-                    .foregroundStyle(Color.pfAccent)
-
-                Spacer()
-            }
-
-            if viewModel.jobs.isEmpty {
-                Text("No jobs match the current filters")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-            } else {
-                ForEach(viewModel.jobs, id: \.job.id) { job in
-                    jobRow(job)
-                }
-            }
-        }
-    }
-
-    private func jobRow(_ job: QueuedJobWithMeta) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(job.gcodeFile?.fileName ?? job.job.name)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                Spacer()
-                Text(job.job.status.capitalized)
-                    .font(.caption2.weight(.semibold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(statusColor(job.job.status).opacity(0.15), in: Capsule())
-                    .foregroundStyle(statusColor(job.job.status))
-            }
-
-            HStack {
-                if let printerName = job.job.printerName ?? job.assignedPrinter?.name {
-                    Label(printerName, systemImage: "printer")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if let material = job.gcodeFile?.materialType {
-                    Text(material)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(10)
-        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.pfBorder, lineWidth: 1)
-        )
-    }
-
-    private func statusColor(_ status: String) -> Color {
-        switch status.lowercased() {
-        case "completed": return .pfSuccess
-        case "printing": return .pfAccent
-        case "queued": return .pfSecondaryAccent
-        case "failed": return .pfError
-        case "cancelled": return .pfTextTertiary
-        case "paused": return .pfWarning
-        default: return .pfTextSecondary
-        }
-    }
 }
