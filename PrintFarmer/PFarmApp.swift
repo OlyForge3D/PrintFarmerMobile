@@ -47,6 +47,9 @@ struct PFarmApp: App {
                           let destination = DeepLinkHandler.parse(url: url) else { return }
                     router.navigate(to: destination)
                 }
+                .onReceive(NotificationCenter.default.publisher(for: .localNotificationTapped)) { _ in
+                    router.selectedTab = .printers
+                }
                 #endif
                 .task {
                     await authViewModel.restoreSession()

@@ -16,7 +16,11 @@ struct RootView: View {
             if authViewModel.isAuthenticated {
                 ContentView()
                     .task {
-                        pendingReadyMonitor.configure(autoPrintService: services.autoPrintService)
+                        pendingReadyMonitor.configure(
+                            autoPrintService: services.autoPrintService,
+                            printerService: services.printerService
+                        )
+                        await pendingReadyMonitor.requestNotificationPermission()
                         pendingReadyMonitor.startMonitoring()
                         do {
                             try await services.signalRService.connect()
