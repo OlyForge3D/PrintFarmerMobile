@@ -156,6 +156,13 @@ enum NotificationType: String, Codable, Sendable {
     case jobResumed = "JobResumed"
     case queueAlert = "QueueAlert"
     case systemAlert = "SystemAlert"
+    case bedClearRequired = "BedClearRequired"
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        self = NotificationType(rawValue: rawValue) ?? .systemAlert
+    }
 }
 
 enum NotificationFrequency: String, Codable, Sendable {
@@ -190,26 +197,27 @@ struct Printer: Codable, Identifiable, Sendable {
     let isEnabled: Bool
 
     // Live status (from SignalR cache)
-    let isOnline: Bool
-    let state: String?
-    let progress: Double?
-    let jobName: String?
-    let thumbnailUrl: String?
-    let cameraStreamUrl: String?
-    let cameraSnapshotUrl: String?
+    var isOnline: Bool
+    var state: String?
+    var progress: Double?
+    var jobName: String?
+    var fileName: String?
+    var thumbnailUrl: String?
+    var cameraStreamUrl: String?
+    var cameraSnapshotUrl: String?
 
     // Telemetry
-    let x: Double?
-    let y: Double?
-    let z: Double?
-    let hotendTemp: Double?
-    let bedTemp: Double?
-    let hotendTarget: Double?
-    let bedTarget: Double?
-    let homedAxes: String?
+    var x: Double?
+    var y: Double?
+    var z: Double?
+    var hotendTemp: Double?
+    var bedTemp: Double?
+    var hotendTarget: Double?
+    var bedTarget: Double?
+    var homedAxes: String?
 
     // Metadata
-    let spoolInfo: PrinterSpoolInfo?
+    var spoolInfo: PrinterSpoolInfo?
     let backendUrl: String?
     let frontendUrl: String?
     let location: LocationSummary?
@@ -220,7 +228,7 @@ struct Printer: Codable, Identifiable, Sendable {
         case manufacturerId, manufacturerName, modelId, modelName, motionType
         case backend, apiKey, originalServerUrl, backendPort, frontendPort
         case inMaintenance, isEnabled
-        case isOnline, state, progress, jobName, thumbnailUrl
+        case isOnline, state, progress, jobName, fileName, thumbnailUrl
         case cameraStreamUrl, cameraSnapshotUrl
         case x, y, z, hotendTemp, bedTemp, hotendTarget, bedTarget, homedAxes
         case spoolInfo, backendUrl, frontendUrl, location
@@ -251,6 +259,7 @@ struct Printer: Codable, Identifiable, Sendable {
         // Backend sends progress as 0-100; normalize to 0-1.0 for SwiftUI
         progress = try c.decodeIfPresent(Double.self, forKey: .progress).map { $0 / 100.0 }
         jobName = try c.decodeIfPresent(String.self, forKey: .jobName)
+        fileName = try c.decodeIfPresent(String.self, forKey: .fileName)
         thumbnailUrl = try c.decodeIfPresent(String.self, forKey: .thumbnailUrl)
         cameraStreamUrl = try c.decodeIfPresent(String.self, forKey: .cameraStreamUrl)
         cameraSnapshotUrl = try c.decodeIfPresent(String.self, forKey: .cameraSnapshotUrl)

@@ -97,6 +97,7 @@
 		C36E71E0B8D651B87256150D /* PrinterCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A3A3E21352CC6A4514221E /* PrinterCardView.swift */; };
 		C3C22EFA772CBD5125E9F2FE /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007F057316513D6585B3D53A /* NotificationService.swift */; };
 		C46CED04E8CBA839846568BC /* TemperatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DEEFD9852661DAA2637C25 /* TemperatureView.swift */; };
+		2C6155264C934670F2278DC9 /* CustomIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F15146257C59F44A210F002 /* CustomIcons.swift */; };
 		C9B8A7F6E5D4C3B2A1F2E1D0 /* QRSpoolScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* QRSpoolScannerService.swift */; };
 		CB2A92710AD3D33CE4B22717 /* PrinterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F328EBCA1FFAB87F2E1347 /* PrinterService.swift */; };
 		CD8577F6945003EB16C1FF53 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC19E58C13E4D3505F4AC0B5 /* DashboardViewModel.swift */; };
@@ -243,6 +244,7 @@
 		962BFA7750A020B42AECBFA4 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		967769D7BBE893354EE7158A /* ServiceContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceContainer.swift; sourceTree = "<group>"; };
 		97DEEFD9852661DAA2637C25 /* TemperatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureView.swift; sourceTree = "<group>"; };
+		3F15146257C59F44A210F002 /* CustomIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomIcons.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F67890ABCDEF01 /* MockAPIServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIServer.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2FA2A4FEFE32F898CA6799D /* JobListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobListView.swift; sourceTree = "<group>"; };
@@ -654,6 +656,7 @@
 				44789FEC15B2FCE4E3A02174 /* PrintProgressBar.swift */,
 				57A3A3E21352CC6A4514221E /* PrinterCardView.swift */,
 				4E45A19848758E2DB8543C2A /* StatusBadge.swift */,
+				3F15146257C59F44A210F002 /* CustomIcons.swift */,
 				97DEEFD9852661DAA2637C25 /* TemperatureView.swift */,
 			);
 			path = Components;
@@ -934,6 +937,7 @@
 				977E6F182EC8F10888253205 /* PrintProgressBar.swift in Sources */,
 				C36E71E0B8D651B87256150D /* PrinterCardView.swift in Sources */,
 				57E23E107ED77369284AF9D4 /* StatusBadge.swift in Sources */,
+				2C6155264C934670F2278DC9 /* CustomIcons.swift in Sources */,
 				C46CED04E8CBA839846568BC /* TemperatureView.swift in Sources */,
 				C0CF42E5C08F7567EDD6E459 /* DashboardView.swift in Sources */,
 				676E7DBB0DA21342C6F6B86E /* JobDetailView.swift in Sources */,

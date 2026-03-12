@@ -325,7 +325,7 @@ private struct ActiveJobRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(printer.jobName ?? "Unknown Job")
+                    Text(printer.fileName ?? printer.jobName ?? "Unknown Job")
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
 

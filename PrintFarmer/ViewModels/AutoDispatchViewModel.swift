@@ -33,6 +33,19 @@ final class AutoDispatchViewModel {
         guard let autoDispatchService else { return }
         do {
             readyResult = try await autoDispatchService.markReady(printerId: printerId)
+            // Optimistically transition away from PendingReady — the backend
+            // processes the state machine asynchronously so an immediate reload
+            // often still returns PendingReady even though the action succeeded.
+            if let s = status {
+                status = AutoDispatchStatus(
+                    printerId: s.printerId,
+                    autoDispatchEnabled: s.autoDispatchEnabled,
+                    state: "Ready",
+                    queuedJobCount: max(s.queuedJobCount - 1, 0)
+                )
+            }
+            // Reload after a short delay for the authoritative state
+            try? await Task.sleep(for: .seconds(2))
             await loadStatus(printerId: printerId)
         } catch {
             self.error = error.localizedDescription

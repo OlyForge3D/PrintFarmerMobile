@@ -10,6 +10,7 @@ struct PrinterStatusUpdate: Codable, Sendable {
     let state: String?
     let progress: Double?
     let jobName: String?
+    let fileName: String?
     let thumbnailUrl: String?
     let cameraStreamUrl: String?
     let x: Double?

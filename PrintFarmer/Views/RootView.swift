@@ -18,6 +18,11 @@ struct RootView: View {
                     .task {
                         pendingReadyMonitor.configure(autoPrintService: services.autoPrintService)
                         pendingReadyMonitor.startMonitoring()
+                        do {
+                            try await services.signalRService.connect()
+                        } catch {
+                            // SignalR will auto-reconnect; log silently
+                        }
                     }
                     .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
                         router.pendingReadyCount = newValue
@@ -32,6 +37,7 @@ struct RootView: View {
             if !isAuthenticated {
                 pendingReadyMonitor.stopMonitoring()
                 router.pendingReadyCount = 0
+                Task { await services.signalRService.disconnect() }
             }
         }
     }

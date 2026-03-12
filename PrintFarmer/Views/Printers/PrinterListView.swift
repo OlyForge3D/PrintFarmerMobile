@@ -50,6 +50,7 @@ struct PrinterListView: View {
         }
         .task {
             viewModel.configure(printerService: services.printerService)
+            viewModel.configureSignalR(services.signalRService)
             await viewModel.loadPrinters()
         }
     }
