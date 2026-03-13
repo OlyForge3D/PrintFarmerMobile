@@ -287,7 +287,7 @@ struct DashboardView: View {
                         NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
                             ActiveJobRow(
                                 printer: printer,
-                                estimatedCompletion: viewModel.queueOverview.first(where: { $0.printerId == printer.id })?.estimatedCompletionTime
+                                activeJob: viewModel.activeJobForPrinter(printer.id)
                             )
                         }
                         .buttonStyle(.plain)
@@ -298,7 +298,7 @@ struct DashboardView: View {
                     NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
                         ActiveJobRow(
                             printer: printer,
-                            estimatedCompletion: viewModel.queueOverview.first(where: { $0.printerId == printer.id })?.estimatedCompletionTime
+                            activeJob: viewModel.activeJobForPrinter(printer.id)
                         )
                     }
                     .buttonStyle(.plain)
@@ -954,7 +954,19 @@ func destinationView(for destination: AppDestination) -> some View {
 
 private struct ActiveJobRow: View {
     let printer: Printer
-    var estimatedCompletion: Date?
+    var activeJob: QueuedPrintJobResponse?
+
+    private var etaInfo: (remaining: TimeInterval, completion: Date)? {
+        guard let startTime = activeJob?.job.actualStartTimeUtc,
+              let estSeconds = activeJob?.job.estimatedPrintTimeSeconds, estSeconds > 0 else {
+            return nil
+        }
+        let total = TimeInterval(estSeconds)
+        let elapsed = Date.now.timeIntervalSince(startTime)
+        let remaining = max(0, total - elapsed)
+        let completion = Date.now.addingTimeInterval(remaining)
+        return (remaining, completion)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -985,17 +997,17 @@ private struct ActiveJobRow: View {
                 }
             }
 
-            if let eta = estimatedCompletion {
+            if let eta = etaInfo {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                    if eta > Date() {
-                        Text("~\(eta.timeRemainingFormatted) left")
+                    if eta.remaining > 0 {
+                        Text("~\(eta.remaining.durationFormatted) left")
                             .font(.caption)
                         Text("·")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
-                        Text("Done \(eta.shortTimeFormatted)")
+                        Text("Done \(eta.completion.shortTimeFormatted)")
                             .font(.caption)
                     } else {
                         Text("Completing…")
