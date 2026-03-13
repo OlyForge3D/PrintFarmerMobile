@@ -29,7 +29,7 @@ final class MockJobAnalyticsService: JobAnalyticsServiceProtocol, @unchecked Sen
     func getStats() async throws -> QueueStats {
         getStatsCalled = true
         if let error = errorToThrow { throw error }
-        return statsToReturn!
+        return statsToReturn ?? QueueStats(totalQueued: 0, totalPrinting: 0, totalPaused: 0, averageWaitTimeMinutes: 0, byModel: [])
     }
     
     func getModelStats() async throws -> [QueuePrinterModelStats] {

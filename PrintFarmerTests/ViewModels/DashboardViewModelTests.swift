@@ -10,6 +10,7 @@ final class DashboardViewModelTests: XCTestCase {
     private var mockPrinterService: MockPrinterService!
     private var mockJobService: MockJobService!
     private var mockStatsService: MockStatisticsService!
+    private var mockJobAnalyticsService: MockJobAnalyticsService!
     private var viewModel: DashboardViewModel!
 
     override func setUp() {
@@ -17,11 +18,13 @@ final class DashboardViewModelTests: XCTestCase {
         mockPrinterService = MockPrinterService()
         mockJobService = MockJobService()
         mockStatsService = MockStatisticsService()
+        mockJobAnalyticsService = MockJobAnalyticsService()
         viewModel = DashboardViewModel()
         viewModel.configure(
             printerService: mockPrinterService,
             jobService: mockJobService,
-            statisticsService: mockStatsService
+            statisticsService: mockStatsService,
+            jobAnalyticsService: mockJobAnalyticsService
         )
     }
 
@@ -30,6 +33,7 @@ final class DashboardViewModelTests: XCTestCase {
         mockPrinterService = nil
         mockJobService = nil
         mockStatsService = nil
+        mockJobAnalyticsService = nil
         super.tearDown()
     }
 

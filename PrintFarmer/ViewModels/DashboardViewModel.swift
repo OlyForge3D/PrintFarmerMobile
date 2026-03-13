@@ -5,6 +5,7 @@ import os
 final class DashboardViewModel {
     var printers: [Printer] = []
     var queueOverview: [QueueOverview] = []
+    var activeJobs: [QueuedPrintJobResponse] = []
     var summary: StatisticsSummary?
     var queueStats: QueueStats?
     var modelStats: [QueuePrinterModelStats] = []
@@ -63,8 +64,14 @@ final class DashboardViewModel {
         do {
             async let printersTask = printerService.list()
             async let queueTask = jobService.list()
+            async let allJobsTask = jobService.listAllJobs()
             printers = try await printersTask
             queueOverview = try await queueTask
+            let allJobs = try await allJobsTask
+            activeJobs = allJobs.filter {
+                guard let status = $0.job.jobStatus else { return false }
+                return [.printing, .starting, .paused].contains(status)
+            }
 
             do {
                 summary = try await statisticsService?.getSummary()
@@ -133,6 +140,11 @@ final class DashboardViewModel {
     }
 
     // MARK: - Farm Status Helpers
+
+    func activeJobForPrinter(_ printerId: UUID) -> QueuedPrintJobResponse? {
+        let idString = printerId.uuidString
+        return activeJobs.first { $0.job.assignedPrinterId?.caseInsensitiveCompare(idString) == .orderedSame }
+    }
 
     var activePrintingPrinters: [Printer] {
         printers.filter { $0.state?.lowercased() == "printing" }
