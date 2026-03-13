@@ -90,3 +90,32 @@
 
 **User Preference:** Jeff validated that "Emergency Stop as a big red button makes sense" and questioned whether "all the other colors [are] really needed" — this recommendation addresses that concern by reducing color usage to semantic-only (red for destructive).
 
+### 2025-07-18: Dashboard / Jobs Tab Overlap Audit
+**Problem:** Dashboard "Active" page has two sections — "Active Jobs" and "Active Print ETAs" — showing the same jobs. ETAs section shows no actual ETA data. Jobs tab also shows active jobs, creating triple redundancy.
+
+**Root Cause:** Both Dashboard sections pull from `Printer` objects (filtered by state). "Active Print ETAs" (`activePrintETAsSection`) shows job name, printer name, and progress % as text — but no time-based ETA despite the section title. `ActiveJobRow` shows the same data with a progress bar instead.
+
+**Key Architecture Insight:**
+- Dashboard `activeJobsSection` filters `viewModel.printers` (Printer objects) — navigates to PrinterDetail
+- Dashboard `activePrintETAsSection` filters `viewModel.activePrintingPrinters` (same Printer objects, but only "printing" state)
+- Jobs tab `PrintingPage` uses `QueuedPrintJobResponse` objects — navigates to JobDetail
+- ETA data exists in models (`QueueOverview.estimatedCompletionTime`, `QueuedPrintJobResponse.estimatedCompletionTime`, `QueuedPrintJobResponse.estimatedStartTime`) but is NOT surfaced anywhere in the UI
+
+**Recommendation (awaiting approval):**
+1. Remove "Active Print ETAs" section entirely
+2. Enhance "Active Jobs" cards to include: progress %, time remaining, estimated completion time
+3. Surface `estimatedCompletionTime` from existing model data
+4. Keep Dashboard as farm-status-at-a-glance; Jobs tab for full job management
+
+**Decision Document:** `.squad/decisions/inbox/parker-dashboard-jobs-overlap.md`
+
+**User Preference:** Jeff wants less overlap/redundancy between views. Expects "ETAs" to show actual estimated completion times. Values clear purpose distinction between Dashboard (overview) and Jobs (management).
+
+**Key File Paths:**
+- Dashboard view: `PrintFarmer/Views/Dashboard/DashboardView.swift`
+- Dashboard VM: `PrintFarmer/ViewModels/DashboardViewModel.swift` (line 137: `activePrintingPrinters`)
+- Jobs list: `PrintFarmer/Views/Jobs/JobListView.swift`
+- ETA models: `PrintFarmer/Models/Models.swift` (lines 489, 503: `estimatedCompletionTime`)
+- Dashboard pages: Overview (fleet summary), Active (jobs + ETAs), Queue (up next + model breakdown + dispatch link)
+- Jobs pages: Queue, Printing, Recent
+
