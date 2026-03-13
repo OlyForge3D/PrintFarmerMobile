@@ -7,6 +7,25 @@ extension Date {
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: self, relativeTo: .now)
     }
+
+    /// Formats time remaining from now until this date (e.g., "2h 15m").
+    var timeRemainingFormatted: String {
+        let remaining = self.timeIntervalSince(Date())
+        guard remaining > 0 else { return "0m" }
+        let hours = Int(remaining) / 3600
+        let minutes = (Int(remaining) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
+    /// Formats the date as a short time string (e.g., "2:45 PM").
+    var shortTimeFormatted: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: self)
+    }
 }
 
 extension Double {

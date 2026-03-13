@@ -467,3 +467,28 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 
 ### Cross-Team Learning
 **CodingKeys Pattern for API Compatibility:** This approach (rename Swift types, use CodingKeys for backward compat) can be applied to future terminology migrations without backend changes. Document this pattern in team runbook.
+
+---
+
+## 2026-03-13 — Dispatch Back-Button Crash Investigation
+
+**Status:** ✅ Investigation complete, fixes recommended (not yet implemented)
+
+### Learnings
+- **Task.isCancelled guards are insufficient alone**: They only protect against cancellation of the *calling* task. Unstructured `Task { }` blocks (e.g., Retry buttons) are never cancelled by SwiftUI's `.task` lifecycle — the guards silently pass through.
+- **Crash root cause**: `DispatchDashboardView.swift` line 20 creates an unstructured `Task { }` in the Retry button that survives view dismissal. The `Task.isCancelled` guards added in commit bd18e97 are ineffective for this code path.
+- **Pattern for future**: Any button action that launches `Task { }` inside a navigation destination view must either (a) store and cancel the task on disappear, or (b) use a ViewModel-level `isActive` flag.
+- **Dashboard swipeable pages pattern**: DashboardView uses `TabView(.page)` with 3 pages on iPhone (Overview, Active, Queue) + `PageIndicator`. Dispatch could become a 4th page.
+- **Navigation architecture**: Dispatch is a NavigationLink push from Dashboard's QueuePage. It uses `AppDestination.dispatchDashboard` resolved by `destinationView(for:)` free function.
+- **No SignalR on Dispatch**: DispatchViewModel has no SignalR listeners or timers — crash is purely a task lifecycle issue.
+- **AutoDispatchViewModel also lacks guards**: `AutoDispatchSection.swift` buttons create unstructured Tasks without cancellation handling — same pattern, potential same bug on PrinterDetailView back navigation.
+
+### Key File Paths
+- `PrintFarmer/Views/Dashboard/DispatchDashboardView.swift` — Dispatch view with Retry button (crash site)
+- `PrintFarmer/ViewModels/DispatchViewModel.swift` — ViewModel with existing guards
+- `PrintFarmer/Views/Dashboard/DashboardView.swift` — Parent view, swipeable TabView pattern
+- `PrintFarmer/Navigation/AppDestination.swift` — Navigation enum
+- `PrintFarmer/Views/Printers/AutoDispatchSection.swift` — Same unguarded Task pattern (related risk)
+
+### Decision Filed
+- `.squad/decisions/inbox/lambert-dispatch-crash.md` — Full root cause analysis, 3 recommended fixes

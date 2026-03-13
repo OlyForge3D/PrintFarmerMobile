@@ -5,6 +5,8 @@ struct DashboardView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = DashboardViewModel()
+    @State private var dispatchViewModel = DispatchViewModel()
+    @State private var dispatchRetryTask: Task<Void, Never>?
     @State private var currentPage = 0
 
     var body: some View {
@@ -41,10 +43,12 @@ struct DashboardView: View {
                                     .tag(1)
                                 QueuePage()
                                     .tag(2)
+                                DispatchPage()
+                                    .tag(3)
                             }
                             .tabViewStyle(.page(indexDisplayMode: .never))
                             
-                            PageIndicator(currentPage: $currentPage, pageCount: 3, labels: ["Overview", "Active", "Queue"])
+                            PageIndicator(currentPage: $currentPage, pageCount: 4, labels: ["Overview", "Active", "Queue", "Dispatch"])
                                 .padding(.bottom, 8)
                         }
                     } else {
@@ -81,6 +85,10 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 20) {
                 summarySection
                 
+                if let summary = viewModel.summary {
+                    utilizationSection(summary: summary)
+                }
+                
                 if let stats = viewModel.queueStats {
                     queueHealthSection(stats: stats)
                 }
@@ -97,10 +105,6 @@ struct DashboardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 activeJobsSection
-                
-                if !viewModel.activePrintingPrinters.isEmpty {
-                    activePrintETAsSection
-                }
             }
             .padding()
         }
@@ -120,13 +124,52 @@ struct DashboardView: View {
                 if !viewModel.modelStats.isEmpty {
                     modelBreakdownSection
                 }
-                
-                dispatchLink
             }
             .padding()
         }
         .refreshable {
             await viewModel.loadDashboard()
+        }
+    }
+    
+    @ViewBuilder
+    private func DispatchPage() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if dispatchViewModel.isLoading && dispatchViewModel.queueStatus == nil {
+                    ProgressView("Loading dispatch…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = dispatchViewModel.error, dispatchViewModel.queueStatus == nil {
+                    ContentUnavailableView {
+                        Label("Error", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Retry") {
+                            dispatchRetryTask = Task {
+                                await dispatchViewModel.loadQueueStatus()
+                                await dispatchViewModel.loadHistory()
+                            }
+                        }
+                    }
+                } else {
+                    dispatchStatusCards
+                    dispatchHistorySection
+                }
+            }
+            .padding()
+        }
+        .refreshable {
+            await dispatchViewModel.loadQueueStatus()
+            await dispatchViewModel.loadHistory()
+        }
+        .task {
+            dispatchViewModel.configure(dispatchService: services.dispatchService)
+            await dispatchViewModel.loadQueueStatus()
+            await dispatchViewModel.loadHistory()
+        }
+        .onDisappear {
+            dispatchRetryTask?.cancel()
         }
     }
     
@@ -143,12 +186,18 @@ struct DashboardView: View {
                 // Fleet summary cards
                 summarySection
                 
+                // Utilization
+                if let summary = viewModel.summary {
+                    utilizationSection(summary: summary)
+                }
+                
                 // iPad: 2-column layout for active jobs + dispatch
                 HStack(alignment: .top, spacing: 16) {
                     activeJobsSection
                         .frame(maxWidth: .infinity)
                     VStack(alignment: .leading, spacing: 16) {
-                        dispatchLink
+                        dispatchStatusCards
+                        dispatchHistorySection
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -236,7 +285,10 @@ struct DashboardView: View {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(topPrinters) { printer in
                         NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
-                            ActiveJobRow(printer: printer)
+                            ActiveJobRow(
+                                printer: printer,
+                                estimatedCompletion: viewModel.queueOverview.first(where: { $0.printerId == printer.id })?.estimatedCompletionTime
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -244,7 +296,10 @@ struct DashboardView: View {
             } else {
                 ForEach(topPrinters) { printer in
                     NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
-                        ActiveJobRow(printer: printer)
+                        ActiveJobRow(
+                            printer: printer,
+                            estimatedCompletion: viewModel.queueOverview.first(where: { $0.printerId == printer.id })?.estimatedCompletionTime
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -272,25 +327,9 @@ struct DashboardView: View {
                 queueHealthSection(stats: stats)
             }
 
-            // Model breakdown + Active ETAs in 2-column on iPad
-            if sizeClass == .regular {
-                HStack(alignment: .top, spacing: 16) {
-                    if !viewModel.modelStats.isEmpty {
-                        modelBreakdownSection
-                            .frame(maxWidth: .infinity)
-                    }
-                    if !viewModel.activePrintingPrinters.isEmpty {
-                        activePrintETAsSection
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            } else {
-                if !viewModel.modelStats.isEmpty {
-                    modelBreakdownSection
-                }
-                if !viewModel.activePrintingPrinters.isEmpty {
-                    activePrintETAsSection
-                }
+            // Model breakdown
+            if !viewModel.modelStats.isEmpty {
+                modelBreakdownSection
             }
 
             // Up Next
@@ -495,37 +534,288 @@ struct DashboardView: View {
         )
     }
 
-    // MARK: - Dispatch Link
+    // MARK: - Dispatch Inline Content
 
-    private var dispatchLink: some View {
-        NavigationLink(value: AppDestination.dispatchDashboard) {
-            HStack(spacing: 10) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.title3)
-                    .foregroundStyle(Color.pfAccent)
+    private var dispatchStatusCards: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Queue Status")
+                .font(.title2.bold())
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Dispatch Dashboard")
-                        .font(.subheadline.weight(.medium))
-                    Text("View queue status and dispatch history")
+            let twoColumns = Array(repeating: GridItem(.flexible()), count: 2)
+            let threeColumns = Array(repeating: GridItem(.flexible()), count: 3)
+
+            LazyVGrid(columns: twoColumns, spacing: 12) {
+                dispatchCard(
+                    title: "Queued Jobs",
+                    value: "\(dispatchViewModel.totalQueuedJobs)",
+                    subtitle: "Unassigned: \(dispatchViewModel.pendingJobCount)",
+                    icon: "tray.full",
+                    color: .pfSecondaryAccent
+                )
+
+                dispatchCard(
+                    title: "Printers",
+                    value: "\(dispatchViewModel.idlePrinterCount + dispatchViewModel.busyPrinterCount)",
+                    subtitle: "\(dispatchViewModel.idlePrinterCount) Idle · \(dispatchViewModel.busyPrinterCount) Busy",
+                    icon: "printer",
+                    color: .pfAccent
+                )
+            }
+
+            Text("Last 24 Hours")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            LazyVGrid(columns: threeColumns, spacing: 12) {
+                dispatchCard(
+                    title: "Dispatched",
+                    value: "\(dispatchViewModel.dispatchedLast24h)",
+                    icon: "checkmark.circle",
+                    color: .pfSuccess
+                )
+
+                dispatchCard(
+                    title: "Auto",
+                    value: "\(dispatchViewModel.autoDispatchedLast24h)",
+                    icon: "bolt.circle",
+                    color: .pfSecondaryAccent
+                )
+
+                dispatchCard(
+                    title: "Failed",
+                    value: "\(dispatchViewModel.failedLast24h)",
+                    icon: "xmark.circle",
+                    color: dispatchViewModel.failedLast24h > 0 ? .pfWarning : .secondary
+                )
+            }
+
+            if dispatchViewModel.averageScoreLast24h > 0 {
+                dispatchAverageScoreCard
+            }
+
+            if let depths = dispatchViewModel.queueStatus?.printerQueueDepths, !depths.isEmpty {
+                dispatchPrinterQueueDepthsSection(depths)
+            }
+        }
+    }
+
+    private var dispatchAverageScoreCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "gauge.medium")
+                .font(.title3)
+                .foregroundStyle(Color.pfAccent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Avg Dispatch Score (24h)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(String(format: "%.1f", dispatchViewModel.averageScoreLast24h))
+                    .font(.title3.bold().monospacedDigit())
+            }
+
+            Spacer()
+
+            ProgressView(value: min(dispatchViewModel.averageScoreLast24h / 100.0, 1.0))
+                .tint(.pfAccent)
+                .frame(width: 80)
+        }
+        .padding(12)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
+        )
+    }
+
+    private func dispatchPrinterQueueDepthsSection(_ depths: [PrinterQueueDepth]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Printer Queues")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            ForEach(depths, id: \.printerId) { printer in
+                HStack(spacing: 10) {
+                    Image(systemName: printer.isPrinting ? "printer.fill" : "printer")
+                        .foregroundStyle(printer.isAvailable ? Color.pfSuccess : .secondary)
+
+                    Text(printer.printerName)
+                        .font(.subheadline)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(printer.queueDepth) queued")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+
+                    Circle()
+                        .fill(printer.isPrinting ? Color.pfAccent : (printer.isAvailable ? .pfSuccess : .secondary))
+                        .frame(width: 8, height: 8)
+                }
+                .padding(10)
+                .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.pfBorder, lineWidth: 1)
+                )
+            }
+        }
+    }
+
+    private func dispatchCard(
+        title: String,
+        value: String,
+        subtitle: String? = nil,
+        icon: String,
+        color: Color
+    ) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+
+            Text(value)
+                .font(.title2.bold().monospacedDigit())
+
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
+        )
+    }
+
+    private var dispatchHistorySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recent Dispatches")
+                .font(.title2.bold())
+
+            if dispatchViewModel.history.isEmpty {
+                Text("No recent dispatch history")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+            } else {
+                ForEach(dispatchViewModel.history.prefix(20), id: \.id) { entry in
+                    dispatchHistoryRow(entry)
+                }
+            }
+        }
+    }
+
+    private func dispatchHistoryRow(_ entry: DispatchHistoryEntry) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.right.circle.fill")
+                .foregroundStyle(Color.pfAccent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.jobName ?? "Job \(entry.printJobId.uuidString.prefix(8))")
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    if let printer = entry.printerName {
+                        Label(printer, systemImage: "printer")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(entry.action)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
             }
-            .padding(12)
-            .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.pfBorder, lineWidth: 1)
-            )
+
+            Spacer()
+
+            Text(entry.createdAtUtc, style: .relative)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
-        .buttonStyle(.plain)
+        .padding(10)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Utilization Section
+
+    private func utilizationSection(summary: StatisticsSummary) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Farm Utilization")
+                .font(.title2.bold())
+
+            let columns = sizeClass == .regular
+                ? [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+                : [GridItem(.flexible()), GridItem(.flexible())]
+
+            LazyVGrid(columns: columns, spacing: 12) {
+                utilizationCard(
+                    title: "Success Rate",
+                    value: String(format: "%.0f%%", summary.successRate),
+                    icon: "checkmark.seal",
+                    color: summary.successRate >= 90 ? .pfSuccess : (summary.successRate >= 70 ? .pfWarning : .pfError)
+                )
+                utilizationCard(
+                    title: "Print Hours",
+                    value: String(format: "%.0f", summary.totalPrintHours),
+                    icon: "clock.fill",
+                    color: .pfAccent
+                )
+                utilizationCard(
+                    title: "Filament Used",
+                    value: summary.totalFilamentGrams >= 1000
+                        ? String(format: "%.1f kg", summary.totalFilamentGrams / 1000.0)
+                        : String(format: "%.0f g", summary.totalFilamentGrams),
+                    icon: "circle.circle",
+                    color: .pfSecondaryAccent
+                )
+                utilizationCard(
+                    title: "Completed",
+                    value: "\(summary.completedJobs)/\(summary.totalJobs)",
+                    icon: "tray.full.fill",
+                    color: .pfTextPrimary
+                )
+            }
+        }
+    }
+
+    private func utilizationCard(title: String, value: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(value)
+                .font(.title3.bold().monospacedDigit())
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.pfBorder, lineWidth: 1)
+        )
     }
 
     // MARK: - Maintenance Alert
@@ -664,6 +954,7 @@ func destinationView(for destination: AppDestination) -> some View {
 
 private struct ActiveJobRow: View {
     let printer: Printer
+    var estimatedCompletion: Date?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -685,7 +976,33 @@ private struct ActiveJobRow: View {
             }
 
             if let progress = printer.progress {
-                PrintProgressBar(progress: progress, height: 6)
+                HStack(spacing: 8) {
+                    PrintProgressBar(progress: progress, height: 6)
+                    Text("\(Int(progress * 100))%")
+                        .font(.caption.weight(.medium).monospacedDigit())
+                        .foregroundStyle(Color.pfAccent)
+                        .frame(width: 36, alignment: .trailing)
+                }
+            }
+
+            if let eta = estimatedCompletion {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                    if eta > Date() {
+                        Text("~\(eta.timeRemainingFormatted) left")
+                            .font(.caption)
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text("Done \(eta.shortTimeFormatted)")
+                            .font(.caption)
+                    } else {
+                        Text("Completing…")
+                            .font(.caption)
+                    }
+                }
+                .foregroundStyle(.secondary)
             }
         }
         .padding(12)
