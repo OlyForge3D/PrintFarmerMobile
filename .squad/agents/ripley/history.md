@@ -450,3 +450,53 @@ Added a new step in the first-launch flow (between onboarding and login) that pr
 - Matches onboarding page styling exactly
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### MJPEG Livestream for Active Printers (2026-07-24)
+**Files Created:**
+- `PrintFarmer/Views/Components/MJPEGStreamView.swift`
+
+**Files Modified:**
+- `PrintFarmer/ViewModels/PrinterDetailViewModel.swift`
+- `PrintFarmer/Views/Printers/PrinterDetailView.swift`
+- `PrintFarmer.xcodeproj/project.pbxproj`
+
+**Feature Added:**
+Implemented MJPEG livestream display when printers are actively printing, with automatic fallback to static snapshots.
+
+**Implementation:**
+1. **MJPEGStreamView (UIViewRepresentable):**
+   - WKWebView wrapper that natively renders MJPEG streams from `cameraStreamUrl`
+   - Supports camera rotation via CSS transforms
+   - Disables scrolling/bouncing, transparent background for dark mode
+   - `MJPEGStreamContainer` wrapper adds loading indicator with 2s auto-dismiss
+   - `#if canImport(UIKit)` guard for platform compatibility
+
+2. **PrinterDetailViewModel Changes:**
+   - Added `showLivestream: Bool` toggle (default false, auto-enabled when printing)
+   - Added `isActivelyPrinting` computed: true when state is "printing", "starting", or "paused"
+   - Added `canShowLivestream` computed: `isActivelyPrinting && cameraStreamUrl != nil`
+   - `applyLiveUpdate()` auto-toggles livestream on/off when state changes
+   - `loadPrinter()` auto-enables livestream on initial load when printing
+
+3. **PrinterDetailView Camera Section:**
+   - LIVE/SNAPSHOT badge next to "Camera" header (red capsule for live, gray for snapshot)
+   - Toggle button (video.fill ↔ photo icon) to switch between stream and snapshot
+   - Refresh button hidden when in livestream mode (not needed for streams)
+   - Rotation button always visible for both modes
+   - Falls back to snapshot/placeholder when not printing or no stream URL
+
+**Architecture Decisions:**
+- WKWebView approach chosen over custom multipart HTTP parsing — Safari handles MJPEG natively
+- Rotation applied via CSS in WebView (not SwiftUI `.rotationEffect`) to work within the web context
+- Auto-toggle pattern: livestream turns on when printing starts (via SignalR), off when printing stops
+- Manual override preserved: user can toggle back to snapshot even while printing
+
+**Key Patterns:**
+- `#if canImport(UIKit)` for platform-specific WebKit code
+- `UIViewRepresentable` coordinator pattern for WKNavigationDelegate
+- CSS injection via `evaluateJavaScript` for styling the MJPEG stream
+- URL change detection in `updateUIView` via coordinator state
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
