@@ -9,6 +9,7 @@ final class PrinterDetailViewModel {
     var currentJob: PrintJobStatusInfo?
     var snapshotData: Data?
     var isLoadingSnapshot = false
+    var showLivestream = false
     var isLoading = false
     var errorMessage: String?
     var isPerformingAction = false
@@ -106,6 +107,16 @@ final class PrinterDetailViewModel {
             if let z = update.z { p.z = z }
             if let spool = update.spoolInfo { p.spoolInfo = spool }
             printer = p
+
+            // Auto-toggle livestream based on printer state
+            if let state = p.state?.lowercased() {
+                let isPrinterActive = ["printing", "starting", "paused"].contains(state)
+                if isPrinterActive && p.cameraStreamUrl != nil && !showLivestream {
+                    showLivestream = true
+                } else if !isPrinterActive && showLivestream {
+                    showLivestream = false
+                }
+            }
         }
 
         statusDetail = PrinterStatusDetail(
@@ -305,6 +316,13 @@ final class PrinterDetailViewModel {
             logger.warning("Failed to load snapshot: \(error.localizedDescription)")
         }
 
+        // Auto-enable livestream when printer is actively printing
+        if let state = printer?.state?.lowercased(),
+           ["printing", "starting", "paused"].contains(state),
+           printer?.cameraStreamUrl != nil {
+            showLivestream = true
+        }
+
         isLoading = false
     }
 
@@ -395,6 +413,15 @@ final class PrinterDetailViewModel {
 
     var isPaused: Bool {
         printer?.state?.lowercased() == "paused"
+    }
+
+    var isActivelyPrinting: Bool {
+        guard let state = printer?.state?.lowercased() else { return false }
+        return ["printing", "starting", "paused"].contains(state)
+    }
+
+    var canShowLivestream: Bool {
+        isActivelyPrinting && printer?.cameraStreamUrl != nil
     }
 
     var isIdle: Bool {

@@ -102,6 +102,7 @@
 		2B0A1CAE11FC88565FA288EA /* iPadPrinterCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B076B098F30F1506B8E1C983 /* iPadPrinterCardView.swift */; };
 		C3C22EFA772CBD5125E9F2FE /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007F057316513D6585B3D53A /* NotificationService.swift */; };
 		C46CED04E8CBA839846568BC /* TemperatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DEEFD9852661DAA2637C25 /* TemperatureView.swift */; };
+		77F7448C2D183C8F140C41CB /* MJPEGStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFD389576B18CC0E5ADBB63 /* MJPEGStreamView.swift */; };
 		2C6155264C934670F2278DC9 /* CustomIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F15146257C59F44A210F002 /* CustomIcons.swift */; };
 		C9B8A7F6E5D4C3B2A1F2E1D0 /* QRSpoolScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* QRSpoolScannerService.swift */; };
 		CB2A92710AD3D33CE4B22717 /* PrinterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F328EBCA1FFAB87F2E1347 /* PrinterService.swift */; };
@@ -253,6 +254,7 @@
 		962BFA7750A020B42AECBFA4 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		967769D7BBE893354EE7158A /* ServiceContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceContainer.swift; sourceTree = "<group>"; };
 		97DEEFD9852661DAA2637C25 /* TemperatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureView.swift; sourceTree = "<group>"; };
+		DAFD389576B18CC0E5ADBB63 /* MJPEGStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MJPEGStreamView.swift; sourceTree = "<group>"; };
 		3F15146257C59F44A210F002 /* CustomIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomIcons.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F67890ABCDEF01 /* MockAPIServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIServer.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -669,6 +671,7 @@
 				4E45A19848758E2DB8543C2A /* StatusBadge.swift */,
 				3F15146257C59F44A210F002 /* CustomIcons.swift */,
 				97DEEFD9852661DAA2637C25 /* TemperatureView.swift */,
+				DAFD389576B18CC0E5ADBB63 /* MJPEGStreamView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -956,6 +959,7 @@
 				57E23E107ED77369284AF9D4 /* StatusBadge.swift in Sources */,
 				2C6155264C934670F2278DC9 /* CustomIcons.swift in Sources */,
 				C46CED04E8CBA839846568BC /* TemperatureView.swift in Sources */,
+				77F7448C2D183C8F140C41CB /* MJPEGStreamView.swift in Sources */,
 				C0CF42E5C08F7567EDD6E459 /* DashboardView.swift in Sources */,
 				676E7DBB0DA21342C6F6B86E /* JobDetailView.swift in Sources */,
 				3F2C3545841C1FABF8086E77 /* JobListView.swift in Sources */,

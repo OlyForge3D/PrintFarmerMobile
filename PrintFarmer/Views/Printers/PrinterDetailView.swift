@@ -453,7 +453,29 @@ struct PrinterDetailView: View {
                 Text("Camera")
                     .font(.headline)
 
+                if viewModel.canShowLivestream {
+                    Text(viewModel.showLivestream ? "LIVE" : "SNAPSHOT")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(viewModel.showLivestream ? .white : Color.pfTextSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            viewModel.showLivestream ? Color.red : Color.pfBorder,
+                            in: Capsule()
+                        )
+                }
+
                 Spacer()
+
+                if viewModel.canShowLivestream {
+                    Button {
+                        withAnimation { viewModel.showLivestream.toggle() }
+                    } label: {
+                        Image(systemName: viewModel.showLivestream ? "photo" : "video.fill")
+                            .font(.subheadline)
+                    }
+                    .accessibilityLabel(viewModel.showLivestream ? "Switch to snapshot" : "Switch to livestream")
+                }
 
                 if viewModel.snapshotData != nil || printer.cameraSnapshotUrl != nil {
                     Button {
@@ -464,18 +486,34 @@ struct PrinterDetailView: View {
                     }
                     .accessibilityLabel("Rotate camera view")
                     
-                    Button {
-                        Task { await viewModel.refreshSnapshot() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.subheadline)
+                    if !viewModel.showLivestream {
+                        Button {
+                            Task { await viewModel.refreshSnapshot() }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.subheadline)
+                        }
+                        .disabled(viewModel.isLoadingSnapshot)
+                        .accessibilityLabel("Refresh camera snapshot")
                     }
-                    .disabled(viewModel.isLoadingSnapshot)
-                    .accessibilityLabel("Refresh camera snapshot")
                 }
             }
 
             Group {
+                #if canImport(UIKit)
+                if viewModel.showLivestream,
+                   let streamUrlString = printer.cameraStreamUrl,
+                   let streamUrl = URL(string: streamUrlString) {
+                    MJPEGStreamContainer(url: streamUrl, rotation: viewModel.cameraRotation)
+                } else if let data = viewModel.snapshotData {
+                    snapshotImage(from: data)
+                } else if let urlString = printer.cameraSnapshotUrl,
+                          let url = URL(string: urlString) {
+                    asyncSnapshotImage(url: url)
+                } else {
+                    noCameraPlaceholder()
+                }
+                #else
                 if let data = viewModel.snapshotData {
                     snapshotImage(from: data)
                 } else if let urlString = printer.cameraSnapshotUrl,
@@ -484,6 +522,7 @@ struct PrinterDetailView: View {
                 } else {
                     noCameraPlaceholder()
                 }
+                #endif
             }
             .frame(maxWidth: .infinity)
             .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
