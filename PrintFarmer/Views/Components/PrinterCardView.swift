@@ -42,6 +42,9 @@ struct PrinterCardView: View {
                     .font(.caption)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                // Filament row — always visible
+                filamentSection
             }
             .padding(14)
         }
@@ -149,6 +152,54 @@ struct PrinterCardView: View {
             return .blue
         } else {
             return .blue.opacity(0.35)
+        }
+    }
+
+    // MARK: - Filament Info
+
+    @ViewBuilder
+    private var filamentSection: some View {
+        if let spool = printer.spoolInfo, spool.hasActiveSpool {
+            HStack(spacing: 6) {
+                if let hex = spool.colorHex {
+                    Circle()
+                        .fill(Color(hex: hex))
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().strokeBorder(.primary.opacity(0.2), lineWidth: 0.5))
+                }
+
+                if let material = spool.material {
+                    Text(material)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let name = spool.filamentName {
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text(name)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                if let weight = spool.remainingWeightG {
+                    Label {
+                        Text(String(format: "%.0fg", weight))
+                            .font(.caption.monospacedDigit())
+                    } icon: {
+                        Image(systemName: "scalemass")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            Label("No spool loaded", systemImage: "cylinder")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }

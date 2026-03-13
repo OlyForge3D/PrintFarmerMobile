@@ -19,9 +19,13 @@ struct iPadPrinterCardView: View {
                 // Temperature row
                 temperatureSection
 
-                // Filament info row
+                // Filament info row — always visible
                 if let spool = printer.spoolInfo, spool.hasActiveSpool {
                     filamentRow(spool)
+                } else {
+                    Label("No spool loaded", systemImage: "cylinder")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 // Bed clear banner

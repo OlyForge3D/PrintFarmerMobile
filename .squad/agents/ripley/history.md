@@ -500,3 +500,32 @@ Implemented MJPEG livestream display when printers are actively printing, with a
 - URL change detection in `updateUIView` via coordinator state
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### Always-Visible Filament Info on Printer Cards (2026-07-24)
+**Files Modified:**
+- `PrintFarmer/Views/Components/PrinterCardView.swift` (iPhone)
+- `PrintFarmer/Views/Components/iPadPrinterCardView.swift` (iPad)
+
+**Changes Made:**
+1. **iPhone PrinterCardView — Added filament row:**
+   - Added `filamentSection` computed property below temperature row
+   - When `spoolInfo != nil && hasActiveSpool`: shows color circle, material, filament name, remaining weight (matching iPad layout)
+   - When no spool: shows `Label("No spool loaded", systemImage: "cylinder")` in `.caption` / `.secondary`
+
+2. **iPad iPadPrinterCardView — Always-visible filament:**
+   - Removed conditional `if let spool = printer.spoolInfo, spool.hasActiveSpool` guard
+   - Added else branch showing "No spool loaded" label with cylinder icon (matches PrinterDetailView pattern)
+
+**No changes needed:**
+- PendingReady yellow header: already implemented on both cards (`headerBaseColor` has `case "pendingready": return Color(hex: "#eab308")`)
+- Sort order: already implemented in `PrinterListViewModel.sortPriority()` (pendingReady=0, printing=1, ready/idle=2, offline=100)
+- PrinterDetailView: already handles both spool/no-spool states
+
+**Key Patterns:**
+- Filament empty state uses `Label` with `cylinder` SF Symbol, `.caption` font, `.secondary` foreground — consistent with PrinterDetailView
+- `@ViewBuilder` used for `filamentSection` to support conditional content without `AnyView`
+- iPhone filament row uses slightly smaller spacing (6pt) vs iPad (8pt) for compact layout
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
