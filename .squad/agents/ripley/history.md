@@ -565,3 +565,10 @@ Added debug logging (`print("DEBUG headerBaseColor: ...")`) to both card views t
 - ViewModels: `guard isViewActive else { return }` at top of async load methods
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+## 2026-03-14 — Back-Button Crashes & Notification Fixes (Lambert cross-pollination)
+
+**Related fixes from Lambert:**
+- Notification deduplication now uses printer UUID identifiers instead of random UUIDs
+- This ensures proper cleanup when printers leave PendingReady state
+- Impact: Filament indicator cards with yellow "pending" headers benefit from cleaner notification lifecycle

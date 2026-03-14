@@ -502,3 +502,10 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 - On `stopMonitoring()` (logout), all pending-ready notifications are now cleaned up.
 - `AppDelegate` sets `PushNotificationManager.shared` as `UNUserNotificationCenter.delegate` — this is what enables foreground banner display and tap handling.
 - Notification tap on a `PENDING_READY` category posts `.localNotificationTapped` which `PFarmApp` listens to and navigates to the printers tab.
+
+## 2026-03-14 — Notification Deduplication (Ripley cross-pollination)
+
+**Related fixes from Ripley:**
+- Back-button crash fixes added `isViewActive` guards across 13 views and 5 ViewModels
+- Task lifecycle fixes ensure state mutations only happen when views are on-screen
+- Impact: Notification delivery is now safe during rapid navigation (no crashes during notification display)
