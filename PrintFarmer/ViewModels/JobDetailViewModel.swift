@@ -96,17 +96,21 @@ final class JobDetailViewModel {
     // MARK: - Private
 
     private func performAction(_ action: @escaping (any JobServiceProtocol) async throws -> Void) async {
+        guard isViewActive else { return }
         guard let jobService else { return }
         isPerformingAction = true
         actionError = nil
 
         do {
             try await action(jobService)
+            guard isViewActive else { return }
             await loadJob()
         } catch {
+            guard isViewActive else { return }
             actionError = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 }
