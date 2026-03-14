@@ -5,6 +5,7 @@ import SwiftUI
 /// and inline bed-clear banner for PendingReady state.
 struct iPadPrinterCardView: View {
     let printer: Printer
+    var isPendingReady: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -220,10 +221,6 @@ struct iPadPrinterCardView: View {
     }
 
     // MARK: - Computed Properties
-
-    private var isPendingReady: Bool {
-        printer.state?.lowercased() == "pendingready"
-    }
 
     private var statusLabel: String {
         // Check pendingReady BEFORE isOnline — API may report isOnline=false for PendingReady printers

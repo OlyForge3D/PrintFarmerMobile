@@ -3,6 +3,7 @@ import SwiftUI
 /// Compact card for a printer in list/grid views.
 struct PrinterCardView: View {
     let printer: Printer
+    var isPendingReady: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -86,7 +87,7 @@ struct PrinterCardView: View {
 
     private var statusLabel: String {
         // Check pendingReady BEFORE isOnline — API may report isOnline=false for PendingReady printers
-        if printer.state?.lowercased() == "pendingready" { return "Bed Clear" }
+        if isPendingReady { return "Bed Clear" }
         guard printer.isOnline else { return "Offline" }
         guard let state = printer.state else { return "Idle" }
         switch state.lowercased() {
@@ -100,7 +101,7 @@ struct PrinterCardView: View {
 
     private var headerBaseColor: Color {
         // Check pendingReady BEFORE isOnline — a printer awaiting bed clear is reachable
-        if printer.state?.lowercased() == "pendingready" { return Color(hex: "#eab308") }
+        if isPendingReady { return Color(hex: "#eab308") }
         if !printer.isOnline { return Color(hex: "#4b5563") }
         switch printer.state?.lowercased() {
         case "printing": return Color(hex: "#1d4ed8")
@@ -119,7 +120,7 @@ struct PrinterCardView: View {
     }
 
     private var statusAccentColor: Color {
-        if printer.state?.lowercased() == "pendingready" { return .pfWarning }
+        if isPendingReady { return .pfWarning }
         if !printer.isOnline { return .pfTextTertiary }
         switch printer.state?.lowercased() {
         case "printing": return .pfSecondaryAccent

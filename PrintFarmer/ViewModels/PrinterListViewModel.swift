@@ -4,6 +4,7 @@ import Foundation
 final class PrinterListViewModel {
     var printers: [Printer] = []
     var locations: [Location] = []
+    var autoDispatchStatuses: [UUID: AutoDispatchStatus] = [:]
     var isLoading = false
     var errorMessage: String?
     var searchText: String = ""
@@ -21,10 +22,12 @@ final class PrinterListViewModel {
     }
 
     private var printerService: (any PrinterServiceProtocol)?
+    private var autoPrintService: (any AutoDispatchServiceProtocol)?
     private var signalRService: (any SignalRServiceProtocol)?
 
-    func configure(printerService: any PrinterServiceProtocol) {
+    func configure(printerService: any PrinterServiceProtocol, autoPrintService: any AutoDispatchServiceProtocol) {
         self.printerService = printerService
+        self.autoPrintService = autoPrintService
     }
 
     func configureSignalR(_ service: any SignalRServiceProtocol) {
@@ -57,11 +60,22 @@ final class PrinterListViewModel {
 
         do {
             printers = try await printerService.list()
+            await loadAutoDispatchStatuses()
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+    }
+
+    func loadAutoDispatchStatuses() async {
+        guard let autoPrintService else { return }
+        do {
+            let statuses = try await autoPrintService.getAllStatus()
+            autoDispatchStatuses = Dictionary(uniqueKeysWithValues: statuses.map { ($0.printerId, $0) })
+        } catch {
+            // Non-critical — cards will fall back to printer state
+        }
     }
 
     // MARK: - Filtered Results
@@ -73,9 +87,13 @@ final class PrinterListViewModel {
         .sorted { sortPriority($0) < sortPriority($1) }
     }
     
+    func isPendingReady(_ printer: Printer) -> Bool {
+        autoDispatchStatuses[printer.id]?.state == "PendingReady"
+    }
+
     private func sortPriority(_ printer: Printer) -> Int {
         // PendingReady always sorts to top regardless of isOnline
-        if printer.state?.lowercased() == "pendingready" { return 0 }
+        if isPendingReady(printer) { return 0 }
         guard printer.isOnline else { return 100 }
         switch printer.state?.lowercased() {
         case "printing": return 1
