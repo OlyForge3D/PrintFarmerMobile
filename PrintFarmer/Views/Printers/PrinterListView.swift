@@ -58,6 +58,7 @@ struct PrinterListView: View {
             viewModel.configureSignalR(services.signalRService)
             await viewModel.loadPrinters()
         }
+        .onDisappear { retryTask?.cancel() }
     }
 
     // MARK: - Printer List

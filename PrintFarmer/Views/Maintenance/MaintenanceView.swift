@@ -59,6 +59,7 @@ struct MaintenanceView: View {
             viewModel.configure(maintenanceService: services.maintenanceService)
             await viewModel.loadData()
         }
+        .onDisappear { retryTask?.cancel() }
     }
     
     // MARK: - iPhone Pages

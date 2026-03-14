@@ -9,6 +9,7 @@ struct LocalNetworkPermissionView: View {
     @Binding var hasCompletedNetworkPermission: Bool
     @State private var isRequesting = false
     @State private var didRequest = false
+    @State private var permissionTask: Task<Void, Never>?
 
     private let networkAuth = LocalNetworkAuthorization()
 
@@ -73,11 +74,12 @@ struct LocalNetworkPermissionView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.3), value: didRequest)
+        .onDisappear { permissionTask?.cancel() }
     }
 
     private func requestPermission() {
         isRequesting = true
-        Task {
+        permissionTask = Task {
             _ = await networkAuth.requestAuthorization()
             isRequesting = false
             didRequest = true

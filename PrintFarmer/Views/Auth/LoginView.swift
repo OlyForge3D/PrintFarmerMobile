@@ -4,6 +4,7 @@ struct LoginView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = LoginViewModel()
+    @State private var loginTask: Task<Void, Never>?
     @FocusState private var focusedField: LoginField?
 
     private enum LoginField: Hashable {
@@ -40,6 +41,7 @@ struct LoginView: View {
         .onTapGesture { focusedField = nil }
         .animation(.easeInOut(duration: 0.2), value: authViewModel.errorMessage)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isServerURLExpanded)
+        .onDisappear { loginTask?.cancel() }
     }
 
     // MARK: - Branding
@@ -173,8 +175,6 @@ struct LoginView: View {
     private func attemptLogin() {
         guard viewModel.isFormValid, !authViewModel.isLoading else { return }
         focusedField = nil
-        Task {
-            await viewModel.login(using: authViewModel)
-        }
+        loginTask = Task { await viewModel.login(using: authViewModel) }
     }
 }

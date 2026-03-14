@@ -16,6 +16,7 @@ final class SpoolPickerViewModel {
     var selectedStatus: SpoolStatus?
     var isLoading = false
     var errorMessage: String?
+    var isViewActive = true
 
     // Scanning state
     var isQRScannerPresented = false
@@ -197,7 +198,9 @@ final class SpoolPickerViewModel {
         scanError = nil
 
         Task {
+            guard isViewActive else { return }
             let result = await nfcScanner.scan()
+            guard isViewActive else { return }
             await handleScanResult(result)
             isScanning = false
         }
@@ -225,6 +228,7 @@ final class SpoolPickerViewModel {
     // MARK: - Private Helpers
 
     private func fetchAndSelectSpool(id: Int) async {
+        guard isViewActive else { return }
         guard let spoolService else {
             scanError = "Spool service not available"
             return

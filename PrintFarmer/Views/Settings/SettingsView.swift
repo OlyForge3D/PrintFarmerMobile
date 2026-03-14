@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var showLogoutConfirmation = false
     @State private var showChangeURL = false
     @State private var newServerURL = ""
+    @State private var logoutTask: Task<Void, Never>?
 
     var body: some View {
         @Bindable var themeManager = themeManager
@@ -81,7 +82,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .confirmationDialog("Sign Out?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) {
-                    Task { await authViewModel.logout() }
+                    logoutTask = Task { await authViewModel.logout() }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -98,13 +99,14 @@ struct SettingsView: View {
                     let trimmed = newServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmed.isEmpty {
                         UserDefaults.standard.set(trimmed, forKey: APIClient.serverURLKey)
-                        Task { await authViewModel.logout() }
+                        logoutTask = Task { await authViewModel.logout() }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Enter the URL of your Printfarmer server. You will need to sign in again.")
             }
+            .onDisappear { logoutTask?.cancel() }
         }
     }
 }

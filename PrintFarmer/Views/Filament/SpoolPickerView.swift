@@ -102,6 +102,11 @@ struct SpoolPickerView: View {
                 }
                 await viewModel.loadMaterials()
             }
+            .onAppear { viewModel.isViewActive = true }
+            .onDisappear {
+                viewModel.isViewActive = false
+                activeTasks.forEach { $0.cancel() }
+            }
         }
     }
 

@@ -47,9 +47,10 @@ final class PendingReadyMonitor {
         pollingTask = nil
         let idsToClean = notifiedPrinterIds
         notifiedPrinterIds.removeAll()
-        Task {
-            await updateBadgeCount(0)
-            await removeDeliveredNotifications(for: idsToClean)
+        Task { [weak self] in
+            guard let self else { return }
+            await self.updateBadgeCount(0)
+            await self.removeDeliveredNotifications(for: idsToClean)
         }
     }
 

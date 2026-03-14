@@ -61,6 +61,9 @@ struct NotificationsView: View {
         .onChange(of: viewModel.unreadCount) { _, newValue in
             router.notificationBadgeCount = newValue
         }
+        .onDisappear {
+            activeTasks.forEach { $0.cancel() }
+        }
     }
 
     // MARK: - Notification List
