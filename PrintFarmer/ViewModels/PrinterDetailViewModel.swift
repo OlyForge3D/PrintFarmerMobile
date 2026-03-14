@@ -84,12 +84,14 @@ final class PrinterDetailViewModel {
         service.onPrinterUpdated { [weak self] update in
             guard update.id == self?.printerId else { return }
             Task { @MainActor [weak self] in
-                self?.applyLiveUpdate(update)
+                guard let self, self.isViewActive else { return }
+                self.applyLiveUpdate(update)
             }
         }
     }
 
     private func applyLiveUpdate(_ update: PrinterStatusUpdate) {
+        guard isViewActive else { return }
         if var p = printer {
             p.isOnline = update.isOnline
             if let s = update.state { p.state = s }
@@ -145,6 +147,7 @@ final class PrinterDetailViewModel {
 
     #if canImport(UIKit)
     func writeNFCPrinterTag() {
+        guard isViewActive else { return }
         guard let printer else { return }
         guard let nfcService = nfcScanner as? NFCService else {
             nfcScanError = "NFC writing is not available on this device."
@@ -156,7 +159,8 @@ final class PrinterDetailViewModel {
             } catch SpoolScanError.cancelled {
                 // User cancelled — do nothing
             } catch {
-                nfcScanError = error.localizedDescription
+                guard self.isViewActive else { return }
+                self.nfcScanError = error.localizedDescription
             }
         }
     }
@@ -165,6 +169,7 @@ final class PrinterDetailViewModel {
     // MARK: - Mark Ready (NFC Deep Link)
 
     func markPrinterReady() async {
+        guard isViewActive else { return }
         guard let autoDispatchService else {
             actionError = "Auto-dispatch service not available."
             return
@@ -173,10 +178,13 @@ final class PrinterDetailViewModel {
         actionError = nil
         do {
             _ = try await autoDispatchService.markReady(printerId: printerId)
+            guard isViewActive else { return }
             await loadPrinter()
         } catch {
+            guard isViewActive else { return }
             actionError = error.localizedDescription
         }
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 
@@ -189,6 +197,7 @@ final class PrinterDetailViewModel {
     // MARK: - NFC Scan to Load
 
     func handleNFCScanToLoad() {
+        guard isViewActive else { return }
         guard let nfcScanner, nfcScanner.isAvailable else {
             nfcScanError = "NFC scanning is not available on this device."
             return
@@ -196,6 +205,7 @@ final class PrinterDetailViewModel {
 
         Task {
             let result = await nfcScanner.scan()
+            guard self.isViewActive else { return }
             switch result {
             case .spoolId(let id):
                 await loadSpoolById(id)
@@ -211,6 +221,7 @@ final class PrinterDetailViewModel {
     }
 
     private func loadSpoolById(_ id: Int) async {
+        guard isViewActive else { return }
         guard let printerService else {
             print("⚠️ loadSpoolById: printerService is nil")
             return
@@ -220,6 +231,7 @@ final class PrinterDetailViewModel {
         do {
             print("📡 loadSpoolById: printer=\(printerId) spool=\(id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: id)
+            guard isViewActive else { return }
             print("✅ loadSpoolById: success")
             lastSetSpoolInfo = PrinterSpoolInfo(
                 hasActiveSpool: true,
@@ -227,28 +239,36 @@ final class PrinterDetailViewModel {
             )
             await loadPrinter()
         } catch {
+            guard isViewActive else { return }
             print("❌ loadSpoolById failed: \(error)")
             actionError = error.localizedDescription
         }
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 
     func ejectFilament() async {
+        guard isViewActive else { return }
         guard let printerService else { return }
         isPerformingAction = true
         actionError = nil
         do {
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: nil)
+            guard isViewActive else { return }
             _ = try await printerService.unloadFilament(printerId: printerId)
+            guard isViewActive else { return }
             lastSetSpoolInfo = nil
             await loadPrinter()
         } catch {
+            guard isViewActive else { return }
             actionError = error.localizedDescription
         }
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 
     func setActiveSpool(_ spool: SpoolmanSpool) async {
+        guard isViewActive else { return }
         showSpoolPicker = false
         guard let printerService else {
             print("⚠️ setActiveSpool: printerService is nil")
@@ -259,6 +279,7 @@ final class PrinterDetailViewModel {
         do {
             print("📡 setActiveSpool: printer=\(printerId) spool=\(spool.id)")
             _ = try await printerService.setActiveSpool(printerId: printerId, spoolId: spool.id)
+            guard isViewActive else { return }
             print("✅ setActiveSpool: success")
             lastSetSpoolInfo = PrinterSpoolInfo(
                 hasActiveSpool: true,
@@ -273,9 +294,11 @@ final class PrinterDetailViewModel {
             )
             await loadPrinter()
         } catch {
+            guard isViewActive else { return }
             print("❌ setActiveSpool failed: \(error)")
             actionError = error.localizedDescription
         }
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 
@@ -353,6 +376,7 @@ final class PrinterDetailViewModel {
     }
 
     func confirmAction() async {
+        guard isViewActive else { return }
         guard let action = pendingAction else { return }
         showConfirmation = false
         pendingAction = nil
@@ -360,11 +384,13 @@ final class PrinterDetailViewModel {
         switch action {
         case .cancelPrint:
             await performAction { _ = try await $0.cancel(id: self.printerId) }
+            guard isViewActive else { return }
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             #endif
         case .emergencyStop:
             await performAction { _ = try await $0.emergencyStop(id: self.printerId) }
+            guard isViewActive else { return }
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
@@ -372,18 +398,23 @@ final class PrinterDetailViewModel {
     }
 
     func toggleMaintenance() async {
+        guard isViewActive else { return }
         guard let printerService, let printer else { return }
         do {
-            self.printer = try await printerService.setMaintenanceMode(
+            let updated = try await printerService.setMaintenanceMode(
                 id: printerId,
                 inMaintenance: !printer.inMaintenance
             )
+            guard isViewActive else { return }
+            self.printer = updated
         } catch {
+            guard isViewActive else { return }
             actionError = error.localizedDescription
         }
     }
 
     func refreshSnapshot() async {
+        guard isViewActive else { return }
         guard let printerService else { return }
         isLoadingSnapshot = true
         do {
@@ -391,6 +422,7 @@ final class PrinterDetailViewModel {
         } catch {
             logger.warning("Failed to refresh snapshot: \(error.localizedDescription)")
         }
+        guard isViewActive else { return }
         isLoadingSnapshot = false
     }
     
@@ -438,17 +470,21 @@ final class PrinterDetailViewModel {
     // MARK: - Private
 
     private func performAction(_ action: @escaping (any PrinterServiceProtocol) async throws -> Void) async {
+        guard isViewActive else { return }
         guard let printerService else { return }
         isPerformingAction = true
         actionError = nil
 
         do {
             try await action(printerService)
+            guard isViewActive else { return }
             await loadPrinter()
         } catch {
+            guard isViewActive else { return }
             actionError = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isPerformingAction = false
     }
 }

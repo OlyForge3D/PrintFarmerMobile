@@ -4,6 +4,7 @@ struct UptimeView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = UptimeViewModel()
+    @State private var retryTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -17,7 +18,7 @@ struct UptimeView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadData() }
+                        retryTask = Task { await viewModel.loadData() }
                     }
                 }
             } else {
@@ -35,6 +36,7 @@ struct UptimeView: View {
             viewModel.configure(maintenanceService: services.maintenanceService)
             await viewModel.loadData()
         }
+        .onDisappear { retryTask?.cancel() }
     }
 
     // MARK: - Content

@@ -17,6 +17,7 @@ final class SpoolInventoryViewModel {
     var showOnlyMissingNFC = false
     var isLoading = false
     var errorMessage: String?
+    var isViewActive = true
 
     // NFC scanning state
     var isScanning = false
@@ -149,7 +150,9 @@ final class SpoolInventoryViewModel {
         scanError = nil
 
         Task {
+            guard isViewActive else { return }
             let result = await nfcScanner.scan()
+            guard isViewActive else { return }
             await handleScanResult(result)
             isScanning = false
         }

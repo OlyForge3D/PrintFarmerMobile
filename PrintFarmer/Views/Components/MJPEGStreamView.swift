@@ -77,6 +77,7 @@ struct MJPEGStreamContainer: View {
     let url: URL
     let rotation: Int
     @State private var isLoading = true
+    @State private var loadingTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -99,10 +100,11 @@ struct MJPEGStreamContainer: View {
                     }
             }
         }
+        .onDisappear { loadingTask?.cancel() }
     }
 
     private func scheduleLoadingDismiss() {
-        Task {
+        loadingTask = Task {
             try? await Task.sleep(for: .seconds(2))
             withAnimation { isLoading = false }
         }

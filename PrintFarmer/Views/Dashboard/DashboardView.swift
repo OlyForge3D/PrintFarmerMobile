@@ -76,6 +76,10 @@ struct DashboardView: View {
             viewModel.configureSignalR(services.signalRService)
             await viewModel.loadDashboard()
         }
+        .onDisappear {
+            dispatchRetryTask?.cancel()
+            retryTask?.cancel()
+        }
     }
     
     // MARK: - iPhone Pages

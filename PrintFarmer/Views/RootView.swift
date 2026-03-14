@@ -13,6 +13,7 @@ struct RootView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @AppStorage("hasCompletedNetworkPermission") private var hasCompletedNetworkPermission = false
     @State private var minimumSplashElapsed = false
+    @State private var disconnectTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -52,9 +53,10 @@ struct RootView: View {
             if !isAuthenticated {
                 pendingReadyMonitor.stopMonitoring()
                 router.pendingReadyCount = 0
-                Task { await services.signalRService.disconnect() }
+                disconnectTask = Task { await services.signalRService.disconnect() }
             }
         }
+        .onDisappear { disconnectTask?.cancel() }
     }
 
     /// Shown briefly while `restoreSession()` checks for a saved token.

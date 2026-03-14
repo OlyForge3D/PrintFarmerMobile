@@ -52,6 +52,38 @@ Implemented 3-page swipeable onboarding flow shown before login on first app lau
 
 ---
 
+### Task Lifecycle Crash Sweep (2026-03-13)
+**Files Modified:**
+- `PrintFarmer/Views/Settings/SettingsView.swift`
+- `PrintFarmer/Views/Auth/LoginView.swift`
+- `PrintFarmer/Views/Auth/LocalNetworkPermissionView.swift`
+- `PrintFarmer/Views/Filament/NFCWriteView.swift`
+- `PrintFarmer/Views/Maintenance/UptimeView.swift`
+- `PrintFarmer/Views/Maintenance/MaintenanceAnalyticsView.swift`
+- `PrintFarmer/Views/Components/MJPEGStreamView.swift`
+- `PrintFarmer/Views/RootView.swift`
+- `PrintFarmer/Views/Notifications/NotificationsView.swift`
+- `PrintFarmer/Views/Filament/SpoolInventoryView.swift`
+- `PrintFarmer/Views/Filament/SpoolPickerView.swift`
+- `PrintFarmer/Views/Filament/AddSpoolView.swift`
+- `PrintFarmer/Views/Dashboard/DashboardView.swift`
+- `PrintFarmer/Views/Printers/PrinterListView.swift`
+- `PrintFarmer/Views/Jobs/JobListView.swift`
+- `PrintFarmer/Views/Maintenance/MaintenanceView.swift`
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift`
+- `PrintFarmer/ViewModels/SpoolPickerViewModel.swift`
+- `PrintFarmer/ViewModels/PendingReadyMonitor.swift`
+
+**Issue Fixed:**
+Back-button crashes caused by untracked or uncancelled async Tasks mutating view or ViewModel state after dismissal.
+
+**Solution:**
+1. Added Task tracking with `.onDisappear` cancellation for button-driven async work across settings, auth, maintenance, NFC, dashboards, and lists.
+2. Added `isViewActive` guards in spool ViewModels with view-level `.onAppear/.onDisappear` toggles to prevent mutations during teardown.
+3. Updated `PendingReadyMonitor.stopMonitoring()` to use `[weak self]` in its cleanup Task.
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
 ### SignalR Real-Time Updates for Dashboard (2026-03-12)
 **Files Modified:**
 - `PrintFarmer/ViewModels/DashboardViewModel.swift`
@@ -572,3 +604,29 @@ Added debug logging (`print("DEBUG headerBaseColor: ...")`) to both card views t
 - Notification deduplication now uses printer UUID identifiers instead of random UUIDs
 - This ensures proper cleanup when printers leave PendingReady state
 - Impact: Filament indicator cards with yellow "pending" headers benefit from cleaner notification lifecycle
+
+### PrinterDetailView Back-Button Crash Fix (2026-03-14)
+**Files Modified:**
+- `PrintFarmer/ViewModels/PrinterDetailViewModel.swift`
+- `PrintFarmer/ViewModels/JobDetailViewModel.swift`
+
+**Bug Fixed:** App crashed when pressing back on the printer detail page while it was showing a live printing job.
+
+**Root Cause:**
+The View-side fix (activeTasks + onDisappear) was already in place from the previous batch, but the ViewModel had 12+ unguarded crash vectors:
+1. **SignalR callback** — `configureSignalR()` registered an `onPrinterUpdated` handler that called `applyLiveUpdate()` without checking `isViewActive`. When the view was popped and a SignalR update arrived, it mutated `@Observable` properties on a dead view → crash.
+2. **`applyLiveUpdate()`** — directly mutated `printer`, `statusDetail`, `showLivestream` with no guard.
+3. **All async action methods** — `performAction`, `ejectFilament`, `setActiveSpool`, `loadSpoolById`, `markPrinterReady`, `refreshSnapshot`, `toggleMaintenance`, `confirmAction` — none had `isViewActive` guards after await suspension points.
+4. **NFC Task blocks** — `writeNFCPrinterTag()` and `handleNFCScanToLoad()` created fire-and-forget `Task {}` blocks that could mutate state after dismissal.
+
+**Fix Applied:**
+- Added `guard isViewActive` to SignalR callback before calling `applyLiveUpdate()`
+- Added `guard isViewActive` at entry of `applyLiveUpdate()` 
+- Added `guard isViewActive` at entry and after every await point in all 10 async methods
+- Added `guard isViewActive` in NFC methods before state mutations
+- Also fixed `JobDetailViewModel.performAction()` with same pattern
+
+**Key Insight:**
+The previous batch fix correctly added `activeTasks` tracking and `isViewActive = false` on disappear, but missed that the ViewModel's SignalR listener operates OUTSIDE the task lifecycle — it's a callback registered once that fires indefinitely. The `isViewActive` guard inside the callback is the only defense against post-dismissal mutations from push-based updates (SignalR, websockets, timers).
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator

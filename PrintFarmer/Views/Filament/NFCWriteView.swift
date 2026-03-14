@@ -7,6 +7,7 @@ struct NFCWriteView: View {
     let onWrite: () async -> Bool
 
     @State private var writeState: WriteState = .ready
+    @State private var writeTask: Task<Void, Never>?
 
     private enum WriteState {
         case ready
@@ -38,6 +39,7 @@ struct NFCWriteView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .onDisappear { writeTask?.cancel() }
         }
     }
 
@@ -152,7 +154,7 @@ struct NFCWriteView: View {
         switch writeState {
         case .ready:
             Button {
-                Task { await performWrite() }
+                writeTask = Task { await performWrite() }
             } label: {
                 Label("Write Tag", systemImage: "wave.3.right")
                     .fullWidthActionButton(prominence: .prominent)
@@ -172,7 +174,7 @@ struct NFCWriteView: View {
         case .error:
             HStack(spacing: 10) {
                 Button {
-                    Task { await performWrite() }
+                    writeTask = Task { await performWrite() }
                 } label: {
                     Label("Retry", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity, minHeight: 44)

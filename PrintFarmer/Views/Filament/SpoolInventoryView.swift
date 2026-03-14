@@ -142,6 +142,11 @@ struct SpoolInventoryView: View {
                     viewModel.highlightedSpoolId = spoolId
                 }
             }
+            .onAppear { viewModel.isViewActive = true }
+            .onDisappear {
+                viewModel.isViewActive = false
+                activeTasks.forEach { $0.cancel() }
+            }
         }
     }
 

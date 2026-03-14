@@ -54,10 +54,11 @@ struct PrinterListView: View {
             }
         }
         .task {
-            viewModel.configure(printerService: services.printerService)
+            viewModel.configure(printerService: services.printerService, autoPrintService: services.autoPrintService)
             viewModel.configureSignalR(services.signalRService)
             await viewModel.loadPrinters()
         }
+        .onDisappear { retryTask?.cancel() }
     }
 
     // MARK: - Printer List
@@ -78,7 +79,7 @@ struct PrinterListView: View {
                     LazyVGrid(columns: iPadColumns, spacing: 12) {
                         ForEach(viewModel.filteredPrinters) { printer in
                             NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
-                                iPadPrinterCardView(printer: printer)
+                                iPadPrinterCardView(printer: printer, isPendingReady: viewModel.isPendingReady(printer))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(
@@ -90,7 +91,7 @@ struct PrinterListView: View {
                 } else {
                     ForEach(viewModel.filteredPrinters) { printer in
                         NavigationLink(value: AppDestination.printerDetail(id: printer.id)) {
-                            PrinterCardView(printer: printer)
+                            PrinterCardView(printer: printer, isPendingReady: viewModel.isPendingReady(printer))
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(printer.name), \(printer.state ?? "unknown") status\(printer.isOnline ? ", online" : ", offline")")
