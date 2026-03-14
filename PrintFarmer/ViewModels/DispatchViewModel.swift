@@ -7,6 +7,7 @@ final class DispatchViewModel {
     var history: [DispatchHistoryEntry] = []
     var isLoading = false
     var error: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "Dispatch")
     private var dispatchService: (any DispatchServiceProtocol)?
@@ -16,7 +17,7 @@ final class DispatchViewModel {
     }
 
     func loadQueueStatus() async {
-        guard let dispatchService else { return }
+        guard let dispatchService, isViewActive else { return }
         isLoading = true
         error = nil
 
@@ -34,7 +35,7 @@ final class DispatchViewModel {
     }
 
     func loadHistory() async {
-        guard let dispatchService else { return }
+        guard let dispatchService, isViewActive else { return }
         do {
             let page = try await dispatchService.getHistory(page: 1, pageSize: 50)
             guard !Task.isCancelled else { return }

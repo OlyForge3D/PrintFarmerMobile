@@ -4,6 +4,7 @@ struct SpoolPickerView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SpoolPickerViewModel()
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     let onSelect: (SpoolmanSpool) -> Void
 
@@ -85,7 +86,8 @@ struct SpoolPickerView: View {
                 if let data = viewModel.scannedSpoolData {
                     AddSpoolView(scannedData: data)
                         .onDisappear {
-                            Task { await viewModel.loadMaterials() }
+                            let task = Task { await viewModel.loadMaterials() }
+                            activeTasks.append(task)
                         }
                 }
             }
@@ -114,7 +116,8 @@ struct SpoolPickerView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadMaterials() }
+                        let task = Task { await viewModel.loadMaterials() }
+                        activeTasks.append(task)
                     }
                 }
             } else if viewModel.availableMaterials.isEmpty && !viewModel.isLoading {
@@ -159,7 +162,8 @@ struct SpoolPickerView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadSpools() }
+                        let task = Task { await viewModel.loadSpools() }
+                        activeTasks.append(task)
                     }
                 }
             } else if viewModel.spools.isEmpty && !viewModel.isLoading {

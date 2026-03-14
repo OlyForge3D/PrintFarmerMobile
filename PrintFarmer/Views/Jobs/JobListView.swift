@@ -6,6 +6,7 @@ struct JobListView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = JobListViewModel()
     @State private var currentPage = 0
+    @State private var retryTask: Task<Void, Never>?
 
     var body: some View {
         @Bindable var router = router
@@ -22,7 +23,7 @@ struct JobListView: View {
                         Text(error)
                     } actions: {
                         Button("Retry") {
-                            Task { await viewModel.loadJobs() }
+                            retryTask = Task { await viewModel.loadJobs() }
                         }
                     }
                 } else if !viewModel.hasAnyJobs {
@@ -291,7 +292,7 @@ struct JobListView: View {
         .swipeActions(edge: .trailing) {
             if let uuid = item.job.jobUUID {
                 Button {
-                    Task { await viewModel.cancelJob(id: uuid) }
+                    retryTask = Task { await viewModel.cancelJob(id: uuid) }
                 } label: {
                     Label("Cancel", systemImage: "xmark.circle")
                 }
@@ -301,7 +302,7 @@ struct JobListView: View {
         .swipeActions(edge: .leading) {
             if let uuid = item.job.jobUUID {
                 Button {
-                    Task { await viewModel.dispatchJob(id: uuid) }
+                    retryTask = Task { await viewModel.dispatchJob(id: uuid) }
                 } label: {
                     Label("Start", systemImage: "play.circle.fill")
                 }

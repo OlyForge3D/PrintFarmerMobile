@@ -492,3 +492,13 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 
 ### Decision Filed
 - `.squad/decisions/inbox/lambert-dispatch-crash.md` — Full root cause analysis, 3 recommended fixes
+
+## Learnings
+
+### iOS System Notifications (2025-07)
+- Local notification infrastructure was already in place in `PendingReadyMonitor` (permission request, `UNUserNotificationCenter` posting, badge count, foreground display via `PushNotificationManager` delegate).
+- Key improvement: switched from random UUID notification identifiers to printer-UUID-based identifiers (`pending-ready-{printerId}`). This enables per-printer deduplication and automatic removal when a printer leaves PendingReady state.
+- `removeDeliveredNotifications(withIdentifiers:)` and `removePendingNotificationRequests(withIdentifiers:)` are used to clean up stale notifications from Notification Center.
+- On `stopMonitoring()` (logout), all pending-ready notifications are now cleaned up.
+- `AppDelegate` sets `PushNotificationManager.shared` as `UNUserNotificationCenter.delegate` — this is what enables foreground banner display and tap handling.
+- Notification tap on a `PENDING_READY` category posts `.localNotificationTapped` which `PFarmApp` listens to and navigates to the printers tab.

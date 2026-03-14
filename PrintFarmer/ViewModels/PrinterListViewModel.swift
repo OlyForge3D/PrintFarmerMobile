@@ -74,9 +74,10 @@ final class PrinterListViewModel {
     }
     
     private func sortPriority(_ printer: Printer) -> Int {
+        // PendingReady always sorts to top regardless of isOnline
+        if printer.state?.lowercased() == "pendingready" { return 0 }
         guard printer.isOnline else { return 100 }
         switch printer.state?.lowercased() {
-        case "pendingready": return 0
         case "printing": return 1
         case "ready", "idle": return 2
         default: return 3

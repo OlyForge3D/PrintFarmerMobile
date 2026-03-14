@@ -3,6 +3,7 @@ import SwiftUI
 struct JobDetailView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel: JobDetailViewModel
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     init(jobId: UUID) {
         _viewModel = State(initialValue: JobDetailViewModel(jobId: jobId))
@@ -19,7 +20,8 @@ struct JobDetailView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadJob() }
+                        let task = Task { await viewModel.loadJob() }
+                        activeTasks.append(task)
                     }
                 }
             } else {
@@ -37,7 +39,8 @@ struct JobDetailView: View {
         .alert("Cancel Job?", isPresented: $viewModel.showCancelConfirmation) {
             Button("Keep", role: .cancel) {}
             Button("Cancel Job", role: .destructive) {
-                Task { await viewModel.cancelJob() }
+                let task = Task { await viewModel.cancelJob() }
+                activeTasks.append(task)
             }
         } message: {
             Text("This will cancel the print job. This action cannot be undone.")
@@ -52,6 +55,11 @@ struct JobDetailView: View {
         .task {
             viewModel.configure(jobService: services.jobService)
             await viewModel.loadJob()
+        }
+        .onDisappear {
+            activeTasks.forEach { $0.cancel() }
+            activeTasks.removeAll()
+            viewModel.isViewActive = false
         }
     }
 
@@ -241,7 +249,8 @@ struct JobDetailView: View {
         VStack(spacing: 10) {
             if viewModel.canDispatch {
                 Button {
-                    Task { await viewModel.dispatchJob() }
+                    let task = Task { await viewModel.dispatchJob() }
+                    activeTasks.append(task)
                 } label: {
                     Label("Start Print", systemImage: "play.circle.fill")
                         .fullWidthActionButton(prominence: .prominent)
@@ -254,7 +263,8 @@ struct JobDetailView: View {
             if viewModel.canPause && viewModel.canAbort {
                 HStack(spacing: 10) {
                     Button {
-                        Task { await viewModel.pauseJob() }
+                        let task = Task { await viewModel.pauseJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Pause", systemImage: "pause.circle.fill")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -264,7 +274,8 @@ struct JobDetailView: View {
                     .tint(Color.pfWarning)
 
                     Button(role: .destructive) {
-                        Task { await viewModel.abortJob() }
+                        let task = Task { await viewModel.abortJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Abort", systemImage: "stop.circle.fill")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -275,7 +286,8 @@ struct JobDetailView: View {
             } else {
                 if viewModel.canPause {
                     Button {
-                        Task { await viewModel.pauseJob() }
+                        let task = Task { await viewModel.pauseJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Pause", systemImage: "pause.circle.fill")
                             .fullWidthActionButton()
@@ -290,7 +302,8 @@ struct JobDetailView: View {
             if viewModel.canResume && viewModel.canAbort {
                 HStack(spacing: 10) {
                     Button {
-                        Task { await viewModel.resumeJob() }
+                        let task = Task { await viewModel.resumeJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Resume", systemImage: "play.circle.fill")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -299,7 +312,8 @@ struct JobDetailView: View {
                     .buttonStyle(.borderedProminent)
 
                     Button(role: .destructive) {
-                        Task { await viewModel.abortJob() }
+                        let task = Task { await viewModel.abortJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Abort", systemImage: "stop.circle.fill")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -310,7 +324,8 @@ struct JobDetailView: View {
             } else {
                 if viewModel.canResume {
                     Button {
-                        Task { await viewModel.resumeJob() }
+                        let task = Task { await viewModel.resumeJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Resume", systemImage: "play.circle.fill")
                             .fullWidthActionButton(prominence: .prominent)
@@ -321,7 +336,8 @@ struct JobDetailView: View {
 
                 if viewModel.canAbort {
                     Button(role: .destructive) {
-                        Task { await viewModel.abortJob() }
+                        let task = Task { await viewModel.abortJob() }
+                        activeTasks.append(task)
                     } label: {
                         Label("Abort", systemImage: "stop.circle.fill")
                             .fullWidthActionButton()

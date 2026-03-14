@@ -6,6 +6,7 @@ struct MaintenanceView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = MaintenanceViewModel()
     @State private var currentPage = 0
+    @State private var retryTask: Task<Void, Never>?
 
     var body: some View {
         @Bindable var router = router
@@ -22,7 +23,7 @@ struct MaintenanceView: View {
                         Text(error)
                     } actions: {
                         Button("Retry") {
-                            Task { await viewModel.loadData() }
+                            retryTask = Task { await viewModel.loadData() }
                         }
                     }
                 } else {
@@ -159,9 +160,9 @@ struct MaintenanceView: View {
 
             ForEach(viewModel.activeAlerts, id: \.id) { alert in
                 MaintenanceAlertRow(alert: alert) {
-                    Task { await viewModel.acknowledgeAlert(alert) }
+                    retryTask = Task { await viewModel.acknowledgeAlert(alert) }
                 } onDismiss: {
-                    Task { await viewModel.dismissAlert(alert) }
+                    retryTask = Task { await viewModel.dismissAlert(alert) }
                 }
             }
         }

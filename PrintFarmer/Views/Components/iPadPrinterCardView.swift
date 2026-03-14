@@ -46,7 +46,8 @@ struct iPadPrinterCardView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack {
+        let _ = print("DEBUG headerBaseColor: printer=\(printer.name), state='\(printer.state ?? "nil")', isOnline=\(printer.isOnline)")
+        return HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(printer.name)
                     .font(.headline)
@@ -225,25 +226,26 @@ struct iPadPrinterCardView: View {
     }
 
     private var statusLabel: String {
+        // Check pendingReady BEFORE isOnline — API may report isOnline=false for PendingReady printers
+        if isPendingReady { return "Bed Clear" }
         guard printer.isOnline else { return "Offline" }
         guard let state = printer.state else { return "Idle" }
         switch state.lowercased() {
         case "printing": return "Printing"
         case "paused": return "Paused"
         case "error": return "Error"
-        case "pendingready": return "Bed Clear"
         case "idle", "ready": return "Ready"
         default: return state.capitalized
         }
     }
 
     private var statusAccentColor: Color {
+        if isPendingReady { return .pfWarning }
         if !printer.isOnline { return .pfTextTertiary }
         switch printer.state?.lowercased() {
         case "printing": return .pfSecondaryAccent
         case "paused": return .pfWarning
         case "error": return .pfError
-        case "pendingready": return .pfWarning
         default: return .pfSuccess
         }
     }
@@ -257,12 +259,13 @@ struct iPadPrinterCardView: View {
     }
 
     private var headerBaseColor: Color {
+        // Check pendingReady BEFORE isOnline — a printer awaiting bed clear is reachable
+        if isPendingReady { return Color(hex: "#eab308") }
         if !printer.isOnline { return Color(hex: "#4b5563") }
         switch printer.state?.lowercased() {
         case "printing": return Color(hex: "#1d4ed8")
         case "paused": return Color(hex: "#b45309")
         case "error": return Color(hex: "#dc2626")
-        case "pendingready": return Color(hex: "#eab308")
         default: return Color(hex: "#059669")
         }
     }

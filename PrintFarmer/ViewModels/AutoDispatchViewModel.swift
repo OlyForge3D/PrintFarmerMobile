@@ -9,6 +9,7 @@ final class AutoDispatchViewModel {
     var isMarkingReady = false
     var isSkipping = false
     var error: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "AutoDispatch")
     private var autoDispatchService: (any AutoDispatchServiceProtocol)?
@@ -18,7 +19,7 @@ final class AutoDispatchViewModel {
     }
 
     func loadStatus(printerId: UUID) async {
-        guard let autoDispatchService else { return }
+        guard let autoDispatchService, isViewActive else { return }
         isLoading = true
         error = nil
 

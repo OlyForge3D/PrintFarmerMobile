@@ -4,6 +4,7 @@ struct DispatchDashboardView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = DispatchViewModel()
+    @State private var retryTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -17,7 +18,7 @@ struct DispatchDashboardView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task {
+                        retryTask = Task {
                             await viewModel.loadQueueStatus()
                             await viewModel.loadHistory()
                         }
@@ -39,6 +40,10 @@ struct DispatchDashboardView: View {
             viewModel.configure(dispatchService: services.dispatchService)
             await viewModel.loadQueueStatus()
             await viewModel.loadHistory()
+        }
+        .onDisappear {
+            retryTask?.cancel()
+            viewModel.isViewActive = false
         }
     }
 
