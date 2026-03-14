@@ -5,6 +5,7 @@ struct PrinterDetailView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: PrinterDetailViewModel
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     init(printerId: UUID) {
         _viewModel = State(initialValue: PrinterDetailViewModel(printerId: printerId))
@@ -21,7 +22,8 @@ struct PrinterDetailView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadPrinter() }
+                        let task = Task { await viewModel.loadPrinter() }
+                        activeTasks.append(task)
                     }
                 }
             } else {
@@ -43,7 +45,8 @@ struct PrinterDetailView: View {
         ) { _ in
             Button("Cancel", role: .cancel) {}
             Button("Confirm", role: .destructive) {
-                Task { await viewModel.confirmAction() }
+                let task = Task { await viewModel.confirmAction() }
+                activeTasks.append(task)
             }
         } message: { action in
             Text(action.message)
@@ -70,16 +73,23 @@ struct PrinterDetailView: View {
                 router.pendingNFCReadyPrinterId = nil
             }
         }
+        .onDisappear {
+            activeTasks.forEach { $0.cancel() }
+            activeTasks.removeAll()
+            viewModel.isViewActive = false
+        }
         .sheet(isPresented: $viewModel.showSpoolPicker) {
             SpoolPickerView { spool in
-                Task { await viewModel.setActiveSpool(spool) }
+                let task = Task { await viewModel.setActiveSpool(spool) }
+                activeTasks.append(task)
             }
         }
         .sheet(isPresented: $viewModel.showScannedDataSheet) {
             if let data = viewModel.nfcScannedData {
                 AddSpoolView(scannedData: data)
                     .onDisappear {
-                        Task { await viewModel.loadPrinter() }
+                        let task = Task { await viewModel.loadPrinter() }
+                        activeTasks.append(task)
                     }
             }
         }
@@ -93,7 +103,8 @@ struct PrinterDetailView: View {
         .alert("Mark Printer Ready?", isPresented: $viewModel.showNFCReadyConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Mark Ready") {
-                Task { await viewModel.markPrinterReady() }
+                let task = Task { await viewModel.markPrinterReady() }
+                activeTasks.append(task)
             }
         } message: {
             Text("Clear the bed and mark this printer as ready for the next print job?")
@@ -221,7 +232,8 @@ struct PrinterDetailView: View {
             .buttonStyle(.bordered)
 
             Button(role: .destructive) {
-                Task { await viewModel.ejectFilament() }
+                let task = Task { await viewModel.ejectFilament() }
+                activeTasks.append(task)
             } label: {
                 Label("Eject", systemImage: "eject.fill")
                     .frame(maxWidth: .infinity)
@@ -488,7 +500,8 @@ struct PrinterDetailView: View {
                     
                     if !viewModel.showLivestream {
                         Button {
-                            Task { await viewModel.refreshSnapshot() }
+                            let task = Task { await viewModel.refreshSnapshot() }
+                            activeTasks.append(task)
                         } label: {
                             Image(systemName: "arrow.clockwise")
                                 .font(.subheadline)
@@ -646,7 +659,8 @@ struct PrinterDetailView: View {
 
                 // Maintenance toggle
                 Button {
-                    Task { await viewModel.toggleMaintenance() }
+                    let task = Task { await viewModel.toggleMaintenance() }
+                    activeTasks.append(task)
                 } label: {
                     Label(
                         printer.inMaintenance ? "Exit Maintenance" : "Enter Maintenance",
@@ -693,7 +707,8 @@ struct PrinterDetailView: View {
         action: @escaping () async -> Void
     ) -> some View {
         Button(role: role) {
-            Task { await action() }
+            let task = Task { await action() }
+            activeTasks.append(task)
         } label: {
             Label(title, systemImage: icon)
                 .fullWidthActionButton()

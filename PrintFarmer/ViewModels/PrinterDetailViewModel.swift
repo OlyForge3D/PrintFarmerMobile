@@ -16,6 +16,7 @@ final class PrinterDetailViewModel {
     var showConfirmation = false
     var pendingAction: DestructiveAction?
     var actionError: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "PrinterDetail")
 
@@ -279,6 +280,7 @@ final class PrinterDetailViewModel {
     }
 
     func loadPrinter() async {
+        guard isViewActive else { return }
         isLoading = true
         errorMessage = nil
         

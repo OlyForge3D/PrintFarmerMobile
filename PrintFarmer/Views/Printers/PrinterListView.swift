@@ -5,6 +5,7 @@ struct PrinterListView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = PrinterListViewModel()
+    @State private var retryTask: Task<Void, Never>?
 
     private var iPadColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 340))]
@@ -25,7 +26,7 @@ struct PrinterListView: View {
                         Text(error)
                     } actions: {
                         Button("Retry") {
-                            Task { await viewModel.loadPrinters() }
+                            retryTask = Task { await viewModel.loadPrinters() }
                         }
                     }
                 } else if viewModel.printers.isEmpty {

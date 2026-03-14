@@ -4,6 +4,7 @@ struct AddSpoolView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = AddSpoolViewModel()
+    @State private var saveTask: Task<Void, Never>?
 
     var scannedData: ScannedSpoolData?
 
@@ -51,7 +52,7 @@ struct AddSpoolView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        Task { await viewModel.saveSpool() }
+                        saveTask = Task { await viewModel.saveSpool() }
                     }
                     .disabled(!viewModel.isFormValid || viewModel.isSaving)
                 }

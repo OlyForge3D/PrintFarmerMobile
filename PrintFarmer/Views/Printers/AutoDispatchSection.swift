@@ -5,6 +5,7 @@ struct AutoDispatchSection: View {
     let isPrinting: Bool
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel = AutoDispatchViewModel()
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,7 +33,8 @@ struct AutoDispatchSection: View {
                     Toggle(isOn: Binding(
                         get: { viewModel.isEnabled },
                         set: { _ in
-                            Task { await viewModel.toggleEnabled(printerId: printerId) }
+                            let task = Task { await viewModel.toggleEnabled(printerId: printerId) }
+                            activeTasks.append(task)
                         }
                     )) {
                         Label("Auto-Dispatch Enabled", systemImage: "arrow.triangle.2.circlepath")
@@ -64,6 +66,11 @@ struct AutoDispatchSection: View {
         .task {
             viewModel.configure(autoDispatchService: services.autoPrintService)
             await viewModel.loadStatus(printerId: printerId)
+        }
+        .onDisappear {
+            activeTasks.forEach { $0.cancel() }
+            activeTasks.removeAll()
+            viewModel.isViewActive = false
         }
     }
 
@@ -151,7 +158,8 @@ struct AutoDispatchSection: View {
     private var actionButtons: some View {
         HStack(spacing: 8) {
             Button {
-                Task { await viewModel.markReady(printerId: printerId) }
+                let task = Task { await viewModel.markReady(printerId: printerId) }
+                activeTasks.append(task)
             } label: {
                 HStack(spacing: 6) {
                     if viewModel.isMarkingReady {
@@ -168,11 +176,12 @@ struct AutoDispatchSection: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(viewModel.parsedState == .pendingReady ? Color.pfWarning : Color.pfAccent)
-            .disabled(isActionInProgress || (!hasQueuedJobs && viewModel.parsedState != .pendingReady))
-            .opacity((isActionInProgress || (!hasQueuedJobs && viewModel.parsedState != .pendingReady)) ? 0.4 : 1.0)
+            .disabled(isActionInProgress || viewModel.isMarkingReady || (!hasQueuedJobs && viewModel.parsedState != .pendingReady))
+            .opacity((isActionInProgress || viewModel.isMarkingReady || (!hasQueuedJobs && viewModel.parsedState != .pendingReady)) ? 0.4 : 1.0)
 
             Button {
-                Task { await viewModel.skip(printerId: printerId) }
+                let task = Task { await viewModel.skip(printerId: printerId) }
+                activeTasks.append(task)
             } label: {
                 HStack(spacing: 6) {
                     if viewModel.isSkipping {
@@ -187,8 +196,8 @@ struct AutoDispatchSection: View {
                 .fullWidthActionButton()
             }
             .buttonStyle(.bordered)
-            .disabled(isActionInProgress || !hasQueuedJobs)
-            .opacity((isActionInProgress || !hasQueuedJobs) ? 0.4 : 1.0)
+            .disabled(isActionInProgress || viewModel.isSkipping || !hasQueuedJobs)
+            .opacity((isActionInProgress || viewModel.isSkipping || !hasQueuedJobs) ? 0.4 : 1.0)
         }
     }
 

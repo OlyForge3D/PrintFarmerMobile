@@ -9,11 +9,11 @@ struct AlertPrinter: Codable, Sendable {
 
 // MARK: - Maintenance Alert Status
 
-enum MaintenanceAlertStatus: Int, Codable, Sendable {
-    case active = 0
-    case acknowledged = 1
-    case resolved = 2
-    case dismissed = 3
+enum MaintenanceAlertStatus: String, Codable, Sendable {
+    case active = "Active"
+    case acknowledged = "Acknowledged"
+    case resolved = "Resolved"
+    case dismissed = "Dismissed"
 }
 
 // MARK: - Maintenance Alert

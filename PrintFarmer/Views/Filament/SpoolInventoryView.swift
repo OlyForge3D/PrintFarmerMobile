@@ -6,6 +6,7 @@ struct SpoolInventoryView: View {
     @State private var viewModel = SpoolInventoryViewModel()
     @State private var showAddSpool = false
     @State private var nfcWriteSpool: SpoolmanSpool?
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     var body: some View {
         NavigationStack {
@@ -17,7 +18,8 @@ struct SpoolInventoryView: View {
                         Text(error)
                     } actions: {
                         Button("Retry") {
-                            Task { await viewModel.loadSpools() }
+                            let task = Task { await viewModel.loadSpools() }
+                            activeTasks.append(task)
                         }
                     }
                 } else if viewModel.spools.isEmpty && !viewModel.isLoading {
@@ -111,14 +113,16 @@ struct SpoolInventoryView: View {
             .sheet(isPresented: $showAddSpool) {
                 AddSpoolView()
                     .onDisappear {
-                        Task { await viewModel.loadSpools() }
+                        let task = Task { await viewModel.loadSpools() }
+                        activeTasks.append(task)
                     }
             }
             .sheet(isPresented: $viewModel.showScannedDataSheet) {
                 if let data = viewModel.scannedSpoolData {
                     AddSpoolView(scannedData: data)
                         .onDisappear {
-                            Task { await viewModel.loadSpools() }
+                            let task = Task { await viewModel.loadSpools() }
+                            activeTasks.append(task)
                         }
                 }
             }
@@ -286,7 +290,8 @@ struct SpoolInventoryView: View {
             .onDelete { indexSet in
                 let spoolsToDelete = indexSet.map { viewModel.filteredSpools[$0] }
                 for spool in spoolsToDelete {
-                    Task { await viewModel.deleteSpool(spool) }
+                    let task = Task { await viewModel.deleteSpool(spool) }
+                    activeTasks.append(task)
                 }
             }
             }
@@ -297,6 +302,7 @@ struct SpoolInventoryView: View {
                     }
                     Task {
                         try? await Task.sleep(for: .seconds(2))
+                        guard !Task.isCancelled else { return }
                         withAnimation { viewModel.clearHighlight() }
                     }
                 }

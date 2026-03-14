@@ -9,6 +9,7 @@ final class JobDetailViewModel {
     var isPerformingAction = false
     var actionError: String?
     var showCancelConfirmation = false
+    var isViewActive = true
 
     let jobId: UUID
     private var jobService: (any JobServiceProtocol)?
@@ -22,7 +23,7 @@ final class JobDetailViewModel {
     }
 
     func loadJob() async {
-        guard let jobService else { return }
+        guard let jobService, isViewActive else { return }
         isLoading = true
         errorMessage = nil
 

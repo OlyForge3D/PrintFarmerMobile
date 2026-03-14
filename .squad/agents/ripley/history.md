@@ -529,3 +529,46 @@ Implemented MJPEG livestream display when printers are actively printing, with a
 - iPhone filament row uses slightly smaller spacing (6pt) vs iPad (8pt) for compact layout
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+---
+
+### Back Button Crash Fix + PendingReady Yellow Headers + Bed Clear Feedback (2026-03-14)
+**Files Modified:**
+- 13 View files across Views/Dashboard, Views/Printers, Views/Jobs, Views/Filament, Views/Maintenance, Views/Notifications
+- 5 ViewModel files: DispatchViewModel, PrinterDetailViewModel, JobDetailViewModel, JobHistoryViewModel, AutoDispatchViewModel
+- 2 Card components: PrinterCardView, iPadPrinterCardView
+- PrinterListViewModel (sort priority fix)
+
+**Bug Fixed (Task 1): Back button crashes on all pushed views**
+Root cause: Unstructured `Task { }` blocks in Button actions survived view dismissal. When views are popped from NavigationStack, these tasks mutate `@Observable` ViewModels for deallocated views → crash.
+
+Fix applied consistently across ALL views:
+1. **Fix 1 (Store & Cancel):** Added `@State private var activeTasks: [Task<Void, Never>] = []` (or named task refs for simpler views). All `Task { }` in button actions now store task refs. `.onDisappear` cancels all tasks.
+2. **Fix 2 (isActive guard):** Added `var isViewActive = true` to ViewModels of pushed views. Async load methods guard on `isViewActive`. `.onDisappear` sets `viewModel.isViewActive = false`.
+
+**Bug Fixed (Task 2): Bed Clear button no immediate feedback**
+In AutoDispatchSection, the "Confirm Bed Clear" button now includes `viewModel.isMarkingReady` in its disabled condition, preventing double-taps. The existing ProgressView spinner was already wired to `isMarkingReady`; the disabled state now also gates on it.
+
+**Bug Fixed (Task 3): PendingReady printers not showing yellow headers**
+Root cause: `headerBaseColor` checked `!printer.isOnline` BEFORE checking state. When the API returns `isOnline: false` for PendingReady printers, the card showed gray instead of yellow.
+
+Fix: In both PrinterCardView and iPadPrinterCardView, pendingReady state is now checked FIRST, before the isOnline check. Same fix applied to:
+- `statusLabel` — "Bed Clear" shown regardless of isOnline
+- `statusAccentColor` — `.pfWarning` returned for pendingReady regardless of isOnline
+- `sortPriority` in PrinterListViewModel and DashboardView — pendingReady sorts to top regardless of isOnline
+
+Added debug logging (`print("DEBUG headerBaseColor: ...")`) to both card views to help diagnose if issues persist.
+
+**Key Pattern (Task Lifecycle):**
+- Pushed views: `activeTasks` array + `.onDisappear { activeTasks.forEach { $0.cancel() }; viewModel.isViewActive = false }`
+- Root tab views: Named `retryTask` ref (less crash-prone but still good practice)
+- ViewModels: `guard isViewActive else { return }` at top of async load methods
+
+**Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+## 2026-03-14 — Back-Button Crashes & Notification Fixes (Lambert cross-pollination)
+
+**Related fixes from Lambert:**
+- Notification deduplication now uses printer UUID identifiers instead of random UUIDs
+- This ensures proper cleanup when printers leave PendingReady state
+- Impact: Filament indicator cards with yellow "pending" headers benefit from cleaner notification lifecycle

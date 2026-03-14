@@ -4,6 +4,7 @@ struct JobHistoryView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel = JobHistoryViewModel()
     @State private var showDateFilter = false
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     var body: some View {
         Group {
@@ -17,7 +18,8 @@ struct JobHistoryView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await viewModel.loadHistory() }
+                        let task = Task { await viewModel.loadHistory() }
+                        activeTasks.append(task)
                     }
                 }
             } else if viewModel.historyItems.isEmpty {
@@ -59,6 +61,11 @@ struct JobHistoryView: View {
             viewModel.configure(jobAnalyticsService: services.jobAnalyticsService)
             await viewModel.loadHistory()
         }
+        .onDisappear {
+            activeTasks.forEach { $0.cancel() }
+            activeTasks.removeAll()
+            viewModel.isViewActive = false
+        }
     }
 
     // MARK: - History List
@@ -76,7 +83,8 @@ struct JobHistoryView: View {
                         ProgressView()
                     } else {
                         Button("Load More") {
-                            Task { await viewModel.loadMore() }
+                            let task = Task { await viewModel.loadMore() }
+                            activeTasks.append(task)
                         }
                     }
                     Spacer()
@@ -153,14 +161,16 @@ struct JobHistoryView: View {
                 Section {
                     Button("Apply") {
                         showDateFilter = false
-                        Task { await viewModel.loadHistory() }
+                        let task = Task { await viewModel.loadHistory() }
+                        activeTasks.append(task)
                     }
 
                     Button("Clear Dates") {
                         viewModel.dateFrom = nil
                         viewModel.dateTo = nil
                         showDateFilter = false
-                        Task { await viewModel.loadHistory() }
+                        let task = Task { await viewModel.loadHistory() }
+                        activeTasks.append(task)
                     }
                 }
             }

@@ -45,8 +45,12 @@ final class PendingReadyMonitor {
     func stopMonitoring() {
         pollingTask?.cancel()
         pollingTask = nil
+        let idsToClean = notifiedPrinterIds
         notifiedPrinterIds.removeAll()
-        Task { await updateBadgeCount(0) }
+        Task {
+            await updateBadgeCount(0)
+            await removeDeliveredNotifications(for: idsToClean)
+        }
     }
 
     // MARK: - Notification Permission
@@ -79,7 +83,11 @@ final class PendingReadyMonitor {
             // Update app badge count to reflect pending printers
             await updateBadgeCount(pendingReadyCount)
 
-            // Clear notifications for printers that left PendingReady
+            // Remove delivered notifications for printers that left PendingReady
+            let clearedIds = notifiedPrinterIds.subtracting(currentPendingIds)
+            if !clearedIds.isEmpty {
+                await removeDeliveredNotifications(for: clearedIds)
+            }
             notifiedPrinterIds = notifiedPrinterIds.intersection(currentPendingIds)
 
             // Find newly-entered PendingReady printers
@@ -97,33 +105,46 @@ final class PendingReadyMonitor {
 
     private func sendLocalNotification(for printerIds: Set<UUID>) async {
         #if canImport(UserNotifications)
-        let names = await resolveNames(for: printerIds)
+        let nameMap = await resolveNameMap(for: printerIds)
+        let center = UNUserNotificationCenter.current()
 
-        let content = UNMutableNotificationContent()
-        content.title = "Bed Clear Required"
-        if names.count == 1, let name = names.first {
+        for printerId in printerIds {
+            let name = nameMap[printerId] ?? printerId.uuidString.prefix(8).description
+            let content = UNMutableNotificationContent()
+            content.title = "Bed Clear Required"
             content.body = "\(name) is ready for the next job — clear the bed to continue."
-        } else {
-            let list = names.sorted().joined(separator: ", ")
-            content.body = "\(list) need beds cleared to continue auto-dispatch."
-        }
-        content.sound = .default
-        content.categoryIdentifier = Self.notificationCategory
-        content.badge = NSNumber(value: pendingReadyCount)
+            content.sound = .default
+            content.categoryIdentifier = Self.notificationCategory
+            content.badge = NSNumber(value: pendingReadyCount)
 
-        let request = UNNotificationRequest(
-            identifier: "pending-ready-\(UUID().uuidString)",
-            content: content,
-            trigger: nil // fire immediately
-        )
+            // Use printer ID as identifier so we can replace/remove per printer
+            let request = UNNotificationRequest(
+                identifier: Self.notificationIdentifier(for: printerId),
+                content: content,
+                trigger: nil
+            )
 
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            logger.info("Local notification sent for \(printerIds.count) printer(s)")
-        } catch {
-            logger.error("Failed to schedule local notification: \(error.localizedDescription)")
+            do {
+                try await center.add(request)
+                logger.info("Local notification sent for printer \(printerId)")
+            } catch {
+                logger.error("Failed to schedule local notification: \(error.localizedDescription)")
+            }
         }
         #endif
+    }
+
+    private func removeDeliveredNotifications(for printerIds: Set<UUID>) async {
+        #if canImport(UserNotifications)
+        let ids = printerIds.map { Self.notificationIdentifier(for: $0) }
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+        logger.info("Removed notifications for \(printerIds.count) printer(s) that left PendingReady")
+        #endif
+    }
+
+    private static func notificationIdentifier(for printerId: UUID) -> String {
+        "pending-ready-\(printerId.uuidString)"
     }
 
     // MARK: - Badge Count
@@ -138,18 +159,18 @@ final class PendingReadyMonitor {
         #endif
     }
 
-    /// Resolve printer UUIDs to display names, falling back to short ID.
-    private func resolveNames(for ids: Set<UUID>) async -> [String] {
+    /// Resolve printer UUIDs to a name map, falling back to short ID.
+    private func resolveNameMap(for ids: Set<UUID>) async -> [UUID: String] {
         guard let printerService else {
-            return ids.map { $0.uuidString.prefix(8).description }
+            return Dictionary(uniqueKeysWithValues: ids.map { ($0, $0.uuidString.prefix(8).description) })
         }
 
         do {
             let printers = try await printerService.list(includeDisabled: true)
             let nameMap = Dictionary(uniqueKeysWithValues: printers.map { ($0.id, $0.name) })
-            return ids.map { nameMap[$0] ?? $0.uuidString.prefix(8).description }
+            return Dictionary(uniqueKeysWithValues: ids.map { ($0, nameMap[$0] ?? $0.uuidString.prefix(8).description) })
         } catch {
-            return ids.map { $0.uuidString.prefix(8).description }
+            return Dictionary(uniqueKeysWithValues: ids.map { ($0, $0.uuidString.prefix(8).description) })
         }
     }
 }

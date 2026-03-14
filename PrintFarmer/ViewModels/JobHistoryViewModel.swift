@@ -9,6 +9,7 @@ final class JobHistoryViewModel {
     var isLoading = false
     var isLoadingMore = false
     var error: String?
+    var isViewActive = true
     var currentOffset = 0
 
     var dateFrom: Date?
@@ -23,7 +24,7 @@ final class JobHistoryViewModel {
     }
 
     func loadHistory() async {
-        guard let jobAnalyticsService else { return }
+        guard let jobAnalyticsService, isViewActive else { return }
         isLoading = true
         error = nil
         currentOffset = 0

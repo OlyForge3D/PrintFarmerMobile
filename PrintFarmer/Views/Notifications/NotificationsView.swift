@@ -4,6 +4,7 @@ struct NotificationsView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel = NotificationsViewModel()
+    @State private var activeTasks: [Task<Void, Never>] = []
 
     var body: some View {
         @Bindable var router = router
@@ -20,7 +21,8 @@ struct NotificationsView: View {
                         Text(error)
                     } actions: {
                         Button("Retry") {
-                            Task { await viewModel.loadNotifications() }
+                            let task = Task { await viewModel.loadNotifications() }
+                            activeTasks.append(task)
                         }
                     }
                 } else if viewModel.notifications.isEmpty {
@@ -38,7 +40,8 @@ struct NotificationsView: View {
                 ToolbarItem(placement: .automatic) {
                     if !viewModel.notifications.isEmpty {
                         Button("Mark All Read") {
-                            Task { await viewModel.markAllRead() }
+                            let task = Task { await viewModel.markAllRead() }
+                            activeTasks.append(task)
                         }
                         .disabled(viewModel.unreadCount == 0)
                     }
@@ -69,7 +72,8 @@ struct NotificationsView: View {
                     .swipeActions(edge: .leading) {
                         if !notification.isRead {
                             Button {
-                                Task { await viewModel.markRead(id: notification.id) }
+                                let task = Task { await viewModel.markRead(id: notification.id) }
+                                activeTasks.append(task)
                             } label: {
                                 Label("Read", systemImage: "envelope.open")
                             }
@@ -78,7 +82,8 @@ struct NotificationsView: View {
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            Task { await viewModel.deleteNotification(id: notification.id) }
+                            let task = Task { await viewModel.deleteNotification(id: notification.id) }
+                            activeTasks.append(task)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -94,7 +99,8 @@ struct NotificationsView: View {
     private func handleTap(_ notification: AppNotification) {
         // Mark as read on tap
         if !notification.isRead {
-            Task { await viewModel.markRead(id: notification.id) }
+            let task = Task { await viewModel.markRead(id: notification.id) }
+            activeTasks.append(task)
         }
 
         // Navigate to related resource if job is associated
