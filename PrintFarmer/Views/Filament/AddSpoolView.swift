@@ -52,6 +52,7 @@ struct AddSpoolView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         saveTask = Task { await viewModel.saveSpool() }
                     }
                     .disabled(!viewModel.isFormValid || viewModel.isSaving)

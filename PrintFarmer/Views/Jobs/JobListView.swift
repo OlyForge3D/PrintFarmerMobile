@@ -296,6 +296,7 @@ struct JobListView: View {
         .swipeActions(edge: .trailing) {
             if let uuid = item.job.jobUUID {
                 Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     retryTask = Task { await viewModel.cancelJob(id: uuid) }
                 } label: {
                     Label("Cancel", systemImage: "xmark.circle")
@@ -306,6 +307,7 @@ struct JobListView: View {
         .swipeActions(edge: .leading) {
             if let uuid = item.job.jobUUID {
                 Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     retryTask = Task { await viewModel.dispatchJob(id: uuid) }
                 } label: {
                     Label("Start", systemImage: "play.circle.fill")
