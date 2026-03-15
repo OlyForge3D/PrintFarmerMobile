@@ -158,6 +158,7 @@ struct AutoDispatchSection: View {
     private var actionButtons: some View {
         HStack(spacing: 8) {
             Button {
+                viewModel.isMarkingReady = true
                 let task = Task { await viewModel.markReady(printerId: printerId) }
                 activeTasks.append(task)
             } label: {
@@ -180,6 +181,7 @@ struct AutoDispatchSection: View {
             .opacity((isActionInProgress || viewModel.isMarkingReady || (!hasQueuedJobs && viewModel.parsedState != .pendingReady)) ? 0.4 : 1.0)
 
             Button {
+                viewModel.isSkipping = true
                 let task = Task { await viewModel.skip(printerId: printerId) }
                 activeTasks.append(task)
             } label: {

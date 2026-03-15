@@ -33,8 +33,11 @@ final class AutoDispatchViewModel {
     }
 
     func markReady(printerId: UUID) async {
-        guard let autoDispatchService else { return }
-        isMarkingReady = true
+        guard let autoDispatchService else {
+            isMarkingReady = false
+            return
+        }
+        // isMarkingReady is set synchronously by the caller before this Task starts
         error = nil
         do {
             readyResult = try await autoDispatchService.markReady(printerId: printerId)
@@ -52,6 +55,7 @@ final class AutoDispatchViewModel {
             isMarkingReady = false
             // Reload after a short delay for the authoritative state
             try? await Task.sleep(for: .seconds(2))
+            guard isViewActive else { return }
             await loadStatus(printerId: printerId)
         } catch {
             self.error = error.localizedDescription
@@ -60,8 +64,11 @@ final class AutoDispatchViewModel {
     }
 
     func skip(printerId: UUID) async {
-        guard let autoDispatchService else { return }
-        isSkipping = true
+        guard let autoDispatchService else {
+            isSkipping = false
+            return
+        }
+        // isSkipping is set synchronously by the caller before this Task starts
         error = nil
         do {
             status = try await autoDispatchService.skip(printerId: printerId)
