@@ -630,3 +630,9 @@ The View-side fix (activeTasks + onDisappear) was already in place from the prev
 The previous batch fix correctly added `activeTasks` tracking and `isViewActive = false` on disappear, but missed that the ViewModel's SignalR listener operates OUTSIDE the task lifecycle — it's a callback registered once that fires indefinitely. The `isViewActive` guard inside the callback is the only defense against post-dismissal mutations from push-based updates (SignalR, websockets, timers).
 
 **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator
+
+### PendingReady Yellow Headers Fix (2025-07-24)
+* **Root Cause:** `printer.state` is NEVER "PendingReady" — the printer stays "Ready" while awaiting bed clear. The PendingReady state only exists in the auto-dispatch status endpoint (`GET /api/autoprint/status`).
+* **Fix:** `PrinterListViewModel` now fetches auto-dispatch statuses via `autoPrintService.getAllStatus()` and stores them in `autoDispatchStatuses: [UUID: AutoDispatchStatus]`. Both `PrinterCardView` and `iPadPrinterCardView` accept an `isPendingReady: Bool` parameter instead of checking `printer.state`.
+* **Key Insight:** The web UI already does this correctly — it fetches auto-dispatch status separately via `useAutoDispatchStatus(printer.id)` hook. The iOS app was incorrectly checking a field that can never contain the expected value.
+* **Build Result:** ✅ Build succeeded on iPhone 17 Pro simulator

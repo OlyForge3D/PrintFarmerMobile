@@ -6,6 +6,7 @@ final class JobListViewModel {
     var isLoading = false
     var errorMessage: String?
     var showRecentJobs = false
+    var isViewActive = true
 
     private var jobService: (any JobServiceProtocol)?
 
@@ -14,45 +15,52 @@ final class JobListViewModel {
     }
 
     func loadJobs() async {
-        guard let jobService else { return }
+        guard let jobService, isViewActive else { return }
         isLoading = true
         errorMessage = nil
 
         do {
-            jobs = try await jobService.listAllJobs()
+            let result = try await jobService.listAllJobs()
+            guard isViewActive else { return }
+            jobs = result
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 
     func cancelJob(id: UUID) async {
-        guard let jobService else { return }
+        guard let jobService, isViewActive else { return }
         do {
             try await jobService.cancel(id: id)
             await loadJobs()
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
     }
 
     func abortJob(id: UUID) async {
-        guard let jobService else { return }
+        guard let jobService, isViewActive else { return }
         do {
             try await jobService.abort(id: id)
             await loadJobs()
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
     }
 
     func dispatchJob(id: UUID) async {
-        guard let jobService else { return }
+        guard let jobService, isViewActive else { return }
         do {
             try await jobService.dispatch(id: id)
             await loadJobs()
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
     }
