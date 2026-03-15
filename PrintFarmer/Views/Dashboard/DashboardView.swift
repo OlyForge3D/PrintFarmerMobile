@@ -77,11 +77,12 @@ struct DashboardView: View {
             await viewModel.loadDashboard()
         }
         .onDisappear {
+            viewModel.isViewActive = false
             dispatchRetryTask?.cancel()
             retryTask?.cancel()
         }
     }
-    
+
     // MARK: - iPhone Pages
     
     @ViewBuilder
@@ -174,6 +175,7 @@ struct DashboardView: View {
             await dispatchViewModel.loadHistory()
         }
         .onDisappear {
+            viewModel.isViewActive = false
             dispatchRetryTask?.cancel()
             retryTask?.cancel()
         }

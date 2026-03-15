@@ -30,6 +30,9 @@ struct JobTimelineView: View {
             viewModel.configure(jobAnalyticsService: services.jobAnalyticsService)
             await viewModel.loadTimeline(dateFrom: nil, dateTo: nil)
         }
+        .onDisappear {
+            viewModel.isViewActive = false
+        }
     }
 
     // MARK: - Timeline Content

@@ -67,7 +67,10 @@ struct JobListView: View {
             viewModel.configure(jobService: services.jobService)
             await viewModel.loadJobs()
         }
-        .onDisappear { retryTask?.cancel() }
+        .onDisappear {
+        retryTask?.cancel()
+        viewModel.isViewActive = false
+    }
     }
     
     // MARK: - iPhone Pages

@@ -30,7 +30,7 @@ final class JobHistoryViewModel {
         currentOffset = 0
 
         do {
-            historyPage = try await jobAnalyticsService.getHistory(
+            let result = try await jobAnalyticsService.getHistory(
                 limit: pageSize,
                 offset: 0,
                 sortBy: nil,
@@ -38,15 +38,19 @@ final class JobHistoryViewModel {
                 dateStart: dateFrom,
                 dateEnd: dateTo
             )
+            guard isViewActive else { return }
+            historyPage = result
         } catch {
+            guard isViewActive else { return }
             self.error = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 
     func loadMore() async {
-        guard let jobAnalyticsService, !isLoadingMore else { return }
+        guard let jobAnalyticsService, !isLoadingMore, isViewActive else { return }
         guard let page = historyPage, page.entries.count < page.totalCount else { return }
 
         isLoadingMore = true
@@ -61,6 +65,7 @@ final class JobHistoryViewModel {
                 dateStart: dateFrom,
                 dateEnd: dateTo
             )
+            guard isViewActive else { return }
             historyPage = QueueHistoryPage(
                 entries: (historyPage?.entries ?? []) + nextPage.entries,
                 totalCount: nextPage.totalCount,
@@ -69,32 +74,40 @@ final class JobHistoryViewModel {
                 stats: nextPage.stats
             )
         } catch {
+            guard isViewActive else { return }
             logger.warning("Failed to load more history: \(error.localizedDescription)")
         }
 
+        guard isViewActive else { return }
         isLoadingMore = false
     }
 
     func loadTimeline(dateFrom: Date?, dateTo: Date?) async {
-        guard let jobAnalyticsService else { return }
+        guard let jobAnalyticsService, isViewActive else { return }
         do {
-            timeline = try await jobAnalyticsService.getTimeline(
+            let result = try await jobAnalyticsService.getTimeline(
                 dateFrom: dateFrom,
                 dateTo: dateTo,
                 printerId: nil,
                 filterStatus: nil,
                 limit: 100
             )
+            guard isViewActive else { return }
+            timeline = result
         } catch {
+            guard isViewActive else { return }
             logger.warning("Failed to load timeline: \(error.localizedDescription)")
         }
     }
 
     func loadJobStateHistory(jobId: String) async {
-        guard let jobAnalyticsService else { return }
+        guard let jobAnalyticsService, isViewActive else { return }
         do {
-            selectedJobHistory = try await jobAnalyticsService.getJobStateHistory(jobId: jobId)
+            let result = try await jobAnalyticsService.getJobStateHistory(jobId: jobId)
+            guard isViewActive else { return }
+            selectedJobHistory = result
         } catch {
+            guard isViewActive else { return }
             self.error = error.localizedDescription
         }
     }

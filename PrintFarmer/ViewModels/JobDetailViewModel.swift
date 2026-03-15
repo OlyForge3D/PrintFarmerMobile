@@ -28,11 +28,15 @@ final class JobDetailViewModel {
         errorMessage = nil
 
         do {
-            job = try await jobService.get(id: jobId)
+            let result = try await jobService.get(id: jobId)
+            guard isViewActive else { return }
+            job = result
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 

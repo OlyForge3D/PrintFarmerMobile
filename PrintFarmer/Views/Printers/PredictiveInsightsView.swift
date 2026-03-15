@@ -28,6 +28,9 @@ struct PredictiveInsightsView: View {
             await viewModel.loadAlerts()
             await viewModel.loadForecasts()
         }
+        .onDisappear {
+            viewModel.isViewActive = false
+        }
     }
 
     // MARK: - Content

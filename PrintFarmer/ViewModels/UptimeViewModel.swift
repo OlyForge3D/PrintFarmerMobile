@@ -7,6 +7,7 @@ final class UptimeViewModel {
     var fleetStats: [FleetPrinterStatistics] = []
     var isLoading = false
     var error: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "Uptime")
     private var maintenanceService: (any MaintenanceServiceProtocol)?
@@ -16,19 +17,24 @@ final class UptimeViewModel {
     }
 
     func loadData() async {
-        guard let maintenanceService else { return }
+        guard let maintenanceService, isViewActive else { return }
         isLoading = true
         error = nil
 
         do {
             async let uptimeTask = maintenanceService.getUptime()
             async let fleetTask = maintenanceService.getFleetStatistics()
-            uptimeData = try await uptimeTask
-            fleetStats = try await fleetTask
+            let ut = try await uptimeTask
+            let fs = try await fleetTask
+            guard isViewActive else { return }
+            uptimeData = ut
+            fleetStats = fs
         } catch {
+            guard isViewActive else { return }
             self.error = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 
