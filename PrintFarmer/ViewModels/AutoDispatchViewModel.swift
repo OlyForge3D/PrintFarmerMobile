@@ -41,6 +41,7 @@ final class AutoDispatchViewModel {
         error = nil
         do {
             readyResult = try await autoDispatchService.markReady(printerId: printerId)
+            guard isViewActive else { isMarkingReady = false; return }
             // Optimistically transition away from PendingReady — the backend
             // processes the state machine asynchronously so an immediate reload
             // often still returns PendingReady even though the action succeeded.
@@ -52,11 +53,12 @@ final class AutoDispatchViewModel {
                     queuedJobCount: max(s.queuedJobCount - 1, 0)
                 )
             }
-            isMarkingReady = false
-            // Reload after a short delay for the authoritative state
+            // Keep button disabled through the reload cycle so the user sees
+            // sustained feedback. Re-enable only after the authoritative reload.
             try? await Task.sleep(for: .seconds(2))
-            guard isViewActive else { return }
+            guard isViewActive else { isMarkingReady = false; return }
             await loadStatus(printerId: printerId)
+            isMarkingReady = false
         } catch {
             self.error = error.localizedDescription
             isMarkingReady = false

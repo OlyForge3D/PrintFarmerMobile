@@ -40,6 +40,7 @@ struct NotificationsView: View {
                 ToolbarItem(placement: .automatic) {
                     if !viewModel.notifications.isEmpty {
                         Button("Mark All Read") {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             let task = Task { await viewModel.markAllRead() }
                             activeTasks.append(task)
                         }
@@ -76,6 +77,7 @@ struct NotificationsView: View {
                     .swipeActions(edge: .leading) {
                         if !notification.isRead {
                             Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 let task = Task { await viewModel.markRead(id: notification.id) }
                                 activeTasks.append(task)
                             } label: {
@@ -86,6 +88,7 @@ struct NotificationsView: View {
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             let task = Task { await viewModel.deleteNotification(id: notification.id) }
                             activeTasks.append(task)
                         } label: {

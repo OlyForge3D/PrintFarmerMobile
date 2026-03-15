@@ -45,6 +45,7 @@ struct PrinterDetailView: View {
         ) { _ in
             Button("Cancel", role: .cancel) {}
             Button("Confirm", role: .destructive) {
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                 let task = Task { await viewModel.confirmAction() }
                 activeTasks.append(task)
             }
@@ -232,6 +233,7 @@ struct PrinterDetailView: View {
             .buttonStyle(.bordered)
 
             Button(role: .destructive) {
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                 let task = Task { await viewModel.ejectFilament() }
                 activeTasks.append(task)
             } label: {
@@ -659,6 +661,7 @@ struct PrinterDetailView: View {
 
                 // Maintenance toggle
                 Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     let task = Task { await viewModel.toggleMaintenance() }
                     activeTasks.append(task)
                 } label: {
@@ -707,6 +710,7 @@ struct PrinterDetailView: View {
         action: @escaping () async -> Void
     ) -> some View {
         Button(role: role) {
+            UIImpactFeedbackGenerator(style: role == .destructive ? .heavy : .medium).impactOccurred()
             let task = Task { await action() }
             activeTasks.append(task)
         } label: {

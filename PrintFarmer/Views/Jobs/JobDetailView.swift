@@ -39,6 +39,7 @@ struct JobDetailView: View {
         .alert("Cancel Job?", isPresented: $viewModel.showCancelConfirmation) {
             Button("Keep", role: .cancel) {}
             Button("Cancel Job", role: .destructive) {
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                 let task = Task { await viewModel.cancelJob() }
                 activeTasks.append(task)
             }
