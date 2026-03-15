@@ -62,6 +62,7 @@ struct NotificationsView: View {
             router.notificationBadgeCount = newValue
         }
         .onDisappear {
+            viewModel.isViewActive = false
             activeTasks.forEach { $0.cancel() }
         }
     }

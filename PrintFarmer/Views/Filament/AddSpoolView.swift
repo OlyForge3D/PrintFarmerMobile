@@ -67,7 +67,10 @@ struct AddSpoolView: View {
             .onChange(of: viewModel.didSave) { _, saved in
                 if saved { dismiss() }
             }
-            .onDisappear { saveTask?.cancel() }
+            .onDisappear {
+                viewModel.isViewActive = false
+                saveTask?.cancel()
+            }
         }
     }
 

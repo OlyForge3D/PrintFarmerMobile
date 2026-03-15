@@ -23,6 +23,7 @@ final class AddSpoolViewModel {
     var isSaving = false
     var errorMessage: String?
     var didSave = false
+    var isViewActive = true
 
     // Scan pre-fill
     var isPrefilledFromScan = false
@@ -77,8 +78,8 @@ final class AddSpoolViewModel {
     ]
 
     func loadReferenceData() async {
-        guard let spoolService else {
-            errorMessage = "Spool service not available"
+        guard let spoolService, isViewActive else {
+            if spoolService == nil { errorMessage = "Spool service not available" }
             return
         }
 
@@ -88,19 +89,25 @@ final class AddSpoolViewModel {
             async let mats = spoolService.listMaterials()
             async let vends = spoolService.listVendors()
             async let fils = spoolService.listFilaments()
-            materials = try await mats
-            vendors = try await vends
-            filaments = try await fils
+            let m = try await mats
+            let v = try await vends
+            let f = try await fils
+            guard isViewActive else { return }
+            materials = m
+            vendors = v
+            filaments = f
         } catch {
+            guard isViewActive else { return }
             logger.warning("Failed to load reference data: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 
     func saveSpool() async {
-        guard let spoolService, isFormValid else { return }
+        guard let spoolService, isFormValid, isViewActive else { return }
 
         isSaving = true
         errorMessage = nil
@@ -120,12 +127,15 @@ final class AddSpoolViewModel {
 
         do {
             _ = try await spoolService.createSpool(request)
+            guard isViewActive else { return }
             didSave = true
         } catch {
+            guard isViewActive else { return }
             logger.warning("Failed to create spool: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isSaving = false
     }
 }

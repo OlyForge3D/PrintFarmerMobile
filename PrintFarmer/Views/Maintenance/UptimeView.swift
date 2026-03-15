@@ -36,7 +36,10 @@ struct UptimeView: View {
             viewModel.configure(maintenanceService: services.maintenanceService)
             await viewModel.loadData()
         }
-        .onDisappear { retryTask?.cancel() }
+        .onDisappear {
+            viewModel.isViewActive = false
+            retryTask?.cancel()
+        }
     }
 
     // MARK: - Content

@@ -12,6 +12,7 @@ final class DashboardViewModel {
     var upcomingJobs: [QueuedJobWithMeta] = []
     var isLoading = false
     var errorMessage: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "Dashboard")
 
@@ -57,7 +58,7 @@ final class DashboardViewModel {
     }
 
     func loadDashboard() async {
-        guard let printerService, let jobService else { return }
+        guard let printerService, let jobService, isViewActive else { return }
         isLoading = true
         errorMessage = nil
 
@@ -65,16 +66,21 @@ final class DashboardViewModel {
             async let printersTask = printerService.list()
             async let queueTask = jobService.list()
             async let allJobsTask = jobService.listAllJobs()
-            printers = try await printersTask
-            queueOverview = try await queueTask
+            let p = try await printersTask
+            let q = try await queueTask
             let allJobs = try await allJobsTask
+            guard isViewActive else { return }
+            printers = p
+            queueOverview = q
             activeJobs = allJobs.filter {
                 guard let status = $0.job.jobStatus else { return false }
                 return [.printing, .starting, .paused].contains(status)
             }
 
             do {
-                summary = try await statisticsService?.getSummary()
+                let s = try await statisticsService?.getSummary()
+                guard isViewActive else { return }
+                summary = s
             } catch {
                 logger.warning("Failed to load statistics summary: \(error.localizedDescription)")
             }
@@ -90,16 +96,22 @@ final class DashboardViewModel {
                     limit: 5,
                     offset: 0
                 )
-                queueStats = try await statsTask
-                modelStats = try await modelStatsTask ?? []
-                upcomingJobs = try await upcomingTask ?? []
+                let qs = try await statsTask
+                let ms = try await modelStatsTask ?? []
+                let uj = try await upcomingTask ?? []
+                guard isViewActive else { return }
+                queueStats = qs
+                modelStats = ms
+                upcomingJobs = uj
             } catch {
                 logger.warning("Failed to load farm status data: \(error.localizedDescription)")
             }
         } catch {
+            guard isViewActive else { return }
             errorMessage = error.localizedDescription
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 

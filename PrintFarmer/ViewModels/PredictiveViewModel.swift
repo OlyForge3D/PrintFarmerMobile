@@ -8,6 +8,7 @@ final class PredictiveViewModel {
     var forecasts: [MaintenanceForecast] = []
     var isLoading = false
     var error: String?
+    var isViewActive = true
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "Predictive")
     private var predictiveService: (any PredictiveServiceProtocol)?
@@ -17,7 +18,7 @@ final class PredictiveViewModel {
     }
 
     func predictFailure(printerId: UUID, material: String?, duration: TimeInterval?) async {
-        guard let predictiveService else { return }
+        guard let predictiveService, isViewActive else { return }
         isLoading = true
         error = nil
 
@@ -27,29 +28,36 @@ final class PredictiveViewModel {
                 material: material,
                 estimatedDurationSeconds: duration.map { Int($0) }
             )
-            prediction = try await predictiveService.predictJobFailure(request: request)
+            let result = try await predictiveService.predictJobFailure(request: request)
+            guard isViewActive else { return }
+            prediction = result
         } catch {
+            guard isViewActive else { return }
             logger.warning("Failed to predict failure: \(error.localizedDescription)")
-            // Don't show error for network/decode failures — show empty state instead
             prediction = nil
         }
 
+        guard isViewActive else { return }
         isLoading = false
     }
 
     func loadAlerts() async {
-        guard let predictiveService else { return }
+        guard let predictiveService, isViewActive else { return }
         do {
-            alerts = try await predictiveService.getActiveAlerts()
+            let result = try await predictiveService.getActiveAlerts()
+            guard isViewActive else { return }
+            alerts = result
         } catch {
             logger.warning("Failed to load predictive alerts: \(error.localizedDescription)")
         }
     }
 
     func loadForecasts() async {
-        guard let predictiveService else { return }
+        guard let predictiveService, isViewActive else { return }
         do {
-            forecasts = try await predictiveService.getMaintenanceForecast(days: 30)
+            let result = try await predictiveService.getMaintenanceForecast(days: 30)
+            guard isViewActive else { return }
+            forecasts = result
         } catch {
             logger.warning("Failed to load forecasts: \(error.localizedDescription)")
         }
