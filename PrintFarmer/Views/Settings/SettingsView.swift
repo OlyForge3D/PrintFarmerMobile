@@ -5,7 +5,6 @@ import UserNotifications
 
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
-    @Environment(ServiceContainer.self) private var services
     @Environment(ThemeManager.self) private var themeManager
     @State private var showLogoutConfirmation = false
     @State private var showChangeURL = false
@@ -83,7 +82,7 @@ struct SettingsView: View {
                 if DemoMode.shared.isActive {
                     Section {
                         Button(role: .destructive) {
-                            logoutTask = Task { await authViewModel.exitDemoMode(services: services) }
+                            logoutTask = Task { await authViewModel.exitDemoMode() }
                         } label: {
                             Label("Exit Demo Mode", systemImage: "arrow.left.circle")
                         }

@@ -14,7 +14,7 @@ struct PFarmApp: App {
         if DemoMode.shared.isActive {
             let container = ServiceContainer.demo()
             _services = State(initialValue: container)
-            _authViewModel = State(initialValue: AuthViewModel(authService: container.authService))
+            _authViewModel = State(initialValue: AuthViewModel(services: container))
         } else {
             let resolvedURL: URL
             if let mockURL = ProcessInfo.processInfo.environment["PFARM_MOCK_SERVER_URL"],
@@ -25,7 +25,7 @@ struct PFarmApp: App {
             }
             let container = ServiceContainer(baseURL: resolvedURL)
             _services = State(initialValue: container)
-            _authViewModel = State(initialValue: AuthViewModel(authService: container.authService))
+            _authViewModel = State(initialValue: AuthViewModel(services: container))
         }
     }
 
