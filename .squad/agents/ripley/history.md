@@ -767,3 +767,17 @@ func application(
 - @MainActor @Observable singletons work well for cross-layer state (better than EnvironmentKey)
 - VStack layout for persistent UI elements avoids SwiftUI overlay timing issues
 - Demo user pattern (username="demo_user", role="viewer") enables role-based UI branching
+
+### Demo Mode Hot-Swap Fix (2026-03-18)
+**Bug:** Tapping "Try Demo Mode" caused infinite spinners because ServiceContainer was initialized with real services at app startup and never swapped.
+
+**Files Modified:**
+- `PrintFarmer/Services/ServiceContainer.swift` — Changed `let` properties to `var`, added `switchToDemo()` and `switchToReal(baseURL:)` methods for runtime service swapping
+- `PrintFarmer/ViewModels/AuthViewModel.swift` — `loginAsDemo(services:)` and `exitDemoMode(services:)` now accept ServiceContainer and call switchToDemo/switchToReal
+- `PrintFarmer/Views/Auth/LoginView.swift` — Pulls ServiceContainer from @Environment, passes to loginAsDemo
+- `PrintFarmer/Views/Settings/SettingsView.swift` — Pulls ServiceContainer from @Environment, passes to exitDemoMode
+
+**Key Pattern:**
+- ServiceContainer is @Observable, so mutating its properties triggers SwiftUI view updates automatically
+- The container stays the same reference (same @State in PFarmApp), only its service implementations swap
+- No need to replace the container or re-inject — @Observable handles propagation
