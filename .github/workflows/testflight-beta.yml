@@ -203,7 +203,7 @@ jobs:
             --ipa "build/IPA/PrintFarmer.ipa" \
             --api_key_path "$API_KEY_JSON" \
             --changelog "Beta build from tag: ${{ steps.version.outputs.tag_name }}" \
-            --skip_waiting_for_build_processing
+            --distribute_external true
 
       - name: Notify Slack
         if: success()
