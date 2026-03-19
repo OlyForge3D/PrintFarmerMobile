@@ -781,3 +781,24 @@ func application(
 - ServiceContainer is @Observable, so mutating its properties triggers SwiftUI view updates automatically
 - The container stays the same reference (same @State in PFarmApp), only its service implementations swap
 - No need to replace the container or re-inject — @Observable handles propagation
+
+### AuthViewModel Stale Service Reference Fix (2026-03-18)
+**Bug:** After exiting demo mode and logging in with real credentials, the app still showed demo data. AuthViewModel held a stale reference to the old DemoAuthService captured at init time.
+
+**Root Cause:** `private let authService: any AuthServiceProtocol` was set once in `init(authService:)`. When `switchToReal()` swapped the container's services, AuthViewModel still called the old DemoAuthService.
+
+**Fix:**
+- `AuthViewModel` now stores `ServiceContainer` instead of a bare `AuthServiceProtocol`, accessing `services.authService` dynamically at each call site
+- `init(services:)` replaces `init(authService:)`
+- `loginAsDemo()` and `exitDemoMode()` no longer take a `services` parameter — the VM already owns the container
+- LoginView and SettingsView no longer need `@Environment(ServiceContainer.self)` for those calls
+
+**Files Modified:**
+- `PrintFarmer/ViewModels/AuthViewModel.swift` — store ServiceContainer, access .authService dynamically
+- `PrintFarmer/PFarmApp.swift` — pass container to AuthViewModel init
+- `PrintFarmer/Views/Auth/LoginView.swift` — removed services environment, simplified loginAsDemo call
+- `PrintFarmer/Views/Settings/SettingsView.swift` — removed services environment, simplified exitDemoMode call
+
+## Learnings
+- When using @Observable service containers with hot-swappable services, ViewModels must read from the container dynamically — never capture a protocol reference at init
+- The previous hot-swap fix was incomplete: it made the container swappable but left consumers holding stale references

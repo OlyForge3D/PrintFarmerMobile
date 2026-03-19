@@ -2,7 +2,6 @@ import SwiftUI
 
 struct LoginView: View {
     @Environment(AuthViewModel.self) private var authViewModel
-    @Environment(ServiceContainer.self) private var services
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel = LoginViewModel()
     @State private var loginTask: Task<Void, Never>?
@@ -178,7 +177,7 @@ struct LoginView: View {
 
     private var demoModeButton: some View {
         Button {
-            authViewModel.loginAsDemo(services: services)
+            authViewModel.loginAsDemo()
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "play.circle")

@@ -12,11 +12,11 @@ final class AuthViewModel {
     /// True once the initial session restore check has completed.
     private(set) var hasCheckedAuth = false
 
-    private let authService: any AuthServiceProtocol
+    private let services: ServiceContainer
     @ObservationIgnored private var sessionExpiredObserver: NSObjectProtocol?
 
-    init(authService: any AuthServiceProtocol) {
-        self.authService = authService
+    init(services: ServiceContainer) {
+        self.services = services
         sessionExpiredObserver = NotificationCenter.default.addObserver(
             forName: .sessionExpired,
             object: nil,
@@ -33,7 +33,7 @@ final class AuthViewModel {
 
     func restoreSession() async {
         isLoading = true
-        if let user = await authService.restoreSession() {
+        if let user = await services.authService.restoreSession() {
             currentUser = user
             isAuthenticated = true
         }
@@ -48,7 +48,7 @@ final class AuthViewModel {
         errorMessage = nil
 
         do {
-            let response = try await authService.login(
+            let response = try await services.authService.login(
                 serverURL: serverURL,
                 username: username,
                 password: password
@@ -65,21 +65,21 @@ final class AuthViewModel {
     }
 
     func logout() async {
-        await authService.logout()
+        await services.authService.logout()
         isAuthenticated = false
         currentUser = nil
     }
 
     // MARK: - Demo Mode
 
-    func loginAsDemo(services: ServiceContainer) {
+    func loginAsDemo() {
         DemoMode.shared.activate()
         services.switchToDemo()
         currentUser = DemoData.demoUser
         isAuthenticated = true
     }
 
-    func exitDemoMode(services: ServiceContainer) async {
+    func exitDemoMode() async {
         DemoMode.shared.deactivate()
         services.switchToReal()
         await logout()
