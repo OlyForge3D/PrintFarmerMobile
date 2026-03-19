@@ -16,37 +16,43 @@ struct RootView: View {
     @State private var disconnectTask: Task<Void, Never>?
 
     var body: some View {
-        Group {
-            if authViewModel.isAuthenticated {
-                ContentView()
-                    .task {
-                        pendingReadyMonitor.configure(
-                            autoPrintService: services.autoPrintService,
-                            printerService: services.printerService
-                        )
-                        await pendingReadyMonitor.requestNotificationPermission()
-                        pendingReadyMonitor.startMonitoring()
-                        do {
-                            try await services.signalRService.connect()
-                        } catch {
-                            // SignalR will auto-reconnect; log silently
+        VStack(spacing: 0) {
+            if DemoMode.shared.isActive && authViewModel.isAuthenticated {
+                DemoModeBanner()
+            }
+
+            Group {
+                if authViewModel.isAuthenticated {
+                    ContentView()
+                        .task {
+                            pendingReadyMonitor.configure(
+                                autoPrintService: services.autoPrintService,
+                                printerService: services.printerService
+                            )
+                            await pendingReadyMonitor.requestNotificationPermission()
+                            pendingReadyMonitor.startMonitoring()
+                            do {
+                                try await services.signalRService.connect()
+                            } catch {
+                                // SignalR will auto-reconnect; log silently
+                            }
                         }
-                    }
-                    .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
-                        router.pendingReadyCount = newValue
-                    }
-            } else if !authViewModel.hasCheckedAuth || !minimumSplashElapsed {
-                launchScreen
-                    .task {
-                        try? await Task.sleep(for: .seconds(1.5))
-                        minimumSplashElapsed = true
-                    }
-            } else if !hasSeenOnboarding {
-                OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
-            } else if !hasCompletedNetworkPermission {
-                LocalNetworkPermissionView(hasCompletedNetworkPermission: $hasCompletedNetworkPermission)
-            } else {
-                LoginView()
+                        .onChange(of: pendingReadyMonitor.pendingReadyCount) { _, newValue in
+                            router.pendingReadyCount = newValue
+                        }
+                } else if !authViewModel.hasCheckedAuth || !minimumSplashElapsed {
+                    launchScreen
+                        .task {
+                            try? await Task.sleep(for: .seconds(1.5))
+                            minimumSplashElapsed = true
+                        }
+                } else if !hasSeenOnboarding {
+                    OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
+                } else if !hasCompletedNetworkPermission {
+                    LocalNetworkPermissionView(hasCompletedNetworkPermission: $hasCompletedNetworkPermission)
+                } else {
+                    LoginView()
+                }
             }
         }
         .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in

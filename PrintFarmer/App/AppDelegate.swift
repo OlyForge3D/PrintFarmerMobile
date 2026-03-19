@@ -32,5 +32,31 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             PushNotificationManager.shared.didFailToRegisterForRemoteNotifications(error: error)
         }
     }
+
+    // MARK: - Scene Configuration
+
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        // Only support standard window scenes. Return empty config for CarPlay or other scene types
+        // to prevent crashes when connected to unsupported scene roles.
+        if connectingSceneSession.role == .windowApplication {
+            let config = UISceneConfiguration(name: "Default Configuration", sessionRole: .windowApplication)
+            config.delegateClass = nil // SwiftUI manages scene lifecycle
+            return config
+        } else {
+            // CarPlay or other unsupported scene types get minimal config
+            return UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        }
+    }
+
+    func application(
+        _ application: UIApplication,
+        didDiscardSceneSessions sceneSessions: Set<UISceneSession>
+    ) {
+        // Clean up any resources for discarded scenes if needed
+    }
 }
 #endif

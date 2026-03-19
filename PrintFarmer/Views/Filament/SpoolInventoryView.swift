@@ -134,7 +134,9 @@ struct SpoolInventoryView: View {
             .task {
                 viewModel.configure(spoolService: services.spoolService)
                 #if canImport(UIKit)
-                viewModel.configureNFC(scanner: services.nfcService)
+                if let nfc = services.nfcService {
+                    viewModel.configureNFC(scanner: nfc)
+                }
                 #endif
                 await viewModel.loadSpools()
                 if let spoolId = router.pendingSpoolHighlightId {

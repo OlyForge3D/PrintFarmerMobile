@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Location Service
 
-actor LocationService {
+actor LocationService: LocationServiceProtocol {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

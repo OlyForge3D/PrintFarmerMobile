@@ -62,7 +62,9 @@ struct PrinterDetailView: View {
         .task {
             viewModel.configure(printerService: services.printerService)
             #if canImport(UIKit)
-            viewModel.configureNFCScanner(services.nfcService)
+            if let nfc = services.nfcService {
+                viewModel.configureNFCScanner(nfc)
+            }
             #endif
             viewModel.configureAutoDispatch(services.autoPrintService)
             viewModel.configureSignalR(services.signalRService)

@@ -41,7 +41,7 @@ final class PushNotificationManager: NSObject, @unchecked Sendable {
     // MARK: - Dependencies
 
     /// Set after login to enable server-side token registration.
-    private var notificationService: NotificationService?
+    private var notificationService: (any NotificationServiceProtocol)?
 
     // MARK: - Init
 
@@ -53,7 +53,7 @@ final class PushNotificationManager: NSObject, @unchecked Sendable {
 
     // MARK: - Configuration
 
-    func configure(notificationService: NotificationService) {
+    func configure(notificationService: any NotificationServiceProtocol) {
         self.notificationService = notificationService
     }
 
