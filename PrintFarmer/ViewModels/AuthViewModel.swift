@@ -12,10 +12,10 @@ final class AuthViewModel {
     /// True once the initial session restore check has completed.
     private(set) var hasCheckedAuth = false
 
-    private let authService: AuthService
+    private let authService: any AuthServiceProtocol
     @ObservationIgnored private var sessionExpiredObserver: NSObjectProtocol?
 
-    init(authService: AuthService) {
+    init(authService: any AuthServiceProtocol) {
         self.authService = authService
         sessionExpiredObserver = NotificationCenter.default.addObserver(
             forName: .sessionExpired,
@@ -68,6 +68,19 @@ final class AuthViewModel {
         await authService.logout()
         isAuthenticated = false
         currentUser = nil
+    }
+
+    // MARK: - Demo Mode
+
+    func loginAsDemo() {
+        DemoMode.shared.activate()
+        currentUser = DemoData.demoUser
+        isAuthenticated = true
+    }
+
+    func exitDemoMode() async {
+        DemoMode.shared.deactivate()
+        await logout()
     }
 
     // MARK: - Helpers

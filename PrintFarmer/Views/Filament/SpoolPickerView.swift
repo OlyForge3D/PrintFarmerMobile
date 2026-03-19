@@ -94,7 +94,9 @@ struct SpoolPickerView: View {
             .task {
                 viewModel.configure(spoolService: services.spoolService)
                 #if canImport(UIKit)
-                viewModel.configureNFCScanner(services.nfcService)
+                if let nfc = services.nfcService {
+                    viewModel.configureNFCScanner(nfc)
+                }
                 #endif
                 viewModel.onAutoSelect = { spool in
                     onSelect(spool)

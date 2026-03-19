@@ -31,6 +31,9 @@ struct LoginView: View {
                 // MARK: - Sign In
                 signInButton
 
+                // MARK: - Demo Mode
+                demoModeButton
+
                 Spacer(minLength: 60)
             }
             .padding(.horizontal, 32)
@@ -168,6 +171,23 @@ struct LoginView: View {
         }
         .buttonStyle(.borderedProminent)
         .disabled(!viewModel.isFormValid || authViewModel.isLoading)
+    }
+
+    // MARK: - Demo Mode
+
+    private var demoModeButton: some View {
+        Button {
+            authViewModel.loginAsDemo()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "play.circle")
+                Text("Try Demo Mode")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
     }
 
     // MARK: - Actions

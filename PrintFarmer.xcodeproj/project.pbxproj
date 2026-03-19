@@ -168,6 +168,24 @@
 		DFD2A0FB3DC489F94A8CA1D8 /* MaintenanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF6960887D6BE3947D944C8 /* MaintenanceViewModel.swift */; };
 		E02BCD8D6DB753506D437BF5 /* AutoDispatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D1020247C4116936C828DD /* AutoDispatchModels.swift */; };
 		E36958254468F349BCE07693 /* JobAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E5245051668A52E97EA4A9 /* JobAnalyticsService.swift */; };
+		9E95C65470445D11D1AC62E4 /* AuthServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7887B0DD4513CE9C87826 /* AuthServiceProtocol.swift */; };
+		F7A48E9C1C18B76092C052AE /* LocationServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF16548F3F1D5C3EAB3E4E14 /* LocationServiceProtocol.swift */; };
+		168C55CF29586F848BE4B869 /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D59686935AD2C62C29D912 /* DemoData.swift */; };
+		4286F2527CFAD89E261980F6 /* DemoAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851A07AC635F0B71E4EAD648 /* DemoAuthService.swift */; };
+		402AAB63DEEBDF2F1A5E2C2F /* DemoPrinterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F053BC6DCA19E797485E4F0 /* DemoPrinterService.swift */; };
+		8199F0F02FF1F9258DFFB926 /* DemoJobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13486A95DBA9E1C3DA81A031 /* DemoJobService.swift */; };
+		6D982FEF2C7FA9382A0BF354 /* DemoSpoolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFFF06BB67FE01E4DADD88E /* DemoSpoolService.swift */; };
+		6CE4722D3DB54BDFE9DE0FFF /* DemoLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF44DAD87236ACF5D2387EF0 /* DemoLocationService.swift */; };
+		174989D8244174929492B23F /* DemoNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81783B769C3897AF7B30353 /* DemoNotificationService.swift */; };
+		58A3F5C8288BD92030DC1904 /* DemoStatisticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D7C7C60040E58B8A24681A /* DemoStatisticsService.swift */; };
+		3524856D77AEAE9BAD649186 /* DemoMaintenanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E9A5E9738ADA190A83354C /* DemoMaintenanceService.swift */; };
+		60F2B655F2FBC9AFCFBAD01C /* DemoAutoDispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B96F411A0F4B4EA6AABB11B /* DemoAutoDispatchService.swift */; };
+		CB2FF0F351CB05372F628076 /* DemoJobAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B702C279B165D2E4C7F09452 /* DemoJobAnalyticsService.swift */; };
+		020C765E7D2D796BD28ACC51 /* DemoPredictiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8EE4961761DA7DC5DF17E6 /* DemoPredictiveService.swift */; };
+		699EE04580D31EAC1DFDB514 /* DemoDispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2964C5D45A5CE3875411C5 /* DemoDispatchService.swift */; };
+		06290C51382B80A7269F5807 /* DemoSignalRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 647C4A6609FCEA4362C65F32 /* DemoSignalRService.swift */; };
+		20C7007EC7BAF78868D23835 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F1813AB98B7AEA3A598863F /* DemoMode.swift */; };
+		82D78FD0563C041F9256AEF2 /* DemoModeBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94B82574E19FCFCF60B9C152 /* DemoModeBanner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -345,6 +363,24 @@
 		F9613964BDF412E866655E27 /* UptimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UptimeView.swift; sourceTree = "<group>"; };
 		F9E5245051668A52E97EA4A9 /* JobAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAnalyticsService.swift; sourceTree = "<group>"; };
 		FF9ACFBFE1D96FCCB90261DF /* MaintenanceAlertRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceAlertRow.swift; sourceTree = "<group>"; };
+		F2F7887B0DD4513CE9C87826 /* AuthServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceProtocol.swift; sourceTree = "<group>"; };
+		CF16548F3F1D5C3EAB3E4E14 /* LocationServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServiceProtocol.swift; sourceTree = "<group>"; };
+		D8D59686935AD2C62C29D912 /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
+		851A07AC635F0B71E4EAD648 /* DemoAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoAuthService.swift; sourceTree = "<group>"; };
+		3F053BC6DCA19E797485E4F0 /* DemoPrinterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoPrinterService.swift; sourceTree = "<group>"; };
+		13486A95DBA9E1C3DA81A031 /* DemoJobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoJobService.swift; sourceTree = "<group>"; };
+		7BFFF06BB67FE01E4DADD88E /* DemoSpoolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSpoolService.swift; sourceTree = "<group>"; };
+		CF44DAD87236ACF5D2387EF0 /* DemoLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoLocationService.swift; sourceTree = "<group>"; };
+		C81783B769C3897AF7B30353 /* DemoNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoNotificationService.swift; sourceTree = "<group>"; };
+		17D7C7C60040E58B8A24681A /* DemoStatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoStatisticsService.swift; sourceTree = "<group>"; };
+		30E9A5E9738ADA190A83354C /* DemoMaintenanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMaintenanceService.swift; sourceTree = "<group>"; };
+		1B96F411A0F4B4EA6AABB11B /* DemoAutoDispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoAutoDispatchService.swift; sourceTree = "<group>"; };
+		B702C279B165D2E4C7F09452 /* DemoJobAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoJobAnalyticsService.swift; sourceTree = "<group>"; };
+		3D8EE4961761DA7DC5DF17E6 /* DemoPredictiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoPredictiveService.swift; sourceTree = "<group>"; };
+		7B2964C5D45A5CE3875411C5 /* DemoDispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoDispatchService.swift; sourceTree = "<group>"; };
+		647C4A6609FCEA4362C65F32 /* DemoSignalRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSignalRService.swift; sourceTree = "<group>"; };
+		5F1813AB98B7AEA3A598863F /* DemoMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMode.swift; sourceTree = "<group>"; };
+		94B82574E19FCFCF60B9C152 /* DemoModeBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoModeBanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -426,6 +462,7 @@
 		15E99E10A0724AD818418752 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				9FB00D1FA66F23705042FF95 /* Demo */,
 				3DDD6FCA23053FB398C63F95 /* APIClient.swift */,
 				8D809C1522119BD07956A1A7 /* AuthService.swift */,
 				CAA04408A2539F908022484D /* JobService.swift */,
@@ -481,6 +518,8 @@
 		2FBE1183347281A5833ADCC0 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
+				F2F7887B0DD4513CE9C87826 /* AuthServiceProtocol.swift */,
+				CF16548F3F1D5C3EAB3E4E14 /* LocationServiceProtocol.swift */,
 				F9C17AD264628260EACB8E5E /* JobServiceProtocol.swift */,
 				820455561ACB377B99D56057 /* NotificationServiceProtocol.swift */,
 				288048764D1B47272B433307 /* PrinterServiceProtocol.swift */,
@@ -661,6 +700,7 @@
 		CF12EED79C368B077ED14222 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				94B82574E19FCFCF60B9C152 /* DemoModeBanner.swift */,
 				534568DC689B743CE69E44A4 /* EmptyStateView.swift */,
 				46DEBCDF7D99C0F2AEFB6AEC /* ActionButtonStyle.swift */,
 				93B8E20F526E7CE3E92BE781 /* JobCardView.swift */,
@@ -689,6 +729,7 @@
 		D8E08A4195085C8E465A95A6 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				5F1813AB98B7AEA3A598863F /* DemoMode.swift */,
 				962BFA7750A020B42AECBFA4 /* AppConfig.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* NFCTagParser.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* QRCodeParser.swift */,
@@ -766,6 +807,27 @@
 				F9613964BDF412E866655E27 /* UptimeView.swift */,
 			);
 			path = Maintenance;
+			sourceTree = "<group>";
+		};
+		9FB00D1FA66F23705042FF95 /* Demo */ = {
+			isa = PBXGroup;
+			children = (
+				D8D59686935AD2C62C29D912 /* DemoData.swift */,
+				851A07AC635F0B71E4EAD648 /* DemoAuthService.swift */,
+				3F053BC6DCA19E797485E4F0 /* DemoPrinterService.swift */,
+				13486A95DBA9E1C3DA81A031 /* DemoJobService.swift */,
+				7BFFF06BB67FE01E4DADD88E /* DemoSpoolService.swift */,
+				CF44DAD87236ACF5D2387EF0 /* DemoLocationService.swift */,
+				C81783B769C3897AF7B30353 /* DemoNotificationService.swift */,
+				17D7C7C60040E58B8A24681A /* DemoStatisticsService.swift */,
+				30E9A5E9738ADA190A83354C /* DemoMaintenanceService.swift */,
+				1B96F411A0F4B4EA6AABB11B /* DemoAutoDispatchService.swift */,
+				B702C279B165D2E4C7F09452 /* DemoJobAnalyticsService.swift */,
+				3D8EE4961761DA7DC5DF17E6 /* DemoPredictiveService.swift */,
+				7B2964C5D45A5CE3875411C5 /* DemoDispatchService.swift */,
+				647C4A6609FCEA4362C65F32 /* DemoSignalRService.swift */,
+			);
+			path = Demo;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -909,6 +971,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				82D78FD0563C041F9256AEF2 /* DemoModeBanner.swift in Sources */,
+				20C7007EC7BAF78868D23835 /* DemoMode.swift in Sources */,
+				9E95C65470445D11D1AC62E4 /* AuthServiceProtocol.swift in Sources */,
+				F7A48E9C1C18B76092C052AE /* LocationServiceProtocol.swift in Sources */,
+				168C55CF29586F848BE4B869 /* DemoData.swift in Sources */,
+				4286F2527CFAD89E261980F6 /* DemoAuthService.swift in Sources */,
+				402AAB63DEEBDF2F1A5E2C2F /* DemoPrinterService.swift in Sources */,
+				8199F0F02FF1F9258DFFB926 /* DemoJobService.swift in Sources */,
+				6D982FEF2C7FA9382A0BF354 /* DemoSpoolService.swift in Sources */,
+				6CE4722D3DB54BDFE9DE0FFF /* DemoLocationService.swift in Sources */,
+				174989D8244174929492B23F /* DemoNotificationService.swift in Sources */,
+				58A3F5C8288BD92030DC1904 /* DemoStatisticsService.swift in Sources */,
+				3524856D77AEAE9BAD649186 /* DemoMaintenanceService.swift in Sources */,
+				60F2B655F2FBC9AFCFBAD01C /* DemoAutoDispatchService.swift in Sources */,
+				CB2FF0F351CB05372F628076 /* DemoJobAnalyticsService.swift in Sources */,
+				020C765E7D2D796BD28ACC51 /* DemoPredictiveService.swift in Sources */,
+				699EE04580D31EAC1DFDB514 /* DemoDispatchService.swift in Sources */,
+				06290C51382B80A7269F5807 /* DemoSignalRService.swift in Sources */,
 				2868397DE77379D694A2172C /* PFarmApp.swift in Sources */,
 				8ED9E2039EB36A33F0B9850D /* Formatting+Extensions.swift in Sources */,
 				660DA45F179749438845EEE1 /* SpoolmanSpool+ColorName.swift in Sources */,

@@ -78,6 +78,18 @@ struct SettingsView: View {
                     LabeledContent("Version", value: AppConfig.appVersion)
                     LabeledContent("Build", value: AppConfig.buildNumber)
                 }
+
+                if DemoMode.shared.isActive {
+                    Section {
+                        Button(role: .destructive) {
+                            logoutTask = Task { await authViewModel.exitDemoMode() }
+                        } label: {
+                            Label("Exit Demo Mode", systemImage: "arrow.left.circle")
+                        }
+                    } footer: {
+                        Text("Return to login and connect with real credentials.")
+                    }
+                }
             }
             .navigationTitle("Settings")
             .confirmationDialog("Sign Out?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {

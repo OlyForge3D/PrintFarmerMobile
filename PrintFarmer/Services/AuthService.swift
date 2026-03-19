@@ -3,7 +3,7 @@ import KeychainSwift
 
 // MARK: - Auth Service
 
-actor AuthService {
+actor AuthService: AuthServiceProtocol {
     private let apiClient: APIClient
     private let keychain = KeychainSwift()
 

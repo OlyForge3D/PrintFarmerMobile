@@ -11,18 +11,22 @@ struct PFarmApp: App {
     @State private var themeManager = ThemeManager()
 
     init() {
-        let resolvedURL: URL
-        if let mockURL = ProcessInfo.processInfo.environment["PFARM_MOCK_SERVER_URL"],
-           let url = URL(string: mockURL) {
-            // XCUITest injects a mock server URL via launch environment
-            resolvedURL = url
+        if DemoMode.shared.isActive {
+            let container = ServiceContainer.demo()
+            _services = State(initialValue: container)
+            _authViewModel = State(initialValue: AuthViewModel(authService: container.authService))
         } else {
-            resolvedURL = APIClient.savedBaseURL() ?? AppConfig.baseURL
+            let resolvedURL: URL
+            if let mockURL = ProcessInfo.processInfo.environment["PFARM_MOCK_SERVER_URL"],
+               let url = URL(string: mockURL) {
+                resolvedURL = url
+            } else {
+                resolvedURL = APIClient.savedBaseURL() ?? AppConfig.baseURL
+            }
+            let container = ServiceContainer(baseURL: resolvedURL)
+            _services = State(initialValue: container)
+            _authViewModel = State(initialValue: AuthViewModel(authService: container.authService))
         }
-        let container = ServiceContainer(baseURL: resolvedURL)
-        _services = State(initialValue: container)
-        let authService = AuthService(apiClient: container.apiClient)
-        _authViewModel = State(initialValue: AuthViewModel(authService: authService))
     }
 
     var body: some Scene {
