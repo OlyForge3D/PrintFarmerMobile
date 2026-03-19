@@ -1335,3 +1335,82 @@ func application(
 
 ## Files Modified
 - `PrintFarmer/App/AppDelegate.swift` — Scene configuration methods
+
+---
+
+### Decision: Runtime ServiceContainer Hot-Swap for Demo Mode
+
+**Author:** Ripley (iOS Dev)  
+**Date:** 2026-03-18  
+**Status:** Implemented
+
+## Context
+Demo mode was broken — tapping "Try Demo Mode" set auth state but the ServiceContainer still held real service implementations, causing infinite loading spinners across all screens.
+
+## Decision
+Made ServiceContainer properties mutable (`var` instead of `let`) and added `switchToDemo()` / `switchToReal(baseURL:)` methods. The same container instance stays in SwiftUI's environment; only its service implementations swap at runtime.
+
+## Rationale
+- Avoids needing to replace `@State services` in PFarmApp (SwiftUI doesn't re-propagate replaced @State objects well)
+- @Observable on ServiceContainer means property mutations automatically trigger view updates
+- Keeps the single-container architecture — no second container, no environment rebinding
+
+## Trade-offs
+- Service properties are now `var` instead of `let`, reducing compile-time immutability guarantees
+- Acceptable because ServiceContainer is the single source of truth and mutations only happen via the two switch methods
+
+## Files Changed
+- `PrintFarmer/Services/ServiceContainer.swift`
+- `PrintFarmer/ViewModels/AuthViewModel.swift`
+- `PrintFarmer/Views/Auth/LoginView.swift`
+- `PrintFarmer/Views/Settings/SettingsView.swift`
+
+---
+
+### Decision: AuthViewModel holds ServiceContainer, not AuthServiceProtocol
+
+**Date:** 2026-03-18  
+**Author:** Ripley (iOS Dev)  
+**Status:** Implemented
+
+## Context
+
+The demo-mode hot-swap feature (prior fix) made `ServiceContainer` swap its service implementations at runtime via `switchToDemo()` / `switchToReal()`. However, `AuthViewModel` captured `any AuthServiceProtocol` at init time and never re-read from the container. After exiting demo mode and logging in with real credentials, the VM still called `DemoAuthService.login()`, returning demo data.
+
+## Decision
+
+`AuthViewModel` now holds a reference to `ServiceContainer` and accesses `services.authService` dynamically at every call site. The `loginAsDemo()` and `exitDemoMode()` methods no longer accept a `services` parameter since the VM already owns the container reference.
+
+## Consequences
+
+- **Positive:** Auth operations always use the current service implementation, regardless of how many times the container swaps between demo and real.
+- **Positive:** Simpler API surface — callers don't need to pass ServiceContainer into demo mode methods.
+- **Positive:** LoginView and SettingsView no longer need `@Environment(ServiceContainer.self)` just for those calls.
+- **Trade-off:** AuthViewModel is now coupled to ServiceContainer rather than a protocol. This is acceptable because the VM already managed demo/real switching logic.
+
+## Pattern Established
+
+When a ViewModel operates in a hot-swappable service environment, it must hold the *container* and read services dynamically — never capture a service protocol reference at init.
+
+---
+
+### Decision: Enable NSAllowsArbitraryLoads for HTTP Server Connections
+
+**Author:** Lambert  
+**Date:** 2025-07-22  
+**Status:** Implemented
+
+## Context
+Users connecting to local Printfarmer servers over HTTP (non-SSL) were getting connection failures. The Info.plist only had `NSAllowsLocalNetworking = true`, which only covers `.local` domains and bare IP addresses — not HTTP connections to arbitrary hostnames.
+
+## Decision
+Added `NSAllowsArbitraryLoads = true` to the `NSAppTransportSecurity` dictionary in Info.plist, alongside the existing `NSAllowsLocalNetworking`. This allows HTTP connections to any host, which is needed for local/dev server setups without SSL.
+
+## Trade-offs
+- **Pro:** Users can now connect to any Printfarmer server over HTTP, which is common for local/dev environments.
+- **Con:** Disables ATS protections globally. Acceptable for a local-network printer farm management tool.
+- **Future:** If App Store submission requires it, we can switch to per-domain exceptions (`NSExceptionDomains`) instead.
+
+## Files Changed
+- `PrintFarmer/Info.plist` — added `NSAllowsArbitraryLoads`
+- `PrintFarmer/Services/APIClient.swift` — explicit handling for ATS error code in `performRequest`

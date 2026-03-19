@@ -18,10 +18,33 @@ extension Optional: OptionalProtocol {
 
 /// URLSession delegate that accepts self-signed certificates for IP addresses
 /// and private networks. Production hostnames use standard certificate validation.
-final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+/// Implements both session-level and task-level challenge handlers to cover all
+/// URLSession API surfaces (completion-handler and async/await).
+final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
+
+    // MARK: - Session-level challenge (covers completion-handler API)
+
     func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        handleChallenge(challenge, completionHandler: completionHandler)
+    }
+
+    // MARK: - Task-level challenge (covers async/await API)
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        handleChallenge(challenge, completionHandler: completionHandler)
+    }
+
+    private func handleChallenge(
+        _ challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
@@ -60,6 +83,15 @@ actor APIClient {
     /// Shared delegate that trusts self-signed certs on private networks.
     private static let privateNetworkDelegate = PrivateNetworkSessionDelegate()
 
+    /// Creates a URLSession configured to trust self-signed certs on private networks.
+    static func makePrivateNetworkSession() -> URLSession {
+        URLSession(
+            configuration: .default,
+            delegate: privateNetworkDelegate,
+            delegateQueue: nil
+        )
+    }
+
     /// Key used to persist the server URL across launches.
     static let serverURLKey = "pf_server_url"
 
@@ -79,11 +111,7 @@ actor APIClient {
 
     init(baseURL: URL, session: URLSession? = nil) {
         self.baseURL = baseURL
-        self.session = session ?? URLSession(
-            configuration: .default,
-            delegate: Self.privateNetworkDelegate,
-            delegateQueue: nil
-        )
+        self.session = session ?? Self.makePrivateNetworkSession()
 
         self.decoder = JSONDecoder()
         // ASP.NET Core can emit fractional seconds; the built-in .iso8601 strategy
