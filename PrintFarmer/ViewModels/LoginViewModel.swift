@@ -28,11 +28,23 @@ final class LoginViewModel {
     }
 
     /// Normalizes user input into a clean URL string for the API layer.
+    /// IP addresses default to `http://` (local/Tailscale), hostnames to `https://`.
     var normalizedServerURL: String? {
         let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
-        let urlString = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
+        let urlString: String
+        if trimmed.contains("://") {
+            urlString = trimmed
+        } else {
+            let hostPart = trimmed.components(separatedBy: "/").first?
+                .components(separatedBy: ":").first ?? trimmed
+            let isIP = hostPart.range(
+                of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#,
+                options: .regularExpression
+            ) != nil
+            urlString = isIP ? "http://\(trimmed)" : "https://\(trimmed)"
+        }
         guard let url = URL(string: urlString),
               let scheme = url.scheme,
               scheme == "http" || scheme == "https",
