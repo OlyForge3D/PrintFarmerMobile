@@ -105,7 +105,12 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.normalizedServerURL, "https://print.example.com")
     }
 
-    func testNormalizationPreservesExistingScheme() {
+    func testNormalizationAddsHTTPSForBareIP() {
+        viewModel.serverURL = "192.168.1.100"
+        XCTAssertEqual(viewModel.normalizedServerURL, "https://192.168.1.100")
+    }
+
+    func testNormalizationPreservesExplicitHTTP() {
         viewModel.serverURL = "http://192.168.1.100"
         XCTAssertEqual(viewModel.normalizedServerURL, "http://192.168.1.100")
     }

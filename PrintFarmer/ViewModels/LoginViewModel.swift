@@ -28,7 +28,8 @@ final class LoginViewModel {
     }
 
     /// Normalizes user input into a clean URL string for the API layer.
-    /// IP addresses default to `http://` (local/Tailscale), hostnames to `https://`.
+    /// All connections use `https://` by default. The APIClient handles
+    /// self-signed certificates for IP addresses / private networks.
     var normalizedServerURL: String? {
         let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -37,29 +38,16 @@ final class LoginViewModel {
         if trimmed.contains("://") {
             urlString = trimmed
         } else {
-            let hostPart = trimmed.components(separatedBy: "/").first?
-                .components(separatedBy: ":").first ?? trimmed
-            let isIP = hostPart.range(
-                of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#,
-                options: .regularExpression
-            ) != nil
-            urlString = isIP ? "http://\(trimmed)" : "https://\(trimmed)"
+            urlString = "https://\(trimmed)"
         }
         guard let url = URL(string: urlString),
               let scheme = url.scheme,
               scheme == "http" || scheme == "https",
-              let host = url.host
+              let host = url.host, !host.isEmpty
         else { return nil }
 
-        // IP addresses always use http:// (local/Tailscale networks don't serve TLS)
-        var result = urlString
-        if scheme == "https",
-           host.range(of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#, options: .regularExpression) != nil {
-            result = "http" + result.dropFirst("https".count)
-        }
-
         // Strip trailing slash for consistency
-        return result.hasSuffix("/") ? String(result.dropLast()) : result
+        return urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
     }
 
     // MARK: - Initialization
