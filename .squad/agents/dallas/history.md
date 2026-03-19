@@ -194,3 +194,68 @@ TestFlight + GitHub Actions CI/CD infrastructure for PrintFarmer iOS beta distri
 - .gitignore covers essentials but could be hardened with .env/.p8/.p12 patterns
 - .copilot/mcp-config.json is tracked but uses env var placeholders (safe)
 - Package.resolved is gitignored (good for public repos)
+
+## 2026-03-10 — Demo Mode Architecture Proposal (SUCCESS)
+
+**Trigger:** Apple App Review rejection — reviewers can't verify features without live backend
+**Outcome:** ✅ Full architecture proposal delivered to `.squad/decisions/inbox/dallas-demo-mode-architecture.md`
+
+**Analysis Findings:**
+- 13/16 services already have protocols; only AuthService and LocationService lack them
+- ViewModels already accept `any XServiceProtocol` in configure() — fully mock-ready
+- ServiceContainer uses concrete types (not protocols) — the single biggest gap
+- Test target has 15 mock service implementations proving protocol contracts work
+- TestFixtures.swift has realistic JSON data as a starting reference
+
+**Proposed Architecture:** Protocol-based mock service injection via ServiceContainer.demo() factory
+- 18 new files (2 protocols, 2 infrastructure, 13 demo services, 1 UI component)
+- 7 modified files (ServiceContainer, AuthService, LocationService, AuthViewModel, LoginView, PFarmApp, RootView)
+- ~18-20 hours estimated effort across team
+- Zero changes to existing ViewModel logic or View code (beyond login + root)
+
+**Key Decisions:**
+- Runtime toggle (not compile-time flag) so Apple sees real login screen
+- "Try Demo Mode" button on login screen for discoverability
+- DemoSignalRService simulates live printer updates via timers
+- Persistent orange "DEMO MODE" banner for Apple reviewer clarity
+- DemoMode.isActive stored in UserDefaults, cleared on real login
+
+## Learnings
+- The codebase protocol layer is comprehensive enough for seamless mock injection — a testament to Lambert's service architecture
+- ServiceContainer being concrete-typed is the only structural gap; fixing it benefits both demo mode AND future testing
+- Apple review requires demo mode or demo account — always plan for this in TestFlight submissions
+
+## 2026-03-19T01:45Z — Demo Mode Session Complete (SUCCESS)
+
+**Type:** Parallel batch execution (Dallas + Lambert + Ripley)  
+**Status:** ✅ All three agents delivered on time; build succeeds
+
+**Outcome Summary:**
+- **Dallas:** Architecture proposal → Protocol-based DI via ServiceContainer.demo() ✅
+- **Lambert:** 13 demo services + ServiceContainer retyping + protocol gaps resolved ✅
+- **Ripley:** Demo login UI + banner + settings exit, all SwiftUI reactive ✅
+- **Build:** Zero compilation errors, zero warnings, all agents' code integrates seamlessly
+
+### Dallas Role in Session
+- **Orchestration:** Coordinated parallel execution of 3 agents, specified delivery outcomes
+- **Architecture verification:** Protocol-based injection pattern validated across all 13 services
+- **Decisions documentation:** Merged demo mode architecture + implementation + CarPlay fix into decisions.md
+- **Session closure:** Orchestration logs written, cross-agent history updates completed
+
+### Cross-Agent Dependencies Resolved
+- **Lambert → Dallas:** ServiceContainer.demo() factory enables DI layer swapping
+- **Ripley → Lambert:** AuthServiceProtocol + demo services enable login flow integration
+- **All → Scribe:** Orchestration + session logs captured, inbox decisions merged
+
+### Integration Points Verified
+1. **ServiceContainer protocol typing** — All 16 services now speak `any XServiceProtocol`
+2. **DemoMode singleton** — @MainActor @Observable, UserDefaults-backed, available to all layers
+3. **Demo services resilience** — Consistent return types, no network dependency, realistic data
+4. **UI reactive binding** — Banner + exit button respond to DemoMode.isActive changes
+5. **Entry/exit flows** — Clean state machine: login → demo activate → exit → clear demo flag
+
+### Next Steps
+- **Ripley:** Test demo flows on iOS 17+ simulator and device
+- **Ash:** Write demo service unit tests + integration tests
+- **Jeff:** Review and approve demo data realism for App Review
+- **CI/CD:** Ensure demo services compile in GitHub Actions workflows

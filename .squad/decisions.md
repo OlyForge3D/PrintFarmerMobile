@@ -1205,3 +1205,133 @@ var parsedState: AutoDispatchState? {
 - `PrintFarmer/ViewModels/AutoDispatchViewModel.swift`
 - `PrintFarmer/Views/Printers/AutoDispatchSection.swift`
 - `PrintFarmer/Models/Models.swift` (AutoDispatchState enum)
+
+---
+
+### Decision: Demo Mode Architecture (Dallas)
+**Date:** 2026-03-19  
+**Status:** Implemented  
+**Scope:** Protocol-based mock service injection for App Review
+
+## Context
+Apple rejected TestFlight build — reviewers had no way to exercise features without live Printfarmer backend credentials. Demo mode provides self-contained feature showcase with realistic mock data and no network required.
+
+## Architecture Summary
+Protocol-based mock service injection via `ServiceContainer.demo()` factory. App code unchanged; DI layer swaps mock implementations at runtime.
+
+### Phases Completed
+
+**Phase 0: Protocol Gaps** — Created `AuthServiceProtocol` and `LocationServiceProtocol`
+
+**Phase 1: ServiceContainer Retyping** — Changed property types from concrete to protocol (`any XServiceProtocol`)
+
+**Phase 2-3: Demo Infrastructure & Services** — Built 13 demo service implementations with pre-populated canned data
+
+**Phase 4: SignalR Simulation** — `DemoSignalRService` runs timer-driven simulation (printer progress +0.3–0.7% every 5s, job queue updates every 30s)
+
+**Phase 5: Login UI** — "Try Demo Mode" button in `LoginView`, `AuthViewModel.loginAsDemo()` method
+
+**Phase 6: Banner & Settings Exit** — Persistent amber banner in `RootView`, "Exit Demo Mode" in settings
+
+## Files Created (15)
+```
+PrintFarmer/Protocols/AuthServiceProtocol.swift
+PrintFarmer/Protocols/LocationServiceProtocol.swift
+PrintFarmer/Services/Demo/DemoMode.swift
+PrintFarmer/Services/Demo/DemoData.swift
+PrintFarmer/Services/Demo/DemoAuthService.swift
+PrintFarmer/Services/Demo/DemoPrinterService.swift
+PrintFarmer/Services/Demo/DemoJobService.swift
+PrintFarmer/Services/Demo/DemoSpoolService.swift
+PrintFarmer/Services/Demo/DemoLocationService.swift
+PrintFarmer/Services/Demo/DemoNotificationService.swift
+PrintFarmer/Services/Demo/DemoStatisticsService.swift
+PrintFarmer/Services/Demo/DemoMaintenanceService.swift
+PrintFarmer/Services/Demo/DemoAutoDispatchService.swift
+PrintFarmer/Services/Demo/DemoJobAnalyticsService.swift
+PrintFarmer/Services/Demo/DemoPredictiveService.swift
+PrintFarmer/Services/Demo/DemoDispatchService.swift
+PrintFarmer/Services/Demo/DemoSignalRService.swift
+PrintFarmer/Views/Components/DemoModeBanner.swift
+```
+
+## Files Modified (6)
+```
+PrintFarmer/Services/ServiceContainer.swift — Protocol types + demo() factory
+PrintFarmer/Services/AuthService.swift — Protocol conformance
+PrintFarmer/Services/LocationService.swift — Protocol conformance
+PrintFarmer/ViewModels/AuthViewModel.swift — Accept protocol, loginAsDemo()
+PrintFarmer/Views/Auth/LoginView.swift — Demo button
+PrintFarmer/PFarmApp.swift — Demo init branch
+PrintFarmer/Views/RootView.swift — Demo banner overlay
+PrintFarmer/Views/Settings/SettingsView.swift — Exit demo section
+```
+
+## Mock Data Specification
+- **6 printers**: Prusa MK4 ×2, Bambu X1C, Bambu P1S, Voron 2.4, Ender 3 V3 (diverse states)
+- **12 jobs**: 3 printing, 1 paused, 2 queued, 3 completed, 2 failed, 1 cancelled
+- **8 spools**: PLA/PETG/ABS/TPU/ASA from 5 vendors
+- **3 locations**: Workshop (3 printers), Office (2), Garage (1)
+- **10 notifications**: 4 unread (mix of job/queue/system events)
+- **Stats**: 847 jobs, 91.2% success rate, 2,340 print hours
+- **3 maintenance alerts**: 1 critical (nozzle overdue), 2 warnings
+
+## Design Rationale
+1. **Protocol injection** — Leverages existing architecture, zero ViewModel changes, testable
+2. **Singleton DemoMode** — UserDefaults-backed `isActive` bool, persisted across sessions
+3. **Banner placement** — VStack (not overlay) prevents interaction issues with top content
+4. **SignalR simulation** — Timer-driven events give Apple reviewers "live" farm experience
+5. **No backend dependency** — All mock data pre-populated; no network calls
+
+## Risks & Mitigations
+- **Demo data staleness** — Keep DemoData in sync during feature development; add to PR checklist
+- **Apple rejection** — Include ALL features (SignalR sim, NFC stubs, full screen coverage)
+- **Demo as default** — `DemoMode.isActive` defaults to false; cleared on real login
+
+## Build Status
+✅ All phases build successfully — zero errors, zero new warnings
+
+---
+
+### Decision: CarPlay Scene Crash Prevention (Ripley)
+**Date:** 2026-01-XX  
+**Status:** Implemented  
+
+## Problem
+App crashed on launch when connected to CarPlay — no CarPlay support implemented, app didn't know how to handle CarPlay scene sessions.
+
+## Solution
+Added scene configuration handling to `AppDelegate`:
+- `application(_:configurationForConnecting:options:)` returns appropriate config based on scene role
+- For `.windowApplication` → standard window scene
+- For other roles (CarPlay, etc.) → minimal valid config with correct role
+
+## Implementation
+```swift
+func application(
+    _ application: UIApplication,
+    configurationForConnecting connectingSceneSession: UISceneSession,
+    options: UIScene.ConnectionOptions
+) -> UISceneConfiguration {
+    if connectingSceneSession.role == .windowApplication {
+        let config = UISceneConfiguration(name: "Default Configuration", sessionRole: .windowApplication)
+        config.delegateClass = nil
+        return config
+    } else {
+        return UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+    }
+}
+```
+
+## Consequences
+### Positive
+- ✅ No crash on CarPlay connection
+- ✅ No new dependencies or entitlements
+- ✅ Gracefully handles future unsupported scene types
+
+### Negative
+- ⚠️ App won't appear on CarPlay (expected — we don't support it)
+- ⚠️ Requires code changes if full CarPlay support added later
+
+## Files Modified
+- `PrintFarmer/App/AppDelegate.swift` — Scene configuration methods

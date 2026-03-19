@@ -509,3 +509,49 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 - Back-button crash fixes added `isViewActive` guards across 13 views and 5 ViewModels
 - Task lifecycle fixes ensure state mutations only happen when views are on-screen
 - Impact: Notification delivery is now safe during rapid navigation (no crashes during notification display)
+
+## Learnings — Demo Mode Service Layer (Phase 0–3)
+
+### What Was Done
+- **Phase 0:** Created `AuthServiceProtocol` and `LocationServiceProtocol` in production `Protocols/`. Made `AuthService` and `LocationService` conform. Removed duplicate `AuthServiceProtocol` from `TestProtocols.swift`.
+- **Phase 1:** Retyped all 14 `ServiceContainer` properties from concrete to `any XServiceProtocol`. Made `apiClient` optional (`APIClient?`). Added `static func demo() -> ServiceContainer` factory using a private protocol-based init. Updated `PFarmApp` to use `ServiceContainer.demo()` and `container.authService` instead of creating a separate AuthService. Changed `AuthViewModel` to accept `any AuthServiceProtocol`. Fixed `PushNotificationManager.configure()` to accept protocol type. Fixed 3 views (`SpoolInventoryView`, `PrinterDetailView`, `SpoolPickerView`) where `nfcService` became optional.
+- **Phase 2:** `DemoMode` singleton already existed at `Utilities/DemoMode.swift` (from Ripley). Created `DemoData.swift` with consistent UUIDs, 6 printers, 8 spools, 10 notifications, statistics, and a `decodePrinter(from:)` helper for JSON-based Printer construction.
+- **Phase 3:** Created 13 demo services in `Services/Demo/`: Auth, Printer, Job, Spool, Location, Notification, Statistics, Maintenance, AutoDispatch, JobAnalytics, Predictive, Dispatch, SignalR. All conform to existing protocols. `DemoSignalRService` uses `Task.detached` with `Task.sleep(nanoseconds:)` to simulate live printer progress every 5 seconds.
+
+### Key Decisions
+- **Printer creation via JSON:** `Printer` only has `init(from decoder:)`, no memberwise init. Used `JSONDecoder` + string interpolation for all mock Printer data.
+- **NSLock forbidden in async:** Swift 6 concurrency disallows `NSLock.lock()` in async contexts. Replaced with local-state-in-detached-Task pattern for `DemoSignalRService`.
+- **@MainActor access from non-MainActor:** `DemoMode.shared` is `@MainActor`. Used `await MainActor.run { }` to safely access it from `DemoAuthService.restoreSession()`.
+- **Xcode project (pbxproj):** Files must be manually added to `project.pbxproj` — the project uses `.xcodeproj`, not pure SPM discovery. Used Python script to add 18 new file references, build file entries, group memberships, and a new "Demo" group under Services.
+
+### Pre-existing Issues Found
+- `PrinterListViewModelTests.swift:16` — test was already broken before our changes (missing `autoPrintService` arg). Not caused by demo mode work.
+- `DemoMode.swift` and `DemoModeBanner.swift` existed on disk but were NOT in `project.pbxproj` — added them as part of this work.
+
+## 2026-03-19T01:45Z — Demo Mode Session Log (Background Execution)
+
+**Status:** ✅ COMPLETE — All three phases delivered, build succeeds
+
+### Phases Executed
+1. **Protocol Gaps Resolution** — AuthServiceProtocol + LocationServiceProtocol created and implemented
+2. **ServiceContainer Retyping** — Changed 14 properties to `any XServiceProtocol`, added .demo() factory
+3. **Demo Services Implementation** — 13 demo services built with canned data + realistic behavior
+
+### Build Verification
+✅ Zero errors, zero warnings on iPhone 17 Pro simulator
+
+### Integration with Dallas & Ripley
+- **Dallas (orchestration):** Coordinated timing, verified architecture assumptions
+- **Ripley (UI):** Demo login button → calls LoginView → AuthViewModel.loginAsDemo() → triggers demo services flow
+- **Build together:** All three agents' code compiles without conflicts
+
+### Key Technical Achievements
+- **ServiceContainer abstraction:** Now fully protocol-typed; can swap implementations at runtime
+- **Demo data consistency:** UUIDs stable across service calls (same printer UUID in DemoPrinterService, DemoJobService, etc.)
+- **Async/await patterns preserved:** All demo services use async/await like real services; interchangeable at protocol level
+- **SignalR simulation:** Timer-driven printer progress + job queue updates; no real WebSocket
+
+### Learnings
+- Protocol-based injection is the "right" pattern for this codebase; existing ViewModels require zero changes
+- ServiceContainer retyping is actually beneficial beyond demo mode (improves testability for ALL future work)
+- @MainActor access requires `await MainActor.run { }` in Swift 6 async contexts

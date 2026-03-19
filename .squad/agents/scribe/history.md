@@ -74,3 +74,46 @@ Agent Scribe initialized and ready for work.
 6. ⏭️ **History Summarization** — All histories < 12KB (no action needed)
 
 **Outcome:** All Phase 2 scanning decisions documented, merged, and cross-pollinated.
+
+## 2026-03-19T01:45Z — Demo Mode Session Logging (Synchronous)
+
+**Status:** ✅ COMPLETE — Orchestration logs, session log, inbox merge, cross-agent updates, git commit
+
+### Work Items Completed
+
+1. ✅ **Orchestration Logs Written** (3 files)
+   - `.squad/orchestration-log/2026-03-19T01-45-00Z-dallas.md` — Architecture proposal delivery
+   - `.squad/orchestration-log/2026-03-19T01-45-00Z-lambert.md` — Services + protocols phases
+   - `.squad/orchestration-log/2026-03-19T01-45-00Z-ripley.md` — UI implementation phases
+
+2. ✅ **Session Log Written** (1 file)
+   - `.squad/log/2026-03-19T01-45-00Z-demo-mode.md` — Batch outcome summary with agent table
+
+3. ✅ **Decision Inbox Merged** (5 files → decisions.md)
+   - `dallas-demo-mode-architecture.md` — Full architecture, phases 0–6, ~3.5KB
+   - `lambert-demo-services.md` — Implementation notes, build status, ~1KB
+   - `ripley-demo-ui.md` — UI decisions, file changes, dependencies, ~1KB
+   - `ripley-carplay-scene-handling.md` — CarPlay crash prevention, ~1.5KB
+   - Merged into decisions.md (de-duped, cross-linked, chronologically ordered)
+   - **Inbox cleaned:** All 5 .md files deleted
+
+4. ✅ **Cross-Agent History Updates** (3 agents)
+   - **Dallas:** Added 2026-03-19T01:45Z session entry with orchestration role + integration verification
+   - **Lambert:** Added 2026-03-19T01:45Z session entry with phases + build verification + learnings
+   - **Ripley:** Added 2026-03-19T01:45Z session entry with deliverables + design decisions + learnings
+
+5. ⏭️ **Git Commit** — Pending (staged below)
+
+### File Status Summary
+- **Orchestration logs:** 3 new files, total ~4.5KB
+- **Session log:** 1 new file, ~2.3KB
+- **Decisions.md:** Updated with 4 major sections, now ~1380 lines
+- **History files:** Dallas +38 lines, Lambert +36 lines, Ripley +66 lines
+
+### Ready for Git Commit
+All .squad/ changes staged and ready for commit:
+- Orchestration logs (3)
+- Session log (1)
+- Updated decisions.md
+- Updated agent histories (3)
+- Deleted inbox files (5)
