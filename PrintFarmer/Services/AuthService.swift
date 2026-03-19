@@ -18,7 +18,10 @@ actor AuthService: AuthServiceProtocol {
     /// Sets the API client's base URL and stores the JWT on success.
     func login(serverURL: String, username: String, password: String) async throws -> AuthResponse {
         // Normalize and persist the server URL
-        let normalizedURL = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+        let withScheme = serverURL.lowercased().hasPrefix("http://") || serverURL.lowercased().hasPrefix("https://")
+            ? serverURL
+            : "http://\(serverURL)"
+        let normalizedURL = withScheme.hasSuffix("/") ? String(withScheme.dropLast()) : withScheme
         guard let url = URL(string: normalizedURL) else {
             throw NetworkError.invalidURL(serverURL)
         }
