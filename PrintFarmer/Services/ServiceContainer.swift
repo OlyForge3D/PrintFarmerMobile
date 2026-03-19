@@ -46,7 +46,10 @@ final class ServiceContainer: @unchecked Sendable {
         self.nfcService = NFCService()
         #endif
 
-        self.signalRService = SignalRService(serverURL: resolvedURL) {
+        self.signalRService = SignalRService(
+            serverURL: resolvedURL,
+            session: APIClient.makePrivateNetworkSession()
+        ) {
             await client.currentAccessToken()
         }
     }
@@ -111,7 +114,10 @@ final class ServiceContainer: @unchecked Sendable {
         self.jobAnalyticsService = JobAnalyticsService(apiClient: client)
         self.predictiveService = PredictiveService(apiClient: client)
         self.dispatchService = DispatchService(apiClient: client)
-        self.signalRService = SignalRService(serverURL: resolvedURL) {
+        self.signalRService = SignalRService(
+            serverURL: resolvedURL,
+            session: APIClient.makePrivateNetworkSession()
+        ) {
             await client.currentAccessToken()
         }
         #if canImport(UIKit)
