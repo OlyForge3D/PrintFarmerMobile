@@ -166,7 +166,7 @@ enum TestJSON {
     {
         "success": true,
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature",
-        "expiresAt": "2025-07-18T10:00:00Z",
+        "expiresAt": "2099-07-18T10:00:00Z",
         "user": {
             "id": "aab2c3d4-e5f6-7890-abcd-ef1234567890",
             "username": "admin",

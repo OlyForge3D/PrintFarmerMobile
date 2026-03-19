@@ -95,6 +95,57 @@ actor APIClient {
     /// Key used to persist the server URL across launches.
     static let serverURLKey = "pf_server_url"
 
+    /// Normalizes user-entered server URLs into a canonical string.
+    /// Bare hosts/IPs default to `https://`; explicit `http://` is preserved.
+    static func normalizedServerURLString(_ raw: String) -> String? {
+        normalizeServerURLString(raw, upgradeLegacyIPHTTP: false)
+    }
+
+    /// Restores the saved server URL string, upgrading legacy `http://` IP URLs.
+    static func savedServerURLString() -> String? {
+        guard let saved = UserDefaults.standard.string(forKey: serverURLKey),
+              let normalized = normalizeServerURLString(saved, upgradeLegacyIPHTTP: true) else {
+            return nil
+        }
+
+        if normalized != saved {
+            UserDefaults.standard.set(normalized, forKey: serverURLKey)
+        }
+
+        return normalized
+    }
+
+    private static func normalizeServerURLString(
+        _ raw: String,
+        upgradeLegacyIPHTTP: Bool
+    ) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let candidate = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
+        guard var components = URLComponents(string: candidate),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let host = components.host, !host.isEmpty else {
+            return nil
+        }
+
+        if upgradeLegacyIPHTTP, scheme == "http", isIPv4Address(host) {
+            components.scheme = "https"
+        }
+
+        guard let url = components.url else { return nil }
+        let absoluteString = url.absoluteString
+        return absoluteString.hasSuffix("/") ? String(absoluteString.dropLast()) : absoluteString
+    }
+
+    private static func isIPv4Address(_ host: String) -> Bool {
+        host.range(
+            of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#,
+            options: .regularExpression
+        ) != nil
+    }
+
     /// ISO 8601 formatter with fractional seconds (matches ASP.NET Core output).
     nonisolated(unsafe) static let iso8601WithFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -157,20 +208,8 @@ actor APIClient {
     /// Restores a previously-saved server URL from UserDefaults.
     /// Upgrades legacy `http://` IP URLs to `https://` to match current behavior.
     static func savedBaseURL() -> URL? {
-        guard let saved = UserDefaults.standard.string(forKey: serverURLKey),
-              let url = URL(string: saved) else { return nil }
-
-        // Migrate legacy http:// IP URLs to https://
-        if url.scheme == "http",
-           let host = url.host,
-           host.range(of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#, options: .regularExpression) != nil {
-            let upgraded = "https" + saved.dropFirst("http".count)
-            if let httpsURL = URL(string: upgraded) {
-                UserDefaults.standard.set(upgraded, forKey: serverURLKey)
-                return httpsURL
-            }
-        }
-        return url
+        guard let saved = savedServerURLString() else { return nil }
+        return URL(string: saved)
     }
 
     // MARK: - HTTP Methods

@@ -141,7 +141,7 @@ final class AuthServiceTests: XCTestCase {
         XCTAssertTrue(captured?.url?.path.contains("/api/auth/login") ?? false)
 
         // Verify request body
-        if let body = captured?.httpBody {
+        if let body = captured?.capturedHTTPBody() {
             let request = try JSONDecoder().decode(LoginRequest.self, from: body)
             XCTAssertEqual(request.usernameOrEmail, "admin")
             XCTAssertEqual(request.password, "secret")

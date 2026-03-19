@@ -31,29 +31,13 @@ final class LoginViewModel {
     /// All connections use `https://` by default. The APIClient handles
     /// self-signed certificates for IP addresses / private networks.
     var normalizedServerURL: String? {
-        let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let urlString: String
-        if trimmed.contains("://") {
-            urlString = trimmed
-        } else {
-            urlString = "https://\(trimmed)"
-        }
-        guard let url = URL(string: urlString),
-              let scheme = url.scheme,
-              scheme == "http" || scheme == "https",
-              let host = url.host, !host.isEmpty
-        else { return nil }
-
-        // Strip trailing slash for consistency
-        return urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
+        APIClient.normalizedServerURLString(serverURL)
     }
 
     // MARK: - Initialization
 
     init() {
-        if let saved = UserDefaults.standard.string(forKey: APIClient.serverURLKey), !saved.isEmpty {
+        if let saved = APIClient.savedServerURLString(), !saved.isEmpty {
             self.serverURL = saved
             self.isServerURLExpanded = false
         } else {

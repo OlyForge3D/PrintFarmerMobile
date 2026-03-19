@@ -160,6 +160,19 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isServerURLExpanded, "Should collapse URL field when pre-filled")
     }
 
+    func testInitMigratesLegacyHTTPIPURL() {
+        UserDefaults.standard.set("http://100.119.81.25", forKey: APIClient.serverURLKey)
+
+        let vm = LoginViewModel()
+
+        XCTAssertEqual(vm.serverURL, "https://100.119.81.25")
+        XCTAssertEqual(
+            UserDefaults.standard.string(forKey: APIClient.serverURLKey),
+            "https://100.119.81.25"
+        )
+        XCTAssertFalse(vm.isServerURLExpanded)
+    }
+
     func testInitExpandsURLFieldWhenNoSavedURL() {
         UserDefaults.standard.removeObject(forKey: APIClient.serverURLKey)
 

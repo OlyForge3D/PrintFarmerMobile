@@ -49,3 +49,33 @@ final class MockURLProtocol: URLProtocol {
         return URLSession(configuration: config)
     }
 }
+
+extension URLRequest {
+    func capturedHTTPBody() -> Data? {
+        if let httpBody {
+            return httpBody
+        }
+
+        guard let stream = httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+
+        let bufferSize = 1024
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        var data = Data()
+        while stream.hasBytesAvailable {
+            let readCount = stream.read(buffer, maxLength: bufferSize)
+            if readCount < 0 {
+                return data.isEmpty ? nil : data
+            }
+            if readCount == 0 {
+                break
+            }
+            data.append(buffer, count: readCount)
+        }
+
+        return data
+    }
+}
