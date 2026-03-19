@@ -7,17 +7,20 @@ import XCTest
 final class PrinterListViewModelTests: XCTestCase {
 
     private var mockService: MockPrinterService!
+    private var mockAutoDispatchService: MockAutoDispatchService!
     private var viewModel: PrinterListViewModel!
 
     override func setUp() {
         super.setUp()
         mockService = MockPrinterService()
+        mockAutoDispatchService = MockAutoDispatchService()
         viewModel = PrinterListViewModel()
-        viewModel.configure(printerService: mockService)
+        viewModel.configure(printerService: mockService, autoPrintService: mockAutoDispatchService)
     }
 
     override func tearDown() {
         viewModel = nil
+        mockAutoDispatchService = nil
         mockService = nil
         super.tearDown()
     }

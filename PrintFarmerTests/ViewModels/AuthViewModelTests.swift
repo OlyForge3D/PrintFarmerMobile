@@ -9,6 +9,7 @@ final class AuthViewModelTests: XCTestCase {
 
     private var apiClient: APIClient!
     private var authService: AuthService!
+    private var services: ServiceContainer!
     private var viewModel: AuthViewModel!
 
     override func setUp() {
@@ -16,13 +17,16 @@ final class AuthViewModelTests: XCTestCase {
         MockURLProtocol.reset()
         apiClient = MockAPIClient.makeAPIClient()
         authService = AuthService(apiClient: apiClient)
-        viewModel = AuthViewModel(authService: authService)
+        services = ServiceContainer()
+        services.authService = authService
+        viewModel = AuthViewModel(services: services)
     }
 
     override func tearDown() {
         MockURLProtocol.reset()
         UserDefaults.standard.removeObject(forKey: APIClient.serverURLKey)
         viewModel = nil
+        services = nil
         authService = nil
         apiClient = nil
         super.tearDown()

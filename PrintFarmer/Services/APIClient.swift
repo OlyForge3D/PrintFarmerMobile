@@ -14,6 +14,39 @@ extension Optional: OptionalProtocol {
     }
 }
 
+// MARK: - Self-Signed Certificate Trust
+
+/// URLSession delegate that accepts self-signed certificates for IP addresses
+/// and private networks. Production hostnames use standard certificate validation.
+final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        let host = challenge.protectionSpace.host
+        let isIP = host.range(
+            of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#,
+            options: .regularExpression
+        ) != nil
+        let isPrivate = isIP
+            || host.hasSuffix(".local")
+            || host == "localhost"
+
+        if isPrivate {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+}
+
 // MARK: - API Client
 
 actor APIClient {
@@ -23,6 +56,9 @@ actor APIClient {
     private var baseURL: URL
     private var accessToken: String?
     private var tokenExpiryChecker: (@Sendable () async -> Bool)?
+
+    /// Shared delegate that trusts self-signed certs on private networks.
+    private static let privateNetworkDelegate = PrivateNetworkSessionDelegate()
 
     /// Key used to persist the server URL across launches.
     static let serverURLKey = "pf_server_url"
@@ -41,9 +77,13 @@ actor APIClient {
         return f
     }()
 
-    init(baseURL: URL, session: URLSession = .shared) {
+    init(baseURL: URL, session: URLSession? = nil) {
         self.baseURL = baseURL
-        self.session = session
+        self.session = session ?? URLSession(
+            configuration: .default,
+            delegate: Self.privateNetworkDelegate,
+            delegateQueue: nil
+        )
 
         self.decoder = JSONDecoder()
         // ASP.NET Core can emit fractional seconds; the built-in .iso8601 strategy
@@ -87,9 +127,21 @@ actor APIClient {
     }
 
     /// Restores a previously-saved server URL from UserDefaults.
+    /// Upgrades legacy `http://` IP URLs to `https://` to match current behavior.
     static func savedBaseURL() -> URL? {
         guard let saved = UserDefaults.standard.string(forKey: serverURLKey),
               let url = URL(string: saved) else { return nil }
+
+        // Migrate legacy http:// IP URLs to https://
+        if url.scheme == "http",
+           let host = url.host,
+           host.range(of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#, options: .regularExpression) != nil {
+            let upgraded = "https" + saved.dropFirst("http".count)
+            if let httpsURL = URL(string: upgraded) {
+                UserDefaults.standard.set(upgraded, forKey: serverURLKey)
+                return httpsURL
+            }
+        }
         return url
     }
 
