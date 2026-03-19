@@ -42,6 +42,27 @@ final class APIClientTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: APIClient.serverURLKey)
     }
 
+    func testSavedBaseURLMigratesLegacyHTTPIPToHTTPS() {
+        UserDefaults.standard.set("http://100.119.81.25", forKey: APIClient.serverURLKey)
+
+        let savedURL = APIClient.savedBaseURL()
+
+        XCTAssertEqual(savedURL?.absoluteString, "https://100.119.81.25")
+        XCTAssertEqual(
+            UserDefaults.standard.string(forKey: APIClient.serverURLKey),
+            "https://100.119.81.25"
+        )
+
+        UserDefaults.standard.removeObject(forKey: APIClient.serverURLKey)
+    }
+
+    func testNormalizedServerURLStringAddsHTTPSForBareIP() {
+        XCTAssertEqual(
+            APIClient.normalizedServerURLString("100.119.81.25"),
+            "https://100.119.81.25"
+        )
+    }
+
     // MARK: - JWT Token Injection
 
     func testRequestIncludesAuthorizationHeader() async throws {
@@ -96,7 +117,7 @@ final class APIClientTests: XCTestCase {
         let captured = MockURLProtocol.capturedRequests.first
         XCTAssertEqual(captured?.httpMethod, "POST")
         XCTAssertEqual(captured?.value(forHTTPHeaderField: "Content-Type"), "application/json")
-        XCTAssertNotNil(captured?.httpBody)
+        XCTAssertNotNil(captured?.capturedHTTPBody())
     }
 
     func testPostVoidRequestUsesCorrectMethod() async throws {
@@ -359,5 +380,28 @@ final class APIClientTests: XCTestCase {
         
         XCTAssertNotNil(result, "Non-empty response should decode the value")
         XCTAssertEqual(result?.name, "Prusa MK4")
+    }
+
+    func testLiveHTTPSLoginAgainstRealServer() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let rawURL = environment["PFARM_LIVE_LOGIN_URL"],
+              let url = URL(string: rawURL),
+              let username = environment["PFARM_LIVE_LOGIN_USERNAME"],
+              let password = environment["PFARM_LIVE_LOGIN_PASSWORD"] else {
+            throw XCTSkip("Set PFARM_LIVE_LOGIN_URL, PFARM_LIVE_LOGIN_USERNAME, and PFARM_LIVE_LOGIN_PASSWORD to run this diagnostic test.")
+        }
+
+        let liveClient = APIClient(baseURL: url)
+        let request = LoginRequest(
+            usernameOrEmail: username,
+            password: password,
+            rememberMe: true
+        )
+
+        let response: AuthResponse = try await liveClient.post("/api/auth/login", body: request)
+
+        XCTAssertTrue(response.success)
+        XCTAssertNotNil(response.token)
+        XCTAssertEqual(response.user?.username, username)
     }
 }

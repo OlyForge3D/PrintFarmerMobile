@@ -63,11 +63,11 @@ struct SettingsView: View {
                 }
 
                 Section("Server") {
-                    let savedURL = UserDefaults.standard.string(forKey: APIClient.serverURLKey) ?? "Not configured"
+                    let savedURL = APIClient.savedServerURLString() ?? "Not configured"
                     LabeledContent("API URL", value: savedURL)
 
                     Button {
-                        newServerURL = UserDefaults.standard.string(forKey: APIClient.serverURLKey) ?? ""
+                        newServerURL = APIClient.savedServerURLString() ?? ""
                         showChangeURL = true
                     } label: {
                         Label("Change Server URL", systemImage: "link")
@@ -109,8 +109,8 @@ struct SettingsView: View {
                     #endif
                 Button("Save") {
                     let trimmed = newServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !trimmed.isEmpty {
-                        UserDefaults.standard.set(trimmed, forKey: APIClient.serverURLKey)
+                    if let normalized = APIClient.normalizedServerURLString(trimmed) {
+                        UserDefaults.standard.set(normalized, forKey: APIClient.serverURLKey)
                         logoutTask = Task { await authViewModel.logout() }
                     }
                 }

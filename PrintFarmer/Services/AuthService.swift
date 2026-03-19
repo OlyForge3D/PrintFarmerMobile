@@ -17,9 +17,8 @@ actor AuthService: AuthServiceProtocol {
     /// Authenticate against a Printfarmer server.
     /// Sets the API client's base URL and stores the JWT on success.
     func login(serverURL: String, username: String, password: String) async throws -> AuthResponse {
-        // LoginViewModel already normalizes the scheme; just clean trailing slash.
-        let normalizedURL = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-        guard let url = URL(string: normalizedURL) else {
+        guard let normalizedURL = APIClient.normalizedServerURLString(serverURL),
+              let url = URL(string: normalizedURL) else {
             throw NetworkError.invalidURL(serverURL)
         }
         await apiClient.updateBaseURL(url)
