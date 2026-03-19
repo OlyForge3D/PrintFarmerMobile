@@ -48,11 +48,18 @@ final class LoginViewModel {
         guard let url = URL(string: urlString),
               let scheme = url.scheme,
               scheme == "http" || scheme == "https",
-              url.host != nil
+              let host = url.host
         else { return nil }
 
+        // IP addresses always use http:// (local/Tailscale networks don't serve TLS)
+        var result = urlString
+        if scheme == "https",
+           host.range(of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#, options: .regularExpression) != nil {
+            result = "http" + result.dropFirst("https".count)
+        }
+
         // Strip trailing slash for consistency
-        return urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
+        return result.hasSuffix("/") ? String(result.dropLast()) : result
     }
 
     // MARK: - Initialization
