@@ -241,6 +241,8 @@ actor APIClient {
                 throw NetworkError.timeout
             case .cannotFindHost, .cannotConnectToHost:
                 throw NetworkError.serverUnreachable
+            case .appTransportSecurityRequiresSecureConnection:
+                throw NetworkError.transportError(error)
             default:
                 throw NetworkError.transportError(error)
             }
