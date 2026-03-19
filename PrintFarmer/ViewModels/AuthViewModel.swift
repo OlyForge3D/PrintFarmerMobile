@@ -72,14 +72,16 @@ final class AuthViewModel {
 
     // MARK: - Demo Mode
 
-    func loginAsDemo() {
+    func loginAsDemo(services: ServiceContainer) {
         DemoMode.shared.activate()
+        services.switchToDemo()
         currentUser = DemoData.demoUser
         isAuthenticated = true
     }
 
-    func exitDemoMode() async {
+    func exitDemoMode(services: ServiceContainer) async {
         DemoMode.shared.deactivate()
+        services.switchToReal()
         await logout()
     }
 

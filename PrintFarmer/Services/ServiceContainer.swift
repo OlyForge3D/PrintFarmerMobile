@@ -4,23 +4,23 @@ import Foundation
 /// Created once at app startup and passed via SwiftUI environment.
 @Observable
 final class ServiceContainer: @unchecked Sendable {
-    let apiClient: APIClient?
-    let authService: any AuthServiceProtocol
-    let printerService: any PrinterServiceProtocol
-    let jobService: any JobServiceProtocol
-    let locationService: any LocationServiceProtocol
-    let statisticsService: any StatisticsServiceProtocol
-    let notificationService: any NotificationServiceProtocol
-    let signalRService: any SignalRServiceProtocol
-    let spoolService: any SpoolServiceProtocol
-    let maintenanceService: any MaintenanceServiceProtocol
-    let autoPrintService: any AutoDispatchServiceProtocol
-    let jobAnalyticsService: any JobAnalyticsServiceProtocol
-    let predictiveService: any PredictiveServiceProtocol
-    let dispatchService: any DispatchServiceProtocol
+    var apiClient: APIClient?
+    var authService: any AuthServiceProtocol
+    var printerService: any PrinterServiceProtocol
+    var jobService: any JobServiceProtocol
+    var locationService: any LocationServiceProtocol
+    var statisticsService: any StatisticsServiceProtocol
+    var notificationService: any NotificationServiceProtocol
+    var signalRService: any SignalRServiceProtocol
+    var spoolService: any SpoolServiceProtocol
+    var maintenanceService: any MaintenanceServiceProtocol
+    var autoPrintService: any AutoDispatchServiceProtocol
+    var jobAnalyticsService: any JobAnalyticsServiceProtocol
+    var predictiveService: any PredictiveServiceProtocol
+    var dispatchService: any DispatchServiceProtocol
     #if canImport(UIKit)
-    let qrScannerService: QRSpoolScannerService?
-    let nfcService: NFCService?
+    var qrScannerService: QRSpoolScannerService?
+    var nfcService: NFCService?
     #endif
 
     init(baseURL: URL? = nil) {
@@ -68,6 +68,56 @@ final class ServiceContainer: @unchecked Sendable {
             predictiveService: DemoPredictiveService(),
             dispatchService: DemoDispatchService()
         )
+    }
+
+    /// Replaces all services with demo implementations at runtime.
+    func switchToDemo() {
+        self.apiClient = nil
+        self.authService = DemoAuthService()
+        self.printerService = DemoPrinterService()
+        self.jobService = DemoJobService()
+        self.locationService = DemoLocationService()
+        self.statisticsService = DemoStatisticsService()
+        self.notificationService = DemoNotificationService()
+        self.signalRService = DemoSignalRService()
+        self.spoolService = DemoSpoolService()
+        self.maintenanceService = DemoMaintenanceService()
+        self.autoPrintService = DemoAutoDispatchService()
+        self.jobAnalyticsService = DemoJobAnalyticsService()
+        self.predictiveService = DemoPredictiveService()
+        self.dispatchService = DemoDispatchService()
+        #if canImport(UIKit)
+        self.qrScannerService = nil
+        self.nfcService = nil
+        #endif
+    }
+
+    /// Replaces all services with real implementations backed by the given base URL.
+    func switchToReal(baseURL: URL? = nil) {
+        let resolvedURL = baseURL
+            ?? APIClient.savedBaseURL()
+            ?? AppConfig.baseURL
+        let client = APIClient(baseURL: resolvedURL)
+        self.apiClient = client
+        self.authService = AuthService(apiClient: client)
+        self.printerService = PrinterService(apiClient: client)
+        self.jobService = JobService(apiClient: client)
+        self.locationService = LocationService(apiClient: client)
+        self.statisticsService = StatisticsService(apiClient: client)
+        self.notificationService = NotificationService(apiClient: client)
+        self.spoolService = SpoolService(apiClient: client)
+        self.maintenanceService = MaintenanceService(apiClient: client)
+        self.autoPrintService = AutoDispatchService(apiClient: client)
+        self.jobAnalyticsService = JobAnalyticsService(apiClient: client)
+        self.predictiveService = PredictiveService(apiClient: client)
+        self.dispatchService = DispatchService(apiClient: client)
+        self.signalRService = SignalRService(serverURL: resolvedURL) {
+            await client.currentAccessToken()
+        }
+        #if canImport(UIKit)
+        self.qrScannerService = QRSpoolScannerService()
+        self.nfcService = NFCService()
+        #endif
     }
 
     /// Internal initializer used by the `demo()` factory.
