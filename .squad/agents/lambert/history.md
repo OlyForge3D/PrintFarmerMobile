@@ -555,3 +555,6 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 - Protocol-based injection is the "right" pattern for this codebase; existing ViewModels require zero changes
 - ServiceContainer retyping is actually beneficial beyond demo mode (improves testability for ALL future work)
 - @MainActor access requires `await MainActor.run { }` in Swift 6 async contexts
+- `NSAllowsLocalNetworking` only covers .local/mDNS domains and bare IPs; need `NSAllowsArbitraryLoads` for HTTP to arbitrary hostnames
+- Info.plist ATS config: both `NSAllowsArbitraryLoads` and `NSAllowsLocalNetworking` are enabled for dev/local server use
+- ATS failures surface as URLError code `.appTransportSecurityRequiresSecureConnection` (-1022)
