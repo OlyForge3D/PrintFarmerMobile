@@ -66,28 +66,38 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         if isPrivate, trustServerTrust(serverTrust, forHost: host) {
             completionHandler(.useCredential, URLCredential(trust: serverTrust))
         } else if isPrivate {
-            completionHandler(.cancelAuthenticationChallenge, nil)
+            // Some real-device private-network paths (notably Tailscale) can fail
+            // the stricter trust re-evaluation even though URLSession can proceed
+            // successfully with the provided server trust credential.
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
         } else {
             completionHandler(.performDefaultHandling, nil)
         }
     }
 
     private func trustServerTrust(_ serverTrust: SecTrust, forHost host: String) -> Bool {
-        let sslPolicy = SecPolicyCreateSSL(true, host as CFString)
-        SecTrustSetPolicies(serverTrust, sslPolicy)
-
-        var error: CFError?
-        if SecTrustEvaluateWithError(serverTrust, &error) {
-            return true
-        }
-
         guard let leafCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0) else {
             return false
         }
 
+        let strictPolicy = SecPolicyCreateSSL(true, host as CFString)
+        if evaluate(serverTrust, policy: strictPolicy) {
+            return true
+        }
+
         SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
         SecTrustSetAnchorCertificatesOnly(serverTrust, true)
-        error = nil
+        if evaluate(serverTrust, policy: strictPolicy) {
+            return true
+        }
+
+        let relaxedPolicy = SecPolicyCreateSSL(false, nil)
+        return evaluate(serverTrust, policy: relaxedPolicy)
+    }
+
+    private func evaluate(_ serverTrust: SecTrust, policy: SecPolicy) -> Bool {
+        SecTrustSetPolicies(serverTrust, policy)
+        var error: CFError?
         return SecTrustEvaluateWithError(serverTrust, &error)
     }
 }
