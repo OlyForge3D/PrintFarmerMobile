@@ -15,6 +15,91 @@ extension Optional: OptionalProtocol {
     }
 }
 
+// MARK: - TLS Diagnostics
+
+private struct TLSDiagnosticSnapshot: Sendable {
+    let requestHost: String?
+    let challengeHost: String?
+    let authenticationMethod: String?
+    let disposition: String?
+    let trustError: String?
+    let timestamp: Date
+}
+
+enum TLSDiagnostics {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var snapshot: TLSDiagnosticSnapshot?
+
+    static func beginRequest(host: String?) {
+        lock.lock()
+        snapshot = TLSDiagnosticSnapshot(
+            requestHost: host,
+            challengeHost: nil,
+            authenticationMethod: nil,
+            disposition: nil,
+            trustError: nil,
+            timestamp: Date()
+        )
+        lock.unlock()
+    }
+
+    static func recordChallenge(
+        host: String,
+        authenticationMethod: String,
+        disposition: String,
+        trustError: String? = nil
+    ) {
+        lock.lock()
+        let requestHost = snapshot?.requestHost
+        snapshot = TLSDiagnosticSnapshot(
+            requestHost: requestHost ?? host,
+            challengeHost: host,
+            authenticationMethod: authenticationMethod,
+            disposition: disposition,
+            trustError: trustError,
+            timestamp: Date()
+        )
+        lock.unlock()
+    }
+
+    static func recentSummary(maxAge: TimeInterval = 60) -> String? {
+        lock.lock()
+        let current = snapshot
+        lock.unlock()
+
+        guard let current,
+              Date().timeIntervalSince(current.timestamp) <= maxAge else {
+            return nil
+        }
+
+        if let challengeHost = current.challengeHost {
+            var parts = ["host=\(challengeHost)"]
+            if let authenticationMethod = current.authenticationMethod {
+                parts.append("method=\(authenticationMethod)")
+            }
+            if let disposition = current.disposition {
+                parts.append("disposition=\(disposition)")
+            }
+            if let trustError = current.trustError, !trustError.isEmpty {
+                parts.append("trust=\(trustError)")
+            }
+            return parts.joined(separator: ", ")
+        }
+
+        if let requestHost = current.requestHost {
+            return "no trust challenge observed for \(requestHost)"
+        }
+
+        return nil
+    }
+
+    static func clear() {
+        lock.lock()
+        snapshot = nil
+        lock.unlock()
+    }
+}
+
 // MARK: - Self-Signed Certificate Trust
 
 /// URLSession delegate that accepts self-signed certificates for IP addresses
@@ -51,6 +136,11 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
     ) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let serverTrust = challenge.protectionSpace.serverTrust else {
+            TLSDiagnostics.recordChallenge(
+                host: challenge.protectionSpace.host,
+                authenticationMethod: challenge.protectionSpace.authenticationMethod,
+                disposition: "defaultHandling"
+            )
             completionHandler(.performDefaultHandling, nil)
             return
         }
@@ -59,12 +149,29 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         let isPrivate = Self.isPrivateHost(host)
 
         if isPrivate {
-            if let credential = credentialForPrivateHost(serverTrust, host: host) {
+            let (credential, trustError) = credentialForPrivateHost(serverTrust, host: host)
+            if let credential {
+                TLSDiagnostics.recordChallenge(
+                    host: host,
+                    authenticationMethod: challenge.protectionSpace.authenticationMethod,
+                    disposition: "useCredential"
+                )
                 completionHandler(.useCredential, credential)
             } else {
+                TLSDiagnostics.recordChallenge(
+                    host: host,
+                    authenticationMethod: challenge.protectionSpace.authenticationMethod,
+                    disposition: "cancelAuthenticationChallenge",
+                    trustError: trustError
+                )
                 completionHandler(.cancelAuthenticationChallenge, nil)
             }
         } else {
+            TLSDiagnostics.recordChallenge(
+                host: host,
+                authenticationMethod: challenge.protectionSpace.authenticationMethod,
+                disposition: "defaultHandling"
+            )
             completionHandler(.performDefaultHandling, nil)
         }
     }
@@ -77,9 +184,9 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         host.range(of: ipv4Pattern, options: .regularExpression) != nil
     }
 
-    private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> URLCredential? {
+    private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> (URLCredential?, String?) {
         guard let leafCertificate = (SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate])?.first else {
-            return nil
+            return (nil, "missing leaf certificate")
         }
 
         let policy = Self.isIPv4Address(host)
@@ -94,10 +201,10 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
             #if DEBUG
             print("TLS trust evaluation failed for \(host): \(trustError?.localizedDescription ?? "unknown error")")
             #endif
-            return nil
+            return (nil, trustError?.localizedDescription ?? "trust evaluation failed")
         }
 
-        return URLCredential(trust: serverTrust)
+        return (URLCredential(trust: serverTrust), nil)
     }
 }
 
@@ -384,8 +491,11 @@ actor APIClient {
     }
 
     private func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        TLSDiagnostics.beginRequest(host: request.url?.host)
         do {
-            return try await session.data(for: request)
+            let result = try await session.data(for: request)
+            TLSDiagnostics.clear()
+            return result
         } catch let error as URLError {
             switch error.code {
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
@@ -466,10 +576,19 @@ enum NetworkError: LocalizedError, Sendable {
         case .decodingFailed(let error): return "Failed to decode response: \(error.localizedDescription)"
         case .transportError(let error):
             let streamCode = error.userInfo["_kCFStreamErrorCodeKey"] as? Int
+            let tlsSummary = TLSDiagnostics.recentSummary()
             if let streamCode {
-                return "Network error (\(error.code.rawValue), stream \(streamCode)): \(error.localizedDescription)"
+                let base = "Network error (\(error.code.rawValue), stream \(streamCode)): \(error.localizedDescription)"
+                if let tlsSummary {
+                    return "\(base) [tls: \(tlsSummary)]"
+                }
+                return base
             } else {
-                return "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
+                let base = "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
+                if let tlsSummary {
+                    return "\(base) [tls: \(tlsSummary)]"
+                }
+                return base
             }
         case .authFailed(let message): return message
         }
