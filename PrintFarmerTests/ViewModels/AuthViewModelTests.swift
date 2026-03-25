@@ -96,6 +96,21 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertNotNil(viewModel.errorMessage)
     }
 
+    func testLoginPrivateHTTPSConnectFailureShowsTransportErrorDetails() async {
+        apiClient = MockAPIClient.makeAPIClient(baseURL: URL(string: "https://10.0.0.20")!)
+        authService = AuthService(apiClient: apiClient)
+        services.authService = authService
+        viewModel = AuthViewModel(services: services)
+        MockAPIClient.stubError(.cannotConnectToHost)
+
+        await viewModel.login(serverURL: "https://10.0.0.20", username: "admin", password: "password")
+
+        XCTAssertFalse(viewModel.isAuthenticated)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.errorMessage?.contains("Network error") == true)
+        XCTAssertFalse(viewModel.errorMessage?.contains("Check the URL and try again.") == true)
+    }
+
     func testLoginClearsErrorOnSuccess() async {
         MockAPIClient.stubResponse(json: "{}", statusCode: 401)
         await viewModel.login(serverURL: "https://print.example.com", username: "admin", password: "wrong")
