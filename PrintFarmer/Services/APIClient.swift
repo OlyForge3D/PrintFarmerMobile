@@ -63,42 +63,22 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
             || host.hasSuffix(".local")
             || host == "localhost"
 
-        if isPrivate, trustServerTrust(serverTrust, forHost: host) {
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
-        } else if isPrivate {
-            // Some real-device private-network paths (notably Tailscale) can fail
-            // the stricter trust re-evaluation even though URLSession can proceed
-            // successfully with the provided server trust credential.
+        if isPrivate {
+            preparePrivateServerTrust(serverTrust, forHost: host)
             completionHandler(.useCredential, URLCredential(trust: serverTrust))
         } else {
             completionHandler(.performDefaultHandling, nil)
         }
     }
 
-    private func trustServerTrust(_ serverTrust: SecTrust, forHost host: String) -> Bool {
-        guard let leafCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0) else {
-            return false
-        }
-
+    private func preparePrivateServerTrust(_ serverTrust: SecTrust, forHost host: String) {
         let strictPolicy = SecPolicyCreateSSL(true, host as CFString)
-        if evaluate(serverTrust, policy: strictPolicy) {
-            return true
+        SecTrustSetPolicies(serverTrust, strictPolicy)
+
+        if let leafCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0) {
+            SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
+            SecTrustSetAnchorCertificatesOnly(serverTrust, true)
         }
-
-        SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
-        SecTrustSetAnchorCertificatesOnly(serverTrust, true)
-        if evaluate(serverTrust, policy: strictPolicy) {
-            return true
-        }
-
-        let relaxedPolicy = SecPolicyCreateSSL(false, nil)
-        return evaluate(serverTrust, policy: relaxedPolicy)
-    }
-
-    private func evaluate(_ serverTrust: SecTrust, policy: SecPolicy) -> Bool {
-        SecTrustSetPolicies(serverTrust, policy)
-        var error: CFError?
-        return SecTrustEvaluateWithError(serverTrust, &error)
     }
 }
 
