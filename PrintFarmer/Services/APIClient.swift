@@ -97,8 +97,11 @@ actor APIClient {
 
     /// Creates a URLSession configured to trust self-signed certs on private networks.
     static func makePrivateNetworkSession() -> URLSession {
-        URLSession(
-            configuration: .default,
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.urlCache = nil
+        return URLSession(
+            configuration: configuration,
             delegate: privateNetworkDelegate,
             delegateQueue: nil
         )
@@ -428,22 +431,28 @@ enum NetworkError: LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL(let path): "Invalid URL: \(path)"
-        case .invalidResponse: "Invalid server response"
-        case .unauthorized: "Authentication required"
-        case .forbidden: "Access denied"
-        case .notFound: "Resource not found"
-        case .conflict: "Conflict — resource was modified"
-        case .noConnection: "No internet connection"
-        case .timeout: "Request timed out"
-        case .serverUnreachable: "Server is unreachable"
+        case .invalidURL(let path): return "Invalid URL: \(path)"
+        case .invalidResponse: return "Invalid server response"
+        case .unauthorized: return "Authentication required"
+        case .forbidden: return "Access denied"
+        case .notFound: return "Resource not found"
+        case .conflict: return "Conflict — resource was modified"
+        case .noConnection: return "No internet connection"
+        case .timeout: return "Request timed out"
+        case .serverUnreachable: return "Server is unreachable"
         case .clientError(let code, let apiError):
-            apiError?.detail ?? apiError?.message ?? apiError?.title ?? "Client error (\(code))"
-        case .serverError(let code): "Server error (\(code))"
-        case .unexpectedStatus(let code): "Unexpected status (\(code))"
-        case .decodingFailed(let error): "Failed to decode response: \(error.localizedDescription)"
-        case .transportError(let error): "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
-        case .authFailed(let message): message
+            return apiError?.detail ?? apiError?.message ?? apiError?.title ?? "Client error (\(code))"
+        case .serverError(let code): return "Server error (\(code))"
+        case .unexpectedStatus(let code): return "Unexpected status (\(code))"
+        case .decodingFailed(let error): return "Failed to decode response: \(error.localizedDescription)"
+        case .transportError(let error):
+            let streamCode = error.userInfo["_kCFStreamErrorCodeKey"] as? Int
+            if let streamCode {
+                return "Network error (\(error.code.rawValue), stream \(streamCode)): \(error.localizedDescription)"
+            } else {
+                return "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
+            }
+        case .authFailed(let message): return message
         }
     }
 }
