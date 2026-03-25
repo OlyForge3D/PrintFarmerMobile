@@ -77,6 +77,12 @@ final class APIClientTests: XCTestCase {
         XCTAssertFalse(PrivateNetworkSessionDelegate.isIPv4Address("localhost"))
     }
 
+    func testLeafAnchorFallbackOnlyAllowedForSingleCertificateChain() {
+        XCTAssertTrue(PrivateNetworkSessionDelegate.shouldAttemptLeafAnchorFallback(certificateCount: 1))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.shouldAttemptLeafAnchorFallback(certificateCount: 2))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.shouldAttemptLeafAnchorFallback(certificateCount: 3))
+    }
+
     func testTransportErrorIncludesMissingChallengeDiagnostics() {
         TLSDiagnostics.beginRequest(host: "100.119.81.25")
         let error = URLError(
@@ -166,9 +172,30 @@ final class APIClientTests: XCTestCase {
         let description = NetworkError.transportError(error).errorDescription
 
         XCTAssertNotNil(description)
-        XCTAssertTrue(description?.contains("[trust-hint: server is likely presenting a CA certificate or a leaf certificate without serverAuth]") == true)
+        XCTAssertTrue(description?.contains("server may be presenting a CA certificate instead of a TLS server leaf") == true)
+        XCTAssertTrue(description?.contains("leaf certificate may be missing serverAuth") == true)
         XCTAssertTrue(description?.contains("trust=\"PrintFarmer\" certificate is not permitted for this usage") == true)
         XCTAssertTrue(description?.contains("cert=leaf cert has CA:TRUE; leaf cert missing serverAuth EKU") == true)
+        TLSDiagnostics.clear()
+    }
+
+    func testTransportErrorAddsMissingIntermediateTrustHint() {
+        TLSDiagnostics.beginRequest(host: "10.0.0.20")
+        TLSDiagnostics.recordChallenge(
+            host: "10.0.0.20",
+            authenticationMethod: NSURLAuthenticationMethodServerTrust,
+            disposition: "cancelAuthenticationChallenge",
+            trustError: "Trust evaluate failure: [leaf ExtendedKeyUsage MissingIntermediate]",
+            certificateWarning: "leaf cert missing serverAuth EKU"
+        )
+        let error = URLError(.cancelled)
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("[trust-hint: leaf certificate may be missing serverAuth; TLS chain may be missing an intermediate certificate]") == true)
+        XCTAssertTrue(description?.contains("trust=Trust evaluate failure: [leaf ExtendedKeyUsage MissingIntermediate]") == true)
+        XCTAssertTrue(description?.contains("cert=leaf cert missing serverAuth EKU") == true)
         TLSDiagnostics.clear()
     }
 

@@ -157,6 +157,31 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.errorMessage?.contains("certificate is not permitted for this usage") == true)
     }
 
+    func testLoginPrivateHTTPSMissingIntermediateShowsTrustHint() async {
+        apiClient = MockAPIClient.makeAPIClient(baseURL: URL(string: "https://10.0.0.20")!)
+        authService = AuthService(apiClient: apiClient)
+        services.authService = authService
+        viewModel = AuthViewModel(services: services)
+        MockURLProtocol.requestHandler = { _ in
+            TLSDiagnostics.recordChallenge(
+                host: "10.0.0.20",
+                authenticationMethod: NSURLAuthenticationMethodServerTrust,
+                disposition: "cancelAuthenticationChallenge",
+                trustError: "Trust evaluate failure: [leaf ExtendedKeyUsage MissingIntermediate]",
+                certificateWarning: "leaf cert missing serverAuth EKU"
+            )
+            throw URLError(.cancelled)
+        }
+
+        await viewModel.login(serverURL: "https://10.0.0.20", username: "admin", password: "password")
+
+        XCTAssertFalse(viewModel.isAuthenticated)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.errorMessage?.contains("serverAuth") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("intermediate certificate") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("ExtendedKeyUsage MissingIntermediate") == true)
+    }
+
     func testLoginClearsErrorOnSuccess() async {
         MockAPIClient.stubResponse(json: "{}", statusCode: 401)
         await viewModel.login(serverURL: "https://print.example.com", username: "admin", password: "wrong")
