@@ -688,22 +688,90 @@ enum NetworkError: LocalizedError, Sendable {
         case .unexpectedStatus(let code): return "Unexpected status (\(code))"
         case .decodingFailed(let error): return "Failed to decode response: \(error.localizedDescription)"
         case .transportError(let error):
-            let streamCode = error.userInfo["_kCFStreamErrorCodeKey"] as? Int
             let tlsSummary = TLSDiagnostics.recentSummary()
-            if let streamCode {
-                let base = "Network error (\(error.code.rawValue), stream \(streamCode)): \(error.localizedDescription)"
-                if let tlsSummary {
-                    return "\(base) [tls: \(tlsSummary)]"
-                }
-                return base
+            let base: String
+            if let streamComponent = Self.formattedStreamComponent(from: error) {
+                base = "Network error (\(error.code.rawValue), \(streamComponent)): \(error.localizedDescription)"
             } else {
-                let base = "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
-                if let tlsSummary {
-                    return "\(base) [tls: \(tlsSummary)]"
-                }
-                return base
+                base = "Network error (\(error.code.rawValue)): \(error.localizedDescription)"
             }
+
+            var details: [String] = []
+            if let transportHint = Self.transportHint(from: error, tlsSummary: tlsSummary) {
+                details.append("transport: \(transportHint)")
+            }
+            if let trustHint = Self.trustHint(tlsSummary: tlsSummary) {
+                details.append("trust-hint: \(trustHint)")
+            }
+            if let tlsSummary {
+                details.append("tls: \(tlsSummary)")
+            }
+
+            guard !details.isEmpty else { return base }
+            return "\(base) [\(details.joined(separator: "] ["))]"
         case .authFailed(let message): return message
+        }
+    }
+
+    private static func formattedStreamComponent(from error: URLError) -> String? {
+        guard let streamCode = error.userInfo["_kCFStreamErrorCodeKey"] as? Int else {
+            return nil
+        }
+
+        if let streamReason = streamReason(for: streamCode) {
+            return "stream \(streamCode): \(streamReason)"
+        }
+
+        return "stream \(streamCode)"
+    }
+
+    private static func transportHint(from error: URLError, tlsSummary: String?) -> String? {
+        guard let tlsSummary,
+              tlsSummary.hasPrefix("no trust challenge observed for "),
+              let streamCode = error.userInfo["_kCFStreamErrorCodeKey"] as? Int,
+              let posixCode = POSIXErrorCode(rawValue: Int32(streamCode)) else {
+            return nil
+        }
+
+        switch posixCode {
+        case .ECONNREFUSED:
+            return "connection was refused before the TLS handshake started"
+        case .ETIMEDOUT:
+            return "connection timed out before the TLS handshake started"
+        case .ECONNRESET:
+            return "connection was reset before the TLS handshake completed"
+        default:
+            return nil
+        }
+    }
+
+    private static func trustHint(tlsSummary: String?) -> String? {
+        guard let tlsSummary else { return nil }
+
+        if tlsSummary.contains("certificate is not permitted for this usage")
+            || tlsSummary.contains("leaf cert has CA:TRUE")
+            || tlsSummary.contains("leaf cert missing serverAuth EKU") {
+            return "server is likely presenting a CA certificate or a leaf certificate without serverAuth"
+        }
+
+        return nil
+    }
+
+    private static func streamReason(for streamCode: Int) -> String? {
+        guard streamCode > 0,
+              let posixCode = POSIXErrorCode(rawValue: Int32(streamCode)) else {
+            return nil
+        }
+
+        switch posixCode {
+        case .ECONNREFUSED:
+            return "Connection refused"
+        case .ETIMEDOUT:
+            return "Connection timed out"
+        case .ECONNRESET:
+            return "Connection reset by peer"
+        default:
+            return nil
         }
     }
 }

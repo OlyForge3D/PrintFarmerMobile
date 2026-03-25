@@ -111,6 +111,52 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.errorMessage?.contains("Check the URL and try again.") == true)
     }
 
+    func testLoginPrivateHTTPSConnectionRefusedShowsPreTLSHint() async {
+        apiClient = MockAPIClient.makeAPIClient(baseURL: URL(string: "https://10.0.0.20")!)
+        authService = AuthService(apiClient: apiClient)
+        services.authService = authService
+        viewModel = AuthViewModel(services: services)
+        MockURLProtocol.requestHandler = { _ in
+            throw URLError(
+                .cannotConnectToHost,
+                userInfo: ["_kCFStreamErrorCodeKey": 61]
+            )
+        }
+
+        await viewModel.login(serverURL: "https://10.0.0.20", username: "admin", password: "password")
+
+        XCTAssertFalse(viewModel.isAuthenticated)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.errorMessage?.contains("Connection refused") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("before the TLS handshake started") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("no trust challenge observed for 10.0.0.20") == true)
+    }
+
+    func testLoginPrivateHTTPSCertificateUsageErrorShowsTrustHint() async {
+        apiClient = MockAPIClient.makeAPIClient(baseURL: URL(string: "https://10.0.0.20")!)
+        authService = AuthService(apiClient: apiClient)
+        services.authService = authService
+        viewModel = AuthViewModel(services: services)
+        MockURLProtocol.requestHandler = { _ in
+            TLSDiagnostics.recordChallenge(
+                host: "10.0.0.20",
+                authenticationMethod: NSURLAuthenticationMethodServerTrust,
+                disposition: "cancelAuthenticationChallenge",
+                trustError: "\"PrintFarmer\" certificate is not permitted for this usage",
+                certificateWarning: "leaf cert has CA:TRUE; leaf cert missing serverAuth EKU"
+            )
+            throw URLError(.cancelled)
+        }
+
+        await viewModel.login(serverURL: "https://10.0.0.20", username: "admin", password: "password")
+
+        XCTAssertFalse(viewModel.isAuthenticated)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.errorMessage?.contains("CA certificate") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("serverAuth") == true)
+        XCTAssertTrue(viewModel.errorMessage?.contains("certificate is not permitted for this usage") == true)
+    }
+
     func testLoginClearsErrorOnSuccess() async {
         MockAPIClient.stubResponse(json: "{}", statusCode: 401)
         await viewModel.login(serverURL: "https://print.example.com", username: "admin", password: "wrong")
