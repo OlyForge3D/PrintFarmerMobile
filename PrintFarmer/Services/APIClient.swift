@@ -255,9 +255,7 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
     }
 
     private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> TrustEvaluationResult {
-        let policy = Self.isIPv4Address(host)
-            ? SecPolicyCreateSSL(false, nil)
-            : SecPolicyCreateSSL(true, host as CFString)
+        let policy = SecPolicyCreateSSL(true, host as CFString)
         SecTrustSetPolicies(serverTrust, policy)
 
         let certificateCount = SecTrustGetCertificateCount(serverTrust)
