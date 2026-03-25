@@ -77,6 +77,41 @@ final class APIClientTests: XCTestCase {
         XCTAssertFalse(PrivateNetworkSessionDelegate.isIPv4Address("localhost"))
     }
 
+    func testTransportErrorIncludesMissingChallengeDiagnostics() {
+        TLSDiagnostics.beginRequest(host: "100.119.81.25")
+        let error = URLError(
+            .secureConnectionFailed,
+            userInfo: ["_kCFStreamErrorCodeKey": -9802]
+        )
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("Network error (-1200, stream -9802)") == true)
+        XCTAssertTrue(description?.contains("[tls: no trust challenge observed for 100.119.81.25]") == true)
+        TLSDiagnostics.clear()
+    }
+
+    func testTransportErrorIncludesChallengeDispositionDiagnostics() {
+        TLSDiagnostics.beginRequest(host: "100.119.81.25")
+        TLSDiagnostics.recordChallenge(
+            host: "100.119.81.25",
+            authenticationMethod: NSURLAuthenticationMethodServerTrust,
+            disposition: "useCredential"
+        )
+        let error = URLError(
+            .secureConnectionFailed,
+            userInfo: ["_kCFStreamErrorCodeKey": -9802]
+        )
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("Network error (-1200, stream -9802)") == true)
+        XCTAssertTrue(description?.contains("[tls: host=100.119.81.25, method=NSURLAuthenticationMethodServerTrust, disposition=useCredential]") == true)
+        TLSDiagnostics.clear()
+    }
+
     // MARK: - JWT Token Injection
 
     func testRequestIncludesAuthorizationHeader() async throws {
