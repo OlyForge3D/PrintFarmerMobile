@@ -136,6 +136,42 @@ final class APIClientTests: XCTestCase {
         TLSDiagnostics.clear()
     }
 
+    func testTransportErrorExpandsConnectionRefusedBeforeTLSHandshake() {
+        TLSDiagnostics.beginRequest(host: "10.0.0.20")
+        let error = URLError(
+            .cannotConnectToHost,
+            userInfo: ["_kCFStreamErrorCodeKey": 61]
+        )
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("Network error (-1004, stream 61: Connection refused)") == true)
+        XCTAssertTrue(description?.contains("[transport: connection was refused before the TLS handshake started]") == true)
+        XCTAssertTrue(description?.contains("[tls: no trust challenge observed for 10.0.0.20]") == true)
+        TLSDiagnostics.clear()
+    }
+
+    func testTransportErrorAddsCertificateUsageTrustHint() {
+        TLSDiagnostics.beginRequest(host: "10.0.0.20")
+        TLSDiagnostics.recordChallenge(
+            host: "10.0.0.20",
+            authenticationMethod: NSURLAuthenticationMethodServerTrust,
+            disposition: "cancelAuthenticationChallenge",
+            trustError: "\"PrintFarmer\" certificate is not permitted for this usage",
+            certificateWarning: "leaf cert has CA:TRUE; leaf cert missing serverAuth EKU"
+        )
+        let error = URLError(.cancelled)
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("[trust-hint: server is likely presenting a CA certificate or a leaf certificate without serverAuth]") == true)
+        XCTAssertTrue(description?.contains("trust=\"PrintFarmer\" certificate is not permitted for this usage") == true)
+        XCTAssertTrue(description?.contains("cert=leaf cert has CA:TRUE; leaf cert missing serverAuth EKU") == true)
+        TLSDiagnostics.clear()
+    }
+
     func testTLSCertificateProfileFlagsCAAndMissingServerAuth() {
         let der = Data([
             0x06, 0x03, 0x55, 0x1d, 0x13,
