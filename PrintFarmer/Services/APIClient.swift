@@ -22,6 +22,7 @@ extension Optional: OptionalProtocol {
 /// Implements both session-level and task-level challenge handlers to cover all
 /// URLSession API surfaces (completion-handler and async/await).
 final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
+    private static let ipv4Pattern = #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#
 
     // MARK: - Session-level challenge (covers completion-handler API)
 
@@ -55,30 +56,48 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         }
 
         let host = challenge.protectionSpace.host
-        let isIP = host.range(
-            of: #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#,
-            options: .regularExpression
-        ) != nil
-        let isPrivate = isIP
-            || host.hasSuffix(".local")
-            || host == "localhost"
+        let isPrivate = Self.isPrivateHost(host)
 
         if isPrivate {
-            preparePrivateServerTrust(serverTrust, forHost: host)
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+            if let credential = credentialForPrivateHost(serverTrust, host: host) {
+                completionHandler(.useCredential, credential)
+            } else {
+                completionHandler(.cancelAuthenticationChallenge, nil)
+            }
         } else {
             completionHandler(.performDefaultHandling, nil)
         }
     }
 
-    private func preparePrivateServerTrust(_ serverTrust: SecTrust, forHost host: String) {
-        let strictPolicy = SecPolicyCreateSSL(true, host as CFString)
-        SecTrustSetPolicies(serverTrust, strictPolicy)
+    static func isPrivateHost(_ host: String) -> Bool {
+        isIPv4Address(host) || host.hasSuffix(".local") || host == "localhost"
+    }
 
-        if let leafCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0) {
-            SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
-            SecTrustSetAnchorCertificatesOnly(serverTrust, true)
+    static func isIPv4Address(_ host: String) -> Bool {
+        host.range(of: ipv4Pattern, options: .regularExpression) != nil
+    }
+
+    private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> URLCredential? {
+        guard let leafCertificate = (SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate])?.first else {
+            return nil
         }
+
+        let policy = Self.isIPv4Address(host)
+            ? SecPolicyCreateSSL(false, nil)
+            : SecPolicyCreateSSL(true, host as CFString)
+        SecTrustSetPolicies(serverTrust, policy)
+        SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
+        SecTrustSetAnchorCertificatesOnly(serverTrust, true)
+
+        var trustError: CFError?
+        guard SecTrustEvaluateWithError(serverTrust, &trustError) else {
+            #if DEBUG
+            print("TLS trust evaluation failed for \(host): \(trustError?.localizedDescription ?? "unknown error")")
+            #endif
+            return nil
+        }
+
+        return URLCredential(trust: serverTrust)
     }
 }
 

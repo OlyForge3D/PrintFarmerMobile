@@ -63,6 +63,20 @@ final class APIClientTests: XCTestCase {
         )
     }
 
+    func testPrivateHostDetectionTreatsTailscaleIPAsPrivate() {
+        XCTAssertTrue(PrivateNetworkSessionDelegate.isPrivateHost("100.119.81.25"))
+        XCTAssertTrue(PrivateNetworkSessionDelegate.isPrivateHost("10.0.0.20"))
+        XCTAssertTrue(PrivateNetworkSessionDelegate.isPrivateHost("printfarmer.local"))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.isPrivateHost("example.com"))
+    }
+
+    func testIPv4HostsSkipStrictHostnameValidation() {
+        XCTAssertTrue(PrivateNetworkSessionDelegate.isIPv4Address("100.119.81.25"))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.isIPv4Address("printfarmer.local"))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.isIPv4Address("example.com"))
+        XCTAssertFalse(PrivateNetworkSessionDelegate.isIPv4Address("localhost"))
+    }
+
     // MARK: - JWT Token Injection
 
     func testRequestIncludesAuthorizationHeader() async throws {
