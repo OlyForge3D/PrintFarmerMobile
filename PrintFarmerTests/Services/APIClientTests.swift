@@ -406,6 +406,24 @@ final class APIClientTests: XCTestCase {
         }
     }
 
+    func testCannotConnectToPrivateHTTPSHostThrowsTransportError() async {
+        let privateHTTPSClient = MockAPIClient.makeAPIClient(baseURL: URL(string: "https://10.0.0.20")!)
+        MockAPIClient.stubError(.cannotConnectToHost)
+
+        do {
+            let _: [Printer] = try await privateHTTPSClient.get("/api/printers")
+            XCTFail("Expected NetworkError.transportError")
+        } catch let error as NetworkError {
+            if case .transportError(let urlError) = error {
+                XCTAssertEqual(urlError.code, .cannotConnectToHost)
+            } else {
+                XCTFail("Expected .transportError, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
     // MARK: - Decoding
 
     func testDecodingFailureThrowsDecodingError() async {

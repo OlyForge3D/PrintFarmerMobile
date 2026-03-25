@@ -333,8 +333,6 @@ actor APIClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.urlCache = nil
-        configuration.tlsMinimumSupportedProtocolVersion = .TLSv12
-        configuration.tlsMaximumSupportedProtocolVersion = .TLSv12
         return URLSession(
             configuration: configuration,
             delegate: privateNetworkDelegate,
@@ -606,12 +604,18 @@ actor APIClient {
             TLSDiagnostics.clear()
             return result
         } catch let error as URLError {
+            let isPrivateHTTPSRequest = request.url?.scheme?.lowercased() == "https"
+                && (request.url?.host.map(PrivateNetworkSessionDelegate.isPrivateHost) ?? false)
+
             switch error.code {
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
                 throw NetworkError.noConnection
             case .timedOut:
                 throw NetworkError.timeout
             case .cannotFindHost, .cannotConnectToHost:
+                if isPrivateHTTPSRequest {
+                    throw NetworkError.transportError(error)
+                }
                 throw NetworkError.serverUnreachable
             case .appTransportSecurityRequiresSecureConnection:
                 throw NetworkError.transportError(error)
