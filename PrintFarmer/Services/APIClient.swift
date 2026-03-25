@@ -22,7 +22,9 @@ private struct TLSDiagnosticSnapshot: Sendable {
     let challengeHost: String?
     let authenticationMethod: String?
     let disposition: String?
+    let trustSource: String?
     let trustError: String?
+    let certificateWarning: String?
     let timestamp: Date
 }
 
@@ -37,7 +39,9 @@ enum TLSDiagnostics {
             challengeHost: nil,
             authenticationMethod: nil,
             disposition: nil,
+            trustSource: nil,
             trustError: nil,
+            certificateWarning: nil,
             timestamp: Date()
         )
         lock.unlock()
@@ -47,7 +51,9 @@ enum TLSDiagnostics {
         host: String,
         authenticationMethod: String,
         disposition: String,
-        trustError: String? = nil
+        trustSource: String? = nil,
+        trustError: String? = nil,
+        certificateWarning: String? = nil
     ) {
         lock.lock()
         let requestHost = snapshot?.requestHost
@@ -56,7 +62,9 @@ enum TLSDiagnostics {
             challengeHost: host,
             authenticationMethod: authenticationMethod,
             disposition: disposition,
+            trustSource: trustSource,
             trustError: trustError,
+            certificateWarning: certificateWarning,
             timestamp: Date()
         )
         lock.unlock()
@@ -80,8 +88,14 @@ enum TLSDiagnostics {
             if let disposition = current.disposition {
                 parts.append("disposition=\(disposition)")
             }
+            if let trustSource = current.trustSource {
+                parts.append("source=\(trustSource)")
+            }
             if let trustError = current.trustError, !trustError.isEmpty {
                 parts.append("trust=\(trustError)")
+            }
+            if let certificateWarning = current.certificateWarning, !certificateWarning.isEmpty {
+                parts.append("cert=\(certificateWarning)")
             }
             return parts.joined(separator: ", ")
         }
@@ -100,6 +114,43 @@ enum TLSDiagnostics {
     }
 }
 
+enum TLSCertificateProfile {
+    private static let serverAuthOID = Data([0x06, 0x08, 0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x01])
+    private static let basicConstraintsOID = Data([0x06, 0x03, 0x55, 0x1d, 0x13])
+    private static let basicConstraintsCATrueValue = Data([0x30, 0x03, 0x01, 0x01, 0xff])
+
+    static func warningSummary(for certificate: SecCertificate) -> String? {
+        warningSummary(der: SecCertificateCopyData(certificate) as Data)
+    }
+
+    static func warningSummary(der: Data) -> String? {
+        var warnings: [String] = []
+
+        if containsCATrueBasicConstraints(in: der) {
+            warnings.append("leaf cert has CA:TRUE")
+        }
+
+        if !der.contains(serverAuthOID) {
+            warnings.append("leaf cert missing serverAuth EKU")
+        }
+
+        return warnings.isEmpty ? nil : warnings.joined(separator: "; ")
+    }
+
+    private static func containsCATrueBasicConstraints(in der: Data) -> Bool {
+        guard let oidRange = der.range(of: basicConstraintsOID) else {
+            return false
+        }
+
+        let searchRange = oidRange.upperBound..<der.endIndex
+        guard let valueRange = der.range(of: basicConstraintsCATrueValue, options: [], in: searchRange) else {
+            return false
+        }
+
+        return valueRange.lowerBound - oidRange.upperBound <= 8
+    }
+}
+
 // MARK: - Self-Signed Certificate Trust
 
 /// URLSession delegate that accepts self-signed certificates for IP addresses
@@ -108,6 +159,16 @@ enum TLSDiagnostics {
 /// URLSession API surfaces (completion-handler and async/await).
 final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
     private static let ipv4Pattern = #"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"#
+    private enum TrustSource: String {
+        case systemTrust
+        case leafAnchor
+    }
+    private struct TrustEvaluationResult {
+        let credential: URLCredential?
+        let trustError: String?
+        let trustSource: String?
+        let certificateWarning: String?
+    }
 
     // MARK: - Session-level challenge (covers completion-handler API)
 
@@ -149,12 +210,14 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         let isPrivate = Self.isPrivateHost(host)
 
         if isPrivate {
-            let (credential, trustError) = credentialForPrivateHost(serverTrust, host: host)
-            if let credential {
+            let result = credentialForPrivateHost(serverTrust, host: host)
+            if let credential = result.credential {
                 TLSDiagnostics.recordChallenge(
                     host: host,
                     authenticationMethod: challenge.protectionSpace.authenticationMethod,
-                    disposition: "useCredential"
+                    disposition: "useCredential",
+                    trustSource: result.trustSource,
+                    certificateWarning: result.certificateWarning
                 )
                 completionHandler(.useCredential, credential)
             } else {
@@ -162,7 +225,9 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
                     host: host,
                     authenticationMethod: challenge.protectionSpace.authenticationMethod,
                     disposition: "cancelAuthenticationChallenge",
-                    trustError: trustError
+                    trustSource: result.trustSource,
+                    trustError: result.trustError,
+                    certificateWarning: result.certificateWarning
                 )
                 completionHandler(.cancelAuthenticationChallenge, nil)
             }
@@ -184,27 +249,69 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         host.range(of: ipv4Pattern, options: .regularExpression) != nil
     }
 
-    private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> (URLCredential?, String?) {
-        guard let leafCertificate = (SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate])?.first else {
-            return (nil, "missing leaf certificate")
-        }
-
+    private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> TrustEvaluationResult {
         let policy = Self.isIPv4Address(host)
             ? SecPolicyCreateSSL(false, nil)
             : SecPolicyCreateSSL(true, host as CFString)
         SecTrustSetPolicies(serverTrust, policy)
+
+        let leafCertificate = (SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate])?.first
+        let certificateWarning = leafCertificate.flatMap(TLSCertificateProfile.warningSummary(for:))
+
+        var systemTrustError: CFError?
+        if SecTrustEvaluateWithError(serverTrust, &systemTrustError) {
+            return TrustEvaluationResult(
+                credential: URLCredential(trust: serverTrust),
+                trustError: nil,
+                trustSource: TrustSource.systemTrust.rawValue,
+                certificateWarning: certificateWarning
+            )
+        }
+
+        guard let leafCertificate else {
+            return TrustEvaluationResult(
+                credential: nil,
+                trustError: systemTrustError?.localizedDescription ?? "missing leaf certificate",
+                trustSource: nil,
+                certificateWarning: nil
+            )
+        }
+
+        SecTrustSetPolicies(serverTrust, policy)
         SecTrustSetAnchorCertificates(serverTrust, [leafCertificate] as CFArray)
         SecTrustSetAnchorCertificatesOnly(serverTrust, true)
 
-        var trustError: CFError?
-        guard SecTrustEvaluateWithError(serverTrust, &trustError) else {
+        var leafAnchorError: CFError?
+        guard SecTrustEvaluateWithError(serverTrust, &leafAnchorError) else {
             #if DEBUG
-            print("TLS trust evaluation failed for \(host): \(trustError?.localizedDescription ?? "unknown error")")
+            let systemMessage = systemTrustError?.localizedDescription ?? "unknown error"
+            let leafMessage = leafAnchorError?.localizedDescription ?? "unknown error"
+            print("TLS trust evaluation failed for \(host): system=\(systemMessage) leaf-anchor=\(leafMessage)")
             #endif
-            return (nil, trustError?.localizedDescription ?? "trust evaluation failed")
+            let combinedError: String
+            if let systemMessage = systemTrustError?.localizedDescription,
+               let leafMessage = leafAnchorError?.localizedDescription,
+               systemMessage != leafMessage {
+                combinedError = "system trust failed: \(systemMessage); leaf-anchor trust failed: \(leafMessage)"
+            } else {
+                combinedError = leafAnchorError?.localizedDescription
+                    ?? systemTrustError?.localizedDescription
+                    ?? "trust evaluation failed"
+            }
+            return TrustEvaluationResult(
+                credential: nil,
+                trustError: combinedError,
+                trustSource: nil,
+                certificateWarning: certificateWarning
+            )
         }
 
-        return (URLCredential(trust: serverTrust), nil)
+        return TrustEvaluationResult(
+            credential: URLCredential(trust: serverTrust),
+            trustError: nil,
+            trustSource: TrustSource.leafAnchor.rawValue,
+            certificateWarning: certificateWarning
+        )
     }
 }
 

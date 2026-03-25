@@ -97,7 +97,8 @@ final class APIClientTests: XCTestCase {
         TLSDiagnostics.recordChallenge(
             host: "100.119.81.25",
             authenticationMethod: NSURLAuthenticationMethodServerTrust,
-            disposition: "useCredential"
+            disposition: "useCredential",
+            trustSource: "systemTrust"
         )
         let error = URLError(
             .secureConnectionFailed,
@@ -108,8 +109,56 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertNotNil(description)
         XCTAssertTrue(description?.contains("Network error (-1200, stream -9802)") == true)
-        XCTAssertTrue(description?.contains("[tls: host=100.119.81.25, method=NSURLAuthenticationMethodServerTrust, disposition=useCredential]") == true)
+        XCTAssertTrue(description?.contains("host=100.119.81.25") == true)
+        XCTAssertTrue(description?.contains("method=NSURLAuthenticationMethodServerTrust") == true)
+        XCTAssertTrue(description?.contains("disposition=useCredential") == true)
+        XCTAssertTrue(description?.contains("source=systemTrust") == true)
         TLSDiagnostics.clear()
+    }
+
+    func testTransportErrorIncludesCertificateWarningDiagnostics() {
+        TLSDiagnostics.beginRequest(host: "100.119.81.25")
+        TLSDiagnostics.recordChallenge(
+            host: "100.119.81.25",
+            authenticationMethod: NSURLAuthenticationMethodServerTrust,
+            disposition: "useCredential",
+            certificateWarning: "leaf cert has CA:TRUE; leaf cert missing serverAuth EKU"
+        )
+        let error = URLError(
+            .secureConnectionFailed,
+            userInfo: ["_kCFStreamErrorCodeKey": -9802]
+        )
+
+        let description = NetworkError.transportError(error).errorDescription
+
+        XCTAssertNotNil(description)
+        XCTAssertTrue(description?.contains("cert=leaf cert has CA:TRUE; leaf cert missing serverAuth EKU") == true)
+        TLSDiagnostics.clear()
+    }
+
+    func testTLSCertificateProfileFlagsCAAndMissingServerAuth() {
+        let der = Data([
+            0x06, 0x03, 0x55, 0x1d, 0x13,
+            0x01, 0x01, 0xff,
+            0x04, 0x05, 0x30, 0x03, 0x01, 0x01, 0xff
+        ])
+
+        let warning = TLSCertificateProfile.warningSummary(der: der)
+
+        XCTAssertEqual(warning, "leaf cert has CA:TRUE; leaf cert missing serverAuth EKU")
+    }
+
+    func testTLSCertificateProfileAcceptsServerLeafWithServerAuth() {
+        let der = Data([
+            0x06, 0x03, 0x55, 0x1d, 0x13,
+            0x01, 0x01, 0xff,
+            0x04, 0x02, 0x30, 0x00,
+            0x06, 0x08, 0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x01
+        ])
+
+        let warning = TLSCertificateProfile.warningSummary(der: der)
+
+        XCTAssertNil(warning)
     }
 
     // MARK: - JWT Token Injection
