@@ -153,8 +153,9 @@ enum TLSCertificateProfile {
 
 // MARK: - Self-Signed Certificate Trust
 
-/// URLSession delegate that accepts self-signed certificates for IP addresses
-/// and private networks. Production hostnames use standard certificate validation.
+/// URLSession delegate that supports private-network HTTPS while still preferring
+/// normal system trust for CA-signed certificates. Production hostnames use
+/// standard certificate validation.
 /// Implements both session-level and task-level challenge handlers to cover all
 /// URLSession API surfaces (completion-handler and async/await).
 final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
@@ -249,12 +250,17 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
         host.range(of: ipv4Pattern, options: .regularExpression) != nil
     }
 
+    static func shouldAttemptLeafAnchorFallback(certificateCount: Int) -> Bool {
+        certificateCount <= 1
+    }
+
     private func credentialForPrivateHost(_ serverTrust: SecTrust, host: String) -> TrustEvaluationResult {
         let policy = Self.isIPv4Address(host)
             ? SecPolicyCreateSSL(false, nil)
             : SecPolicyCreateSSL(true, host as CFString)
         SecTrustSetPolicies(serverTrust, policy)
 
+        let certificateCount = SecTrustGetCertificateCount(serverTrust)
         let leafCertificate = (SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate])?.first
         let certificateWarning = leafCertificate.flatMap(TLSCertificateProfile.warningSummary(for:))
 
@@ -264,6 +270,15 @@ final class PrivateNetworkSessionDelegate: NSObject, URLSessionDelegate, URLSess
                 credential: URLCredential(trust: serverTrust),
                 trustError: nil,
                 trustSource: TrustSource.systemTrust.rawValue,
+                certificateWarning: certificateWarning
+            )
+        }
+
+        guard Self.shouldAttemptLeafAnchorFallback(certificateCount: certificateCount) else {
+            return TrustEvaluationResult(
+                credential: nil,
+                trustError: systemTrustError?.localizedDescription ?? "trust evaluation failed",
+                trustSource: nil,
                 certificateWarning: certificateWarning
             )
         }
@@ -748,13 +763,24 @@ enum NetworkError: LocalizedError, Sendable {
     private static func trustHint(tlsSummary: String?) -> String? {
         guard let tlsSummary else { return nil }
 
-        if tlsSummary.contains("certificate is not permitted for this usage")
-            || tlsSummary.contains("leaf cert has CA:TRUE")
-            || tlsSummary.contains("leaf cert missing serverAuth EKU") {
-            return "server is likely presenting a CA certificate or a leaf certificate without serverAuth"
+        var hints: [String] = []
+
+        if tlsSummary.contains("leaf cert has CA:TRUE") {
+            hints.append("server may be presenting a CA certificate instead of a TLS server leaf")
         }
 
-        return nil
+        if tlsSummary.contains("certificate is not permitted for this usage")
+            || tlsSummary.contains("leaf cert missing serverAuth EKU")
+            || tlsSummary.contains("ExtendedKeyUsage") {
+            hints.append("leaf certificate may be missing serverAuth")
+        }
+
+        if tlsSummary.contains("MissingIntermediate") {
+            hints.append("TLS chain may be missing an intermediate certificate")
+        }
+
+        guard !hints.isEmpty else { return nil }
+        return hints.joined(separator: "; ")
     }
 
     private static func streamReason(for streamCode: Int) -> String? {
