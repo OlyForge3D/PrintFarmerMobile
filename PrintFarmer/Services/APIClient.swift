@@ -226,6 +226,8 @@ actor APIClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.urlCache = nil
+        configuration.tlsMinimumSupportedProtocolVersion = .TLSv12
+        configuration.tlsMaximumSupportedProtocolVersion = .TLSv12
         return URLSession(
             configuration: configuration,
             delegate: privateNetworkDelegate,
