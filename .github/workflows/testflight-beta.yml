@@ -177,6 +177,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.TESTFLIGHT_EXTERNAL_GROUPS }}
         run: |
           API_KEY_JSON=$RUNNER_TEMP/api_key.json
           
@@ -199,11 +200,20 @@ jobs:
           print('API key JSON created successfully')
           "
           
-          fastlane pilot upload \
-            --ipa "build/IPA/PrintFarmer.ipa" \
-            --api_key_path "$API_KEY_JSON" \
-            --changelog "Beta build from tag: ${{ steps.version.outputs.tag_name }}" \
-            --distribute_external true
+          PILOT_ARGS=(
+            --ipa "build/IPA/PrintFarmer.ipa"
+            --api_key_path "$API_KEY_JSON"
+            --changelog "Beta build from tag: ${{ steps.version.outputs.tag_name }}"
+          )
+
+          if [ -n "${TESTFLIGHT_EXTERNAL_GROUPS:-}" ]; then
+            echo "Distributing to external TestFlight groups: $TESTFLIGHT_EXTERNAL_GROUPS"
+            PILOT_ARGS+=(--distribute_external true --groups "$TESTFLIGHT_EXTERNAL_GROUPS")
+          else
+            echo "No TESTFLIGHT_EXTERNAL_GROUPS secret set; uploading build without external distribution."
+          fi
+
+          fastlane pilot upload "${PILOT_ARGS[@]}"
 
       - name: Notify Slack
         if: success()
