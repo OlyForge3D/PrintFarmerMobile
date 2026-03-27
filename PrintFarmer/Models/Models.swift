@@ -225,7 +225,7 @@ struct Printer: Codable, Identifiable, Sendable {
     let location: LocationSummary?
 
     // Feature flags
-    let spaghettiDetectionEnabled: Bool
+    let obicoEnabled: Bool
 
     // CodingKeys — all property names match backend camelCase keys
     private enum CodingKeys: String, CodingKey {
@@ -237,7 +237,7 @@ struct Printer: Codable, Identifiable, Sendable {
         case cameraStreamUrl, cameraSnapshotUrl
         case x, y, z, hotendTemp, bedTemp, hotendTarget, bedTarget, homedAxes
         case spoolInfo, backendUrl, frontendUrl, location
-        case spaghettiDetectionEnabled
+        case obicoEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -283,7 +283,7 @@ struct Printer: Codable, Identifiable, Sendable {
         backendUrl = try c.decodeIfPresent(String.self, forKey: .backendUrl)
         frontendUrl = try c.decodeIfPresent(String.self, forKey: .frontendUrl)
         location = try c.decodeIfPresent(LocationSummary.self, forKey: .location)
-        spaghettiDetectionEnabled = try c.decodeIfPresent(Bool.self, forKey: .spaghettiDetectionEnabled) ?? false
+        obicoEnabled = try c.decodeIfPresent(Bool.self, forKey: .obicoEnabled) ?? false
     }
 }
 

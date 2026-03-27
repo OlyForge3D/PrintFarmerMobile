@@ -161,7 +161,7 @@ enum DemoData {
                 "spoolInUse": true
             },
             "location": { "id": "\(workshopID.uuidString)", "name": "Workshop", "description": "Main workshop area" },
-            "spaghettiDetectionEnabled": true
+            "obicoEnabled": true
         }
         """),
         decodePrinter(from: """
@@ -219,7 +219,7 @@ enum DemoData {
                 "spoolInUse": true
             },
             "location": { "id": "\(officeID.uuidString)", "name": "Office", "description": "Office print station" },
-            "spaghettiDetectionEnabled": true
+            "obicoEnabled": true
         }
         """),
         decodePrinter(from: """

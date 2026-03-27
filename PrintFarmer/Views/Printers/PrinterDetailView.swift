@@ -277,7 +277,7 @@ struct PrinterDetailView: View {
                     }
 
                     cameraSection(printer)
-                    if printer.spaghettiDetectionEnabled && viewModel.isActivelyPrinting {
+                    if printer.obicoEnabled && viewModel.isActivelyPrinting {
                         failureDetectionSummary(printer)
                     }
                     filamentSection(printer)
@@ -346,7 +346,7 @@ struct PrinterDetailView: View {
             // Right column: camera, current job
             VStack(alignment: .leading, spacing: 20) {
                 cameraSection(printer)
-                if printer.spaghettiDetectionEnabled && viewModel.isActivelyPrinting {
+                if printer.obicoEnabled && viewModel.isActivelyPrinting {
                     failureDetectionSummary(printer)
                 }
 
@@ -420,7 +420,7 @@ struct PrinterDetailView: View {
 
                 VStack(alignment: .trailing, spacing: 6) {
                     HStack(spacing: 6) {
-                        if printer.spaghettiDetectionEnabled {
+                        if printer.obicoEnabled {
                             Image(systemName: "shield.checkered")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.85))

@@ -73,7 +73,7 @@ struct PrinterCardView: View {
                 }
             }
             Spacer()
-            if printer.spaghettiDetectionEnabled {
+            if printer.obicoEnabled {
                 Image(systemName: "shield.checkered")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.85))
