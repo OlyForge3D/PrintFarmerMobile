@@ -31,7 +31,7 @@ struct AutoDispatchSection: View {
                 } else {
                     // Enable/disable toggle
                     Toggle(isOn: Binding(
-                        get: { viewModel.isEnabled },
+                        get: { viewModel.isEnabled ?? false },
                         set: { _ in
                             let task = Task { await viewModel.toggleEnabled(printerId: printerId) }
                             activeTasks.append(task)
@@ -41,7 +41,7 @@ struct AutoDispatchSection: View {
                             .font(.subheadline)
                     }
 
-                    if viewModel.isEnabled {
+                    if viewModel.isEnabled == true {
                         // State-specific UI
                         if viewModel.parsedState == .pendingReady {
                             pendingReadyView
@@ -75,7 +75,7 @@ struct AutoDispatchSection: View {
     }
 
     // MARK: - State Views
-    
+
     private var pendingReadyView: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Banner
@@ -83,7 +83,7 @@ struct AutoDispatchSection: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.title2)
                     .foregroundStyle(Color.pfWarning)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("🔔 Bed Clear Required")
                         .font(.subheadline.weight(.semibold))
@@ -94,9 +94,9 @@ struct AutoDispatchSection: View {
             }
             .padding(12)
             .background(Color.pfWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-            
+
             // Queue info
-            if let queuedCount = viewModel.status?.queuedJobCount, queuedCount > 0 {
+            if let queuedCount = viewModel.status?.queueDepth, queuedCount > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "tray.fill")
                         .foregroundStyle(.secondary)
@@ -107,7 +107,7 @@ struct AutoDispatchSection: View {
             }
         }
     }
-    
+
     private var readyView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -117,11 +117,11 @@ struct AutoDispatchSection: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            
+
             // Show filament check if available
             if let result = viewModel.readyResult {
                 filamentCheckResult(result)
-                
+
                 // Show next job info
                 if let nextJob = result.nextJob {
                     HStack(spacing: 6) {
@@ -135,23 +135,23 @@ struct AutoDispatchSection: View {
             }
         }
     }
-    
+
     private var idleView: some View {
         HStack(spacing: 8) {
             Image(systemName: stateIcon)
                 .foregroundStyle(stateColor)
-            Text(viewModel.currentState)
+            Text(viewModel.currentState ?? "Unknown")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
-    
+
     private var isActionInProgress: Bool {
         viewModel.isMarkingReady || viewModel.isSkipping || isPrinting
     }
 
     private var hasQueuedJobs: Bool {
-        guard let count = viewModel.status?.queuedJobCount else { return false }
+        guard let count = viewModel.status?.queueDepth else { return false }
         return count > 0
     }
 
@@ -239,6 +239,7 @@ struct AutoDispatchSection: View {
         case .none: return "moon"
         case .pendingReady: return "exclamationmark.triangle.fill"
         case .ready: return "checkmark.circle.fill"
+        case .dismissed: return "xmark.circle"
         }
     }
 
@@ -248,6 +249,7 @@ struct AutoDispatchSection: View {
         case .none: return .pfTextTertiary
         case .pendingReady: return .pfWarning
         case .ready: return .pfSuccess
+        case .dismissed: return .pfTextSecondary
         }
     }
 }

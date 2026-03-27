@@ -4,23 +4,33 @@ import Foundation
 
 struct AutoDispatchStatus: Codable, Sendable {
     let printerId: UUID
-    let autoDispatchEnabled: Bool
-    let state: String
-    let queuedJobCount: Int
+    var printerName: String = ""
+    var enabled: Bool
+    var isReady: Bool = false
+    var currentJobName: String?
+    var queueDepth: Int
+    var readyGateChecks: [ReadyGateCheck] = []
+    var lastActivity: String?
+    var state: String
+    var bedPreConfirmed: Bool = false
+    var attentionMessage: String?
+}
 
-    private enum CodingKeys: String, CodingKey {
-        case printerId
-        case autoDispatchEnabled = "autoPrintEnabled"
-        case state
-        case queuedJobCount
-    }
+// MARK: - Ready Gate Check
 
-    init(printerId: UUID, autoDispatchEnabled: Bool, state: String, queuedJobCount: Int) {
-        self.printerId = printerId
-        self.autoDispatchEnabled = autoDispatchEnabled
-        self.state = state
-        self.queuedJobCount = queuedJobCount
-    }
+struct ReadyGateCheck: Codable, Sendable, Identifiable {
+    var id: String { name }
+    let name: String
+    let passed: Bool
+    let message: String
+    let checkedAt: String
+}
+
+// MARK: - AutoDispatch Global Status
+
+struct AutoDispatchGlobalStatus: Codable, Sendable {
+    let globalEnabled: Bool
+    let printers: [AutoDispatchStatus]
 }
 
 // MARK: - AutoDispatch Ready Result

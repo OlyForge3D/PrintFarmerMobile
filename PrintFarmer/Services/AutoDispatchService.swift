@@ -9,27 +9,31 @@ actor AutoDispatchService: AutoDispatchServiceProtocol {
         self.apiClient = apiClient
     }
 
-    func getAllStatus() async throws -> [AutoDispatchStatus] {
-        try await apiClient.get("/api/autoprint/status")
+    func getAllStatus() async throws -> AutoDispatchGlobalStatus {
+        try await apiClient.get("/api/auto-dispatch/status")
     }
 
     func getStatus(printerId: UUID) async throws -> AutoDispatchStatus {
-        try await apiClient.get("/api/autoprint/\(printerId)/status")
+        try await apiClient.get("/api/auto-dispatch/\(printerId)/status")
     }
 
     func markReady(printerId: UUID) async throws -> AutoDispatchReadyResult {
-        try await apiClient.post("/api/autoprint/\(printerId)/ready")
+        try await apiClient.post("/api/auto-dispatch/\(printerId)/ready")
     }
 
     func skip(printerId: UUID) async throws -> AutoDispatchStatus {
-        try await apiClient.post("/api/autoprint/\(printerId)/skip")
+        try await apiClient.post("/api/auto-dispatch/\(printerId)/skip")
     }
 
     func cancel(printerId: UUID) async throws -> AutoDispatchStatus {
-        try await apiClient.post("/api/autoprint/\(printerId)/cancel")
+        try await apiClient.post("/api/auto-dispatch/\(printerId)/cancel")
+    }
+
+    func preClear(printerId: UUID) async throws -> AutoDispatchStatus {
+        try await apiClient.post("/api/auto-dispatch/\(printerId)/pre-clear")
     }
 
     func setEnabled(printerId: UUID, request: SetAutoDispatchEnabledRequest) async throws -> AutoDispatchStatus {
-        try await apiClient.put("/api/autoprint/\(printerId)/enabled", body: request)
+        try await apiClient.put("/api/auto-dispatch/\(printerId)/enabled", body: request)
     }
 }

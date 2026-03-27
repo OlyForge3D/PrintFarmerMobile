@@ -76,7 +76,7 @@ final class PendingReadyMonitor {
 
         do {
             let statuses = try await autoPrintService.getAllStatus()
-            let pendingReadyStatuses = statuses.filter { $0.state == "PendingReady" }
+            let pendingReadyStatuses = statuses.printers.filter { $0.state == "PendingReady" }
             let currentPendingIds = Set(pendingReadyStatuses.map(\.printerId))
 
             pendingReadyCount = pendingReadyStatuses.count
