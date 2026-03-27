@@ -51,8 +51,14 @@ struct PFarmApp: App {
                           let destination = DeepLinkHandler.parse(url: url) else { return }
                     router.navigate(to: destination)
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .localNotificationTapped)) { _ in
-                    router.selectedTab = .printers
+                .onReceive(NotificationCenter.default.publisher(for: .localNotificationTapped)) { notification in
+                    if let userInfo = notification.userInfo,
+                       let printerIdString = userInfo["printerId"] as? String,
+                       let printerId = UUID(uuidString: printerIdString) {
+                        router.navigate(to: .printerReady(id: printerId))
+                    } else {
+                        router.selectedTab = .printers
+                    }
                 }
                 #endif
                 .task {

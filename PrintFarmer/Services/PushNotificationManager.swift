@@ -164,11 +164,14 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         let category = response.notification.request.content.categoryIdentifier
 
         if category == "PENDING_READY" {
-            // Local bed-clear notification — navigate to Printers tab
+            // Local bed-clear notification — extract printer ID and deep-link to detail
+            let identifier = response.notification.request.identifier
+            // Identifier format: "pending-ready-{UUID}"
+            let printerId = identifier.replacingOccurrences(of: "pending-ready-", with: "")
             NotificationCenter.default.post(
                 name: .localNotificationTapped,
                 object: nil,
-                userInfo: ["tab": "printers"]
+                userInfo: ["tab": "printers", "printerId": printerId]
             )
         } else {
             // Remote push notification — deep-link handling
