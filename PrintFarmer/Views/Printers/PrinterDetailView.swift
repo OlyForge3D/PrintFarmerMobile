@@ -68,6 +68,7 @@ struct PrinterDetailView: View {
             #endif
             viewModel.configureAutoDispatch(services.autoPrintService)
             viewModel.configureSignalR(services.signalRService)
+            viewModel.configurePredictive(services.predictiveService)
             await viewModel.loadPrinter()
 
             // Handle NFC "mark ready" deep link
@@ -276,6 +277,9 @@ struct PrinterDetailView: View {
                     }
 
                     cameraSection(printer)
+                    if printer.spaghettiDetectionEnabled && viewModel.isActivelyPrinting {
+                        failureDetectionSummary(printer)
+                    }
                     filamentSection(printer)
                     AutoDispatchSection(printerId: printer.id, isPrinting: viewModel.isPrinting || viewModel.isPaused)
 
@@ -342,6 +346,9 @@ struct PrinterDetailView: View {
             // Right column: camera, current job
             VStack(alignment: .leading, spacing: 20) {
                 cameraSection(printer)
+                if printer.spaghettiDetectionEnabled && viewModel.isActivelyPrinting {
+                    failureDetectionSummary(printer)
+                }
 
                 if let jobName = printer.fileName ?? printer.jobName,
                    let state = printer.state?.lowercased(),
@@ -412,12 +419,19 @@ struct PrinterDetailView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 6) {
-                    Text(detailStatusLabel(printer))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(.black.opacity(0.3), in: Capsule())
-                        .foregroundStyle(.white)
+                    HStack(spacing: 6) {
+                        if printer.spaghettiDetectionEnabled {
+                            Image(systemName: "shield.checkered")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.85))
+                        }
+                        Text(detailStatusLabel(printer))
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(.black.opacity(0.3), in: Capsule())
+                            .foregroundStyle(.white)
+                    }
 
                     if printer.inMaintenance {
                         Text("Maintenance")
@@ -612,6 +626,71 @@ struct PrinterDetailView: View {
                     .strokeBorder(Color.pfBorder, lineWidth: 1)
             )
         }
+    }
+
+    // MARK: - Failure Detection Summary
+
+    private func failureDetectionSummary(_ printer: Printer) -> some View {
+        let riskColor: Color = {
+            guard let level = viewModel.failurePrediction?.riskLevel.lowercased() else { return .pfSuccess }
+            switch level {
+            case "critical": return .pfError
+            case "high": return .orange
+            case "medium": return .pfWarning
+            default: return .pfSuccess
+            }
+        }()
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "shield.checkered")
+                    .font(.subheadline)
+                    .foregroundStyle(riskColor)
+                Text("Failure Detection")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                if let prediction = viewModel.failurePrediction {
+                    Text(prediction.riskLevel)
+                        .font(.caption2.weight(.semibold))
+                        .textCase(.uppercase)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(riskColor.opacity(0.15), in: Capsule())
+                        .foregroundStyle(riskColor)
+                }
+            }
+
+            if let prediction = viewModel.failurePrediction,
+               let likelihood = prediction.predictedFailureLikelihood {
+                HStack(spacing: 8) {
+                    ProgressView(value: min(likelihood, 1.0))
+                        .tint(riskColor)
+                    Text(String(format: "%.0f%%", likelihood * 100))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !viewModel.activeAlerts.isEmpty {
+                ForEach(viewModel.activeAlerts.prefix(2), id: \.message) { alert in
+                    HStack(spacing: 6) {
+                        Image(systemName: alert.severity.lowercased() == "critical" ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(alert.severity.lowercased() == "critical" ? Color.pfError : .pfWarning)
+                        Text(alert.message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(riskColor.opacity(0.3), lineWidth: 1)
+        )
     }
 
     #if canImport(UIKit)

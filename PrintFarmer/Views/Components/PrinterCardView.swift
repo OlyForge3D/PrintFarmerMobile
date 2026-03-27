@@ -73,6 +73,11 @@ struct PrinterCardView: View {
                 }
             }
             Spacer()
+            if printer.spaghettiDetectionEnabled {
+                Image(systemName: "shield.checkered")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.85))
+            }
             Text(statusLabel)
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 7)
