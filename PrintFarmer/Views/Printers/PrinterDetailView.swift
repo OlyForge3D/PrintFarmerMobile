@@ -69,6 +69,7 @@ struct PrinterDetailView: View {
             viewModel.configureAutoDispatch(services.autoPrintService)
             viewModel.configureSignalR(services.signalRService)
             viewModel.configurePredictive(services.predictiveService)
+            viewModel.configureFailureDetection(services.failureDetectionService)
             await viewModel.loadPrinter()
 
             // Handle NFC "mark ready" deep link
@@ -631,13 +632,24 @@ struct PrinterDetailView: View {
     // MARK: - Failure Detection Summary
 
     private func failureDetectionSummary(_ printer: Printer) -> some View {
-        let riskColor: Color = {
-            guard let level = viewModel.failurePrediction?.riskLevel.lowercased() else { return .pfSuccess }
-            switch level {
-            case "critical": return .pfError
-            case "high": return .orange
-            case "medium": return .pfWarning
-            default: return .pfSuccess
+        let status = viewModel.failureDetectionStatus
+        let displayState = status?.state ?? "checking"
+        let stateColor: Color = {
+            switch displayState {
+            case "monitoring": return .pfSuccess
+            case "error": return .pfError
+            case "misconfigured": return .pfWarning
+            default: return .pfTextSecondary
+            }
+        }()
+        let stateLabel: String = {
+            switch displayState {
+            case "monitoring": return "Guarding"
+            case "idle": return "Ready"
+            case "misconfigured": return "Needs Setup"
+            case "error": return "Error"
+            case "disabled": return printer.obicoEnabled ? "Standby" : "Off"
+            default: return printer.obicoEnabled ? "Checking" : "Off"
             }
         }()
 
@@ -645,42 +657,60 @@ struct PrinterDetailView: View {
             HStack(spacing: 6) {
                 Image(systemName: "shield.checkered")
                     .font(.subheadline)
-                    .foregroundStyle(riskColor)
+                    .foregroundStyle(stateColor)
                 Text("Failure Detection")
                     .font(.subheadline.weight(.medium))
                 Spacer()
-                if let prediction = viewModel.failurePrediction {
-                    Text(prediction.riskLevel)
-                        .font(.caption2.weight(.semibold))
-                        .textCase(.uppercase)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(riskColor.opacity(0.15), in: Capsule())
-                        .foregroundStyle(riskColor)
-                }
+                Text(stateLabel)
+                    .font(.caption2.weight(.semibold))
+                    .textCase(.uppercase)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(stateColor.opacity(0.15), in: Capsule())
+                    .foregroundStyle(stateColor)
             }
 
-            if let prediction = viewModel.failurePrediction,
-               let likelihood = prediction.predictedFailureLikelihood {
-                HStack(spacing: 8) {
-                    ProgressView(value: min(likelihood, 1.0))
-                        .tint(riskColor)
-                    Text(String(format: "%.0f%%", likelihood * 100))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if !viewModel.activeAlerts.isEmpty {
-                ForEach(viewModel.activeAlerts.prefix(2), id: \.message) { alert in
+            if let status {
+                switch status.lastOutcome {
+                case "failure":
                     HStack(spacing: 6) {
-                        Image(systemName: alert.severity.lowercased() == "critical" ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                        Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption2)
-                            .foregroundStyle(alert.severity.lowercased() == "critical" ? Color.pfError : .pfWarning)
-                        Text(alert.message)
+                            .foregroundStyle(Color.pfError)
+                        if let confidence = status.lastConfidence {
+                            Text("Failure detected • \(Int(confidence * 100))% confidence")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Failure detected")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if status.lastAutoPaused == true {
+                            Text("• auto-paused")
+                                .font(.caption)
+                                .foregroundStyle(Color.pfError)
+                        }
+                    }
+                case "healthy":
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Color.pfSuccess)
+                        Text("No failure detected")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                    }
+                default:
+                    if displayState == "monitoring" {
+                        HStack(spacing: 6) {
+                            Image(systemName: "eye.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Color.pfSuccess)
+                            Text("Actively watching this print")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -689,7 +719,7 @@ struct PrinterDetailView: View {
         .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(riskColor.opacity(0.3), lineWidth: 1)
+                .strokeBorder(stateColor.opacity(0.3), lineWidth: 1)
         )
     }
 
