@@ -18,6 +18,7 @@ final class ServiceContainer: @unchecked Sendable {
     var jobAnalyticsService: any JobAnalyticsServiceProtocol
     var predictiveService: any PredictiveServiceProtocol
     var dispatchService: any DispatchServiceProtocol
+    var failureDetectionService: any FailureDetectionServiceProtocol
     #if canImport(UIKit)
     var qrScannerService: QRSpoolScannerService?
     var nfcService: NFCService?
@@ -41,6 +42,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.jobAnalyticsService = JobAnalyticsService(apiClient: client)
         self.predictiveService = PredictiveService(apiClient: client)
         self.dispatchService = DispatchService(apiClient: client)
+        self.failureDetectionService = FailureDetectionService(apiClient: client)
         #if canImport(UIKit)
         self.qrScannerService = QRSpoolScannerService()
         self.nfcService = NFCService()
@@ -69,7 +71,8 @@ final class ServiceContainer: @unchecked Sendable {
             autoPrintService: DemoAutoDispatchService(),
             jobAnalyticsService: DemoJobAnalyticsService(),
             predictiveService: DemoPredictiveService(),
-            dispatchService: DemoDispatchService()
+            dispatchService: DemoDispatchService(),
+            failureDetectionService: DemoFailureDetectionService()
         )
     }
 
@@ -89,6 +92,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.jobAnalyticsService = DemoJobAnalyticsService()
         self.predictiveService = DemoPredictiveService()
         self.dispatchService = DemoDispatchService()
+        self.failureDetectionService = DemoFailureDetectionService()
         #if canImport(UIKit)
         self.qrScannerService = nil
         self.nfcService = nil
@@ -114,6 +118,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.jobAnalyticsService = JobAnalyticsService(apiClient: client)
         self.predictiveService = PredictiveService(apiClient: client)
         self.dispatchService = DispatchService(apiClient: client)
+        self.failureDetectionService = FailureDetectionService(apiClient: client)
         self.signalRService = SignalRService(
             serverURL: resolvedURL,
             session: APIClient.makePrivateNetworkSession()
@@ -140,7 +145,8 @@ final class ServiceContainer: @unchecked Sendable {
         autoPrintService: any AutoDispatchServiceProtocol,
         jobAnalyticsService: any JobAnalyticsServiceProtocol,
         predictiveService: any PredictiveServiceProtocol,
-        dispatchService: any DispatchServiceProtocol
+        dispatchService: any DispatchServiceProtocol,
+        failureDetectionService: any FailureDetectionServiceProtocol
     ) {
         self.apiClient = nil
         self.authService = authService
@@ -156,6 +162,7 @@ final class ServiceContainer: @unchecked Sendable {
         self.jobAnalyticsService = jobAnalyticsService
         self.predictiveService = predictiveService
         self.dispatchService = dispatchService
+        self.failureDetectionService = failureDetectionService
         #if canImport(UIKit)
         self.qrScannerService = nil
         self.nfcService = nil

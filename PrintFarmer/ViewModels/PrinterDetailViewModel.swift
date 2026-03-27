@@ -18,7 +18,7 @@ final class PrinterDetailViewModel {
     var actionError: String?
     var isViewActive = true
     var activeAlerts: [PredictiveAlert] = []
-    var failurePrediction: JobFailurePrediction?
+    var failureDetectionStatus: FailureDetectionPrinterStatus?
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "PrinterDetail")
 
@@ -59,6 +59,7 @@ final class PrinterDetailViewModel {
     private var autoDispatchService: (any AutoDispatchServiceProtocol)?
     private var signalRService: (any SignalRServiceProtocol)?
     private var predictiveService: (any PredictiveServiceProtocol)?
+    private var failureDetectionService: (any FailureDetectionServiceProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -84,6 +85,10 @@ final class PrinterDetailViewModel {
 
     func configurePredictive(_ service: any PredictiveServiceProtocol) {
         self.predictiveService = service
+    }
+
+    func configureFailureDetection(_ service: any FailureDetectionServiceProtocol) {
+        self.failureDetectionService = service
     }
 
     func configureSignalR(_ service: any SignalRServiceProtocol) {
@@ -355,31 +360,33 @@ final class PrinterDetailViewModel {
             showLivestream = true
         }
 
-        // Load failure detection data when printing with spaghetti detection
+        // Load failure detection status when printing with Obico enabled
         if printer?.obicoEnabled == true, isActivelyPrinting {
             await loadFailureDetection()
         } else {
             activeAlerts = []
-            failurePrediction = nil
+            failureDetectionStatus = nil
         }
 
         isLoading = false
     }
 
     func loadFailureDetection() async {
-        guard isViewActive, let predictiveService else { return }
-        do {
-            activeAlerts = try await predictiveService.getActiveAlerts(printerId: printerId)
-        } catch {
-            logger.warning("Failed to load active alerts: \(error.localizedDescription)")
+        guard isViewActive else { return }
+        if let failureDetectionService {
+            do {
+                let monitorStatus = try await failureDetectionService.getStatus()
+                failureDetectionStatus = monitorStatus.printers.first { $0.printerId == printerId }
+            } catch {
+                logger.warning("Failed to load failure detection status: \(error.localizedDescription)")
+            }
         }
-        do {
-            let material = printer?.spoolInfo?.material
-            failurePrediction = try await predictiveService.predictJobFailure(
-                request: PredictionRequest(printerId: printerId, material: material, estimatedDurationSeconds: nil)
-            )
-        } catch {
-            logger.warning("Failed to load failure prediction: \(error.localizedDescription)")
+        if let predictiveService {
+            do {
+                activeAlerts = try await predictiveService.getActiveAlerts(printerId: printerId)
+            } catch {
+                logger.warning("Failed to load active alerts: \(error.localizedDescription)")
+            }
         }
     }
 
