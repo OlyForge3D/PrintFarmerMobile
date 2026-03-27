@@ -48,9 +48,16 @@ final class AutoDispatchViewModel {
             if let s = status {
                 status = AutoDispatchStatus(
                     printerId: s.printerId,
-                    autoDispatchEnabled: s.autoDispatchEnabled,
+                    printerName: s.printerName,
+                    enabled: s.enabled,
+                    isReady: true,
+                    currentJobName: s.currentJobName,
+                    queueDepth: max(s.queueDepth - 1, 0),
+                    readyGateChecks: s.readyGateChecks,
+                    lastActivity: s.lastActivity,
                     state: "Ready",
-                    queuedJobCount: max(s.queuedJobCount - 1, 0)
+                    bedPreConfirmed: s.bedPreConfirmed,
+                    attentionMessage: s.attentionMessage
                 )
             }
             // Keep button disabled through the reload cycle so the user sees
@@ -81,8 +88,7 @@ final class AutoDispatchViewModel {
     }
 
     func toggleEnabled(printerId: UUID) async {
-        guard let autoDispatchService else { return }
-        let currentlyEnabled = status?.autoDispatchEnabled ?? false
+        guard let autoDispatchService, let currentlyEnabled = status?.enabled else { return }
         do {
             status = try await autoDispatchService.setEnabled(
                 printerId: printerId,
@@ -95,9 +101,9 @@ final class AutoDispatchViewModel {
 
     // MARK: - Computed
 
-    var isEnabled: Bool { status?.autoDispatchEnabled ?? false }
-    var currentState: String { status?.state ?? "Unknown" }
-    
+    var isEnabled: Bool? { status?.enabled }
+    var currentState: String? { status?.state }
+
     var parsedState: AutoDispatchState? {
         guard let stateStr = status?.state else { return nil }
         return AutoDispatchState(rawValue: stateStr)

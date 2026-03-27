@@ -72,7 +72,7 @@ final class PrinterListViewModel {
         guard let autoPrintService else { return }
         do {
             let statuses = try await autoPrintService.getAllStatus()
-            autoDispatchStatuses = Dictionary(uniqueKeysWithValues: statuses.map { ($0.printerId, $0) })
+            autoDispatchStatuses = Dictionary(uniqueKeysWithValues: statuses.printers.map { ($0.printerId, $0) })
         } catch {
             // Non-critical — cards will fall back to printer state
         }
@@ -86,7 +86,7 @@ final class PrinterListViewModel {
         }
         .sorted { sortPriority($0) < sortPriority($1) }
     }
-    
+
     func isPendingReady(_ printer: Printer) -> Bool {
         autoDispatchStatuses[printer.id]?.state == "PendingReady"
     }

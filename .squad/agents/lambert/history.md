@@ -558,3 +558,28 @@ Documented in `.squad/decisions.md`: "AutoPrint → AutoDispatch Terminology Ren
 - `NSAllowsLocalNetworking` only covers .local/mDNS domains and bare IPs; need `NSAllowsArbitraryLoads` for HTTP to arbitrary hostnames
 - Info.plist ATS config: both `NSAllowsArbitraryLoads` and `NSAllowsLocalNetworking` are enabled for dev/local server use
 - ATS failures surface as URLError code `.appTransportSecurityRequiresSecureConnection` (-1022)
+
+## 2026-03-27 — AutoDispatch API Contract Alignment
+
+**Status:** ✅ Completed
+
+### What Changed
+Backend renamed AutoDispatch routes from `/api/autoprint/*` to `/api/auto-dispatch/*` and restructured the `AutoDispatchStatus` DTO with new fields. iOS models, services, protocol, and tests were out of sync.
+
+### Changes Made
+1. **AutoDispatchService.swift** — All 6 route strings updated from `/api/autoprint/...` to `/api/auto-dispatch/...`. Return type of `getAllStatus()` changed from `[AutoDispatchStatus]` to `AutoDispatchGlobalStatus`. Added `preClear(printerId:)` endpoint.
+2. **AutoDispatchModels.swift** — `AutoDispatchStatus` struct rebuilt to match backend DTO: removed old `autoDispatchEnabled`/`queuedJobCount` fields and CodingKeys, added `printerName`, `enabled`, `isReady`, `currentJobName`, `queueDepth`, `readyGateChecks`, `lastActivity`, `bedPreConfirmed`, `attentionMessage`. Added `ReadyGateCheck` and `AutoDispatchGlobalStatus` structs. Convenience init with defaults provided for call-site compatibility.
+3. **Models.swift** — Added `dismissed = "Dismissed"` case to `AutoDispatchState` enum (with fallback decoder for int value 3).
+4. **AutoDispatchServiceProtocol.swift** — Updated `getAllStatus()` return type, added `preClear(printerId:)`.
+5. **DemoAutoDispatchService.swift** — Updated to match new protocol and struct fields.
+6. **MockAutoDispatchService.swift** — Updated for new protocol (added `preClear`, changed `getAllStatus` to return `AutoDispatchGlobalStatus`).
+7. **AutoDispatchViewModel.swift** — Updated field references (`autoDispatchEnabled` → `enabled`, `queuedJobCount` → `queueDepth`), optimistic update carries forward all new fields.
+8. **PrinterListViewModel.swift** — Changed `getAllStatus()` consumer to access `.printers` on `AutoDispatchGlobalStatus`.
+9. **PendingReadyMonitor.swift** — Same `.printers` accessor fix.
+10. **AutoDispatchSection.swift** — Updated `queuedJobCount` → `queueDepth` references.
+11. **AutoDispatchViewModelTests.swift** — All ~19 `AutoDispatchStatus` constructions updated with new field names.
+
+### Learnings
+- When backend renames DTO fields, a convenience init with defaults on the Swift struct prevents touching every test call site while still matching the new JSON contract. The memberwise init still works for full-field constructions (API decoding), while the convenience init serves test/demo code.
+- `getAllStatus()` returning a wrapper type (`AutoDispatchGlobalStatus`) instead of a bare array is a common backend pattern for adding metadata (like `globalEnabled`). All consumers that iterated the array need to access `.printers` first.
+- The `autoprint` → `auto-dispatch` route rename didn't require CodingKeys this time because the JSON property names match Swift camelCase exactly — the previous CodingKeys were mapping `autoPrintEnabled` to `autoDispatchEnabled` which is now just `enabled`.

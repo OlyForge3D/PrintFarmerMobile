@@ -129,6 +129,7 @@ enum AutoDispatchState: String, Codable, Sendable {
     case none = "None"
     case pendingReady = "PendingReady"
     case ready = "Ready"
+    case dismissed = "Dismissed"
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -140,6 +141,7 @@ enum AutoDispatchState: String, Codable, Sendable {
             case 0: self = .none
             case 1: self = .pendingReady
             case 2: self = .ready
+            case 3: self = .dismissed
             default: self = .none
             }
         } else {
