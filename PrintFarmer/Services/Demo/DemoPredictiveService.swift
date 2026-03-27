@@ -19,8 +19,8 @@ final class DemoPredictiveService: PredictiveServiceProtocol, @unchecked Sendabl
             ])
     }
 
-    func getMaintenanceForecast(days: Int?) async throws -> [MaintenanceForecast] {
-        [
+    func getMaintenanceForecast(days: Int?, printerId: UUID? = nil) async throws -> [MaintenanceForecast] {
+        let allForecasts = [
             MaintenanceForecast(
                 printerId: DemoData.voron24_ID,
                 printerName: "Voron 2.4",
@@ -41,9 +41,13 @@ final class DemoPredictiveService: PredictiveServiceProtocol, @unchecked Sendabl
                     ForecastTask(taskName: "Linear rail lubrication", estimatedDaysUntilDue: 7, priority: "Low"),
                 ]),
         ]
+        if let printerId {
+            return allForecasts.filter { $0.printerId == printerId }
+        }
+        return allForecasts
     }
 
-    func getActiveAlerts() async throws -> [PredictiveAlert] {
+    func getActiveAlerts(printerId: UUID? = nil) async throws -> [PredictiveAlert] {
         [
             PredictiveAlert(
                 alertType: "FailureRisk",

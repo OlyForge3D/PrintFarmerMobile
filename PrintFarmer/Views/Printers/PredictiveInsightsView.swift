@@ -25,8 +25,8 @@ struct PredictiveInsightsView: View {
                 material: nil,
                 duration: nil
             )
-            await viewModel.loadAlerts()
-            await viewModel.loadForecasts()
+            await viewModel.loadAlerts(printerId: printerId)
+            await viewModel.loadForecasts(printerId: printerId)
         }
         .onDisappear {
             viewModel.isViewActive = false
