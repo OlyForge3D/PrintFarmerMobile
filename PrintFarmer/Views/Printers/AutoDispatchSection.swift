@@ -45,14 +45,12 @@ struct AutoDispatchSection: View {
                         // State-specific UI
                         if viewModel.parsedState == .pendingReady {
                             pendingReadyView
+                            actionButtons
                         } else if viewModel.parsedState == .ready {
                             readyView
                         } else {
                             idleView
                         }
-
-                        // Action buttons
-                        actionButtons
                     }
                 }
             }
@@ -159,7 +157,6 @@ struct AutoDispatchSection: View {
         HStack(spacing: 8) {
             Button {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.isMarkingReady = true
                 let task = Task { await viewModel.markReady(printerId: printerId) }
                 activeTasks.append(task)
             } label: {

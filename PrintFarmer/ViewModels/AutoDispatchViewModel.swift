@@ -33,11 +33,10 @@ final class AutoDispatchViewModel {
     }
 
     func markReady(printerId: UUID) async {
-        guard let autoDispatchService else {
-            isMarkingReady = false
+        guard let autoDispatchService, !isMarkingReady else {
             return
         }
-        // isMarkingReady is set synchronously by the caller before this Task starts
+        isMarkingReady = true
         error = nil
         do {
             readyResult = try await autoDispatchService.markReady(printerId: printerId)
