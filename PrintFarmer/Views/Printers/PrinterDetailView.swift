@@ -356,42 +356,106 @@ struct PrinterDetailView: View {
 
     // MARK: - Header
 
-    private func headerSection(_ printer: Printer) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                StatusBadge(printerState: printer.state, isOnline: printer.isOnline)
+    private func detailHeaderBaseColor(_ printer: Printer) -> Color {
+        if !printer.isOnline { return Color(hex: "#4b5563") }
+        switch printer.state?.lowercased() {
+        case "printing": return Color(hex: "#059669")
+        case "paused": return Color(hex: "#b45309")
+        case "error": return Color(hex: "#dc2626")
+        default: return Color(hex: "#1d4ed8")
+        }
+    }
 
-                if printer.inMaintenance {
-                    StatusBadge(text: "Maintenance", color: .pfMaintenance)
+    private func detailStatusLabel(_ printer: Printer) -> String {
+        guard printer.isOnline else { return "Offline" }
+        guard let state = printer.state else { return "Idle" }
+        switch state.lowercased() {
+        case "printing": return "Printing"
+        case "paused": return "Paused"
+        case "error": return "Error"
+        case "idle", "ready": return "Ready"
+        default: return state.capitalized
+        }
+    }
+
+    private func headerSection(_ printer: Printer) -> some View {
+        let baseColor = detailHeaderBaseColor(printer)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            // Gradient header with name, manufacturer, model, state
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(printer.name)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+
+                    if let manufacturer = printer.manufacturerName,
+                       let model = printer.modelName {
+                        Text("\(manufacturer) · \(model)")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                    } else if let manufacturer = printer.manufacturerName {
+                        Text(manufacturer)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                    } else if let model = printer.modelName {
+                        Text(model)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer()
 
-                if let model = printer.modelName {
-                    Text(model)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 6) {
+                    Text(detailStatusLabel(printer))
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.3), in: Capsule())
+                        .foregroundStyle(.white)
+
+                    if printer.inMaintenance {
+                        Text("Maintenance")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(.black.opacity(0.3), in: Capsule())
+                            .foregroundStyle(.white)
+                    }
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [baseColor, baseColor.opacity(0.85)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
 
+            // Location row below the gradient
             if let location = printer.location {
-                Label(location.name, systemImage: "building.2")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            if let manufacturer = printer.manufacturerName {
-                Label(manufacturer, systemImage: "building")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                HStack {
+                    Label(location.name, systemImage: "building.2")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.pfCard)
             }
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.pfCard, in: RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.pfBorder, lineWidth: 1)
+                .strokeBorder(baseColor.opacity(0.3), lineWidth: 1)
         )
     }
 
