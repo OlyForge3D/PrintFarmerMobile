@@ -32,11 +32,11 @@ extension StatusBadge {
         }
         switch state {
         case "printing":
-            self.init(text: "Printing", color: .pfSecondaryAccent)
+            self.init(text: "Printing", color: .pfSuccess)
         case "paused":
             self.init(text: "Paused", color: .pfWarning)
         case "ready", "idle", "operational":
-            self.init(text: "Idle", color: .pfSuccess)
+            self.init(text: "Idle", color: .pfSecondaryAccent)
         case "error":
             self.init(text: "Error", color: .pfError)
         case "maintenance":

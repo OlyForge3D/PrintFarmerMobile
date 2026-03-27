@@ -104,10 +104,10 @@ struct PrinterCardView: View {
         if isPendingReady { return Color(hex: "#eab308") }
         if !printer.isOnline { return Color(hex: "#4b5563") }
         switch printer.state?.lowercased() {
-        case "printing": return Color(hex: "#1d4ed8")
+        case "printing": return Color(hex: "#059669")
         case "paused": return Color(hex: "#b45309")
         case "error": return Color(hex: "#dc2626")
-        default: return Color(hex: "#059669")
+        default: return Color(hex: "#1d4ed8")
         }
     }
 
@@ -123,10 +123,10 @@ struct PrinterCardView: View {
         if isPendingReady { return .pfWarning }
         if !printer.isOnline { return .pfTextTertiary }
         switch printer.state?.lowercased() {
-        case "printing": return .pfSecondaryAccent
+        case "printing": return .pfSuccess
         case "paused": return .pfWarning
         case "error": return .pfError
-        default: return .pfSuccess
+        default: return .pfSecondaryAccent
         }
     }
 
