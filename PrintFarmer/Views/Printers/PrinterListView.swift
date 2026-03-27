@@ -58,6 +58,14 @@ struct PrinterListView: View {
             viewModel.configureSignalR(services.signalRService)
             await viewModel.loadPrinters()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            Task { await viewModel.loadAutoDispatchStatuses() }
+        }
+        .onChange(of: router.printersPath) { _, newPath in
+            if newPath.isEmpty {
+                Task { await viewModel.loadAutoDispatchStatuses() }
+            }
+        }
         .onDisappear { retryTask?.cancel() }
     }
 
