@@ -31,9 +31,9 @@ struct PrinterDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(viewModel.printer?.name ?? "Printer")
+        .navigationTitle("Printer")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         #endif
         .refreshable {
             await viewModel.loadPrinter()
