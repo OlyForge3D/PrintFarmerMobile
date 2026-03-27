@@ -356,7 +356,7 @@ final class PrinterDetailViewModel {
         }
 
         // Load failure detection data when printing with spaghetti detection
-        if printer?.spaghettiDetectionEnabled == true, isActivelyPrinting {
+        if printer?.obicoEnabled == true, isActivelyPrinting {
             await loadFailureDetection()
         } else {
             activeAlerts = []
