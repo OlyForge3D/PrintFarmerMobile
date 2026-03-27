@@ -1,6 +1,6 @@
 # Team Roster
 
-> Native iOS/iPadOS client for PrintFarmer 3D printer farm management
+> {One-line project description}
 
 ## Coordinator
 
@@ -12,11 +12,10 @@
 
 | Name | Role | Charter | Status |
 |------|------|---------|--------|
-| Dallas | Lead / Architect | `.squad/agents/dallas/charter.md` | ✅ Active |
-| Ripley | iOS Developer | `.squad/agents/ripley/charter.md` | ✅ Active |
-| Lambert | Backend Integration | `.squad/agents/lambert/charter.md` | ✅ Active |
-| Parker | UX / Accessibility | `.squad/agents/parker/charter.md` | ✅ Active |
-| Ash | Tester / QA | `.squad/agents/ash/charter.md` | ✅ Active |
+| {Name} | {Role} | `.squad/agents/{name}/charter.md` | ✅ Active |
+| {Name} | {Role} | `.squad/agents/{name}/charter.md` | ✅ Active |
+| {Name} | {Role} | `.squad/agents/{name}/charter.md` | ✅ Active |
+| {Name} | {Role} | `.squad/agents/{name}/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
@@ -55,7 +54,7 @@
 
 ## Project Context
 
-- **Owner:** Jeff Papiez
-- **Stack:** Swift 6, SwiftUI, iOS 17+, Xcode 16+, MVVM, SignalR, REST API
-- **Description:** Native iOS/iPadOS client for the PrintFarmer 3D printer farm management platform
-- **Created:** 2026-03-06
+- **Owner:** {user name}
+- **Stack:** {languages, frameworks, tools}
+- **Description:** {what the project does, in one sentence}
+- **Created:** {timestamp}
