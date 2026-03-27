@@ -109,7 +109,7 @@ final class PredictiveViewModelTests: XCTestCase {
         )
         mockPredictiveService.alertsToReturn = [alert]
         
-        await viewModel.loadAlerts()
+        await viewModel.loadAlerts(printerId: testPrinterId)
         
         XCTAssertEqual(viewModel.alerts.count, 1)
         XCTAssertEqual(viewModel.alerts.first?.alertType, "maintenance_overdue")
@@ -117,12 +117,13 @@ final class PredictiveViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
         XCTAssertTrue(mockPredictiveService.getActiveAlertsCalled)
+        XCTAssertEqual(mockPredictiveService.getActiveAlertsCalledWithPrinterId, testPrinterId)
     }
     
     func testLoadAlertsHandlesError() async {
         mockPredictiveService.errorToThrow = TestError.generic
         
-        await viewModel.loadAlerts()
+        await viewModel.loadAlerts(printerId: testPrinterId)
         
         XCTAssertTrue(viewModel.alerts.isEmpty)
         XCTAssertNotNil(viewModel.error)
@@ -145,7 +146,7 @@ final class PredictiveViewModelTests: XCTestCase {
         )
         mockPredictiveService.forecastsToReturn = [forecast]
         
-        await viewModel.loadForecasts()
+        await viewModel.loadForecasts(printerId: testPrinterId)
         
         XCTAssertEqual(viewModel.forecasts.count, 1)
         XCTAssertEqual(viewModel.forecasts.first?.printerId, testPrinterId)
@@ -154,12 +155,13 @@ final class PredictiveViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.error)
         XCTAssertEqual(mockPredictiveService.getMaintenanceForecastCalledWith, 30)
+        XCTAssertEqual(mockPredictiveService.getMaintenanceForecastCalledWithPrinterId, testPrinterId)
     }
     
     func testLoadForecastsHandlesError() async {
         mockPredictiveService.errorToThrow = TestError.generic
         
-        await viewModel.loadForecasts()
+        await viewModel.loadForecasts(printerId: testPrinterId)
         
         XCTAssertTrue(viewModel.forecasts.isEmpty)
         XCTAssertNotNil(viewModel.error)
@@ -288,7 +290,7 @@ final class PredictiveViewModelTests: XCTestCase {
     func testLoadAlertsDoesNothingWhenUnconfigured() async {
         viewModel = PredictiveViewModel()
         
-        await viewModel.loadAlerts()
+        await viewModel.loadAlerts(printerId: testPrinterId)
         
         XCTAssertTrue(viewModel.alerts.isEmpty)
         XCTAssertFalse(mockPredictiveService.getActiveAlertsCalled)
@@ -297,7 +299,7 @@ final class PredictiveViewModelTests: XCTestCase {
     func testLoadForecastsDoesNothingWhenUnconfigured() async {
         viewModel = PredictiveViewModel()
         
-        await viewModel.loadForecasts()
+        await viewModel.loadForecasts(printerId: testPrinterId)
         
         XCTAssertTrue(viewModel.forecasts.isEmpty)
         XCTAssertNil(mockPredictiveService.getMaintenanceForecastCalledWith)

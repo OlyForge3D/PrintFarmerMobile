@@ -13,14 +13,20 @@ actor PredictiveService: PredictiveServiceProtocol {
         try await apiClient.post("/api/predictive-analytics/predict-job-failure", body: request)
     }
 
-    func getMaintenanceForecast(days: Int? = nil) async throws -> [MaintenanceForecast] {
-        let query = days.map { "?days=\($0)" } ?? ""
+    func getMaintenanceForecast(days: Int? = nil, printerId: UUID? = nil) async throws -> [MaintenanceForecast] {
+        var query = ""
+        var params: [String] = []
+        if let days { params.append("days=\(days)") }
+        if let printerId { params.append("printerId=\(printerId.uuidString)") }
+        if !params.isEmpty { query = "?" + params.joined(separator: "&") }
         let result: [MaintenanceForecast]? = try await apiClient.get("/api/predictive-analytics/maintenance-forecast\(query)")
         return result ?? []
     }
 
-    func getActiveAlerts() async throws -> [PredictiveAlert] {
-        let result: [PredictiveAlert]? = try await apiClient.get("/api/predictive-analytics/active-alerts")
+    func getActiveAlerts(printerId: UUID? = nil) async throws -> [PredictiveAlert] {
+        var query = ""
+        if let printerId { query = "?printerId=\(printerId.uuidString)" }
+        let result: [PredictiveAlert]? = try await apiClient.get("/api/predictive-analytics/active-alerts\(query)")
         return result ?? []
     }
 }

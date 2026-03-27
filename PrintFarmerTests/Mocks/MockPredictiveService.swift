@@ -11,6 +11,8 @@ final class MockPredictiveService: PredictiveServiceProtocol, @unchecked Sendabl
     var predictJobFailureCalledWith: PredictionRequest?
     var getMaintenanceForecastCalledWith: Int?
     var getActiveAlertsCalled = false
+    var getActiveAlertsCalledWithPrinterId: UUID?
+    var getMaintenanceForecastCalledWithPrinterId: UUID?
     
     func predictJobFailure(request: PredictionRequest) async throws -> JobFailurePrediction? {
         predictJobFailureCalledWith = request
@@ -18,14 +20,16 @@ final class MockPredictiveService: PredictiveServiceProtocol, @unchecked Sendabl
         return predictionToReturn
     }
     
-    func getMaintenanceForecast(days: Int? = nil) async throws -> [MaintenanceForecast] {
+    func getMaintenanceForecast(days: Int? = nil, printerId: UUID? = nil) async throws -> [MaintenanceForecast] {
         getMaintenanceForecastCalledWith = days
+        getMaintenanceForecastCalledWithPrinterId = printerId
         if let error = errorToThrow { throw error }
         return forecastsToReturn
     }
     
-    func getActiveAlerts() async throws -> [PredictiveAlert] {
+    func getActiveAlerts(printerId: UUID? = nil) async throws -> [PredictiveAlert] {
         getActiveAlertsCalled = true
+        getActiveAlertsCalledWithPrinterId = printerId
         if let error = errorToThrow { throw error }
         return alertsToReturn
     }
