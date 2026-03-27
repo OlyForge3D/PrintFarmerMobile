@@ -17,6 +17,8 @@ final class PrinterDetailViewModel {
     var pendingAction: DestructiveAction?
     var actionError: String?
     var isViewActive = true
+    var activeAlerts: [PredictiveAlert] = []
+    var failurePrediction: JobFailurePrediction?
 
     private let logger = Logger(subsystem: "com.printfarmer.ios", category: "PrinterDetail")
 
@@ -56,6 +58,7 @@ final class PrinterDetailViewModel {
     private var nfcScanner: (any SpoolScannerProtocol)?
     private var autoDispatchService: (any AutoDispatchServiceProtocol)?
     private var signalRService: (any SignalRServiceProtocol)?
+    private var predictiveService: (any PredictiveServiceProtocol)?
 
     let printerId: UUID
     private var printerService: (any PrinterServiceProtocol)?
@@ -77,6 +80,10 @@ final class PrinterDetailViewModel {
 
     func configureAutoDispatch(_ service: any AutoDispatchServiceProtocol) {
         self.autoDispatchService = service
+    }
+
+    func configurePredictive(_ service: any PredictiveServiceProtocol) {
+        self.predictiveService = service
     }
 
     func configureSignalR(_ service: any SignalRServiceProtocol) {
@@ -348,7 +355,32 @@ final class PrinterDetailViewModel {
             showLivestream = true
         }
 
+        // Load failure detection data when printing with spaghetti detection
+        if printer?.spaghettiDetectionEnabled == true, isActivelyPrinting {
+            await loadFailureDetection()
+        } else {
+            activeAlerts = []
+            failurePrediction = nil
+        }
+
         isLoading = false
+    }
+
+    func loadFailureDetection() async {
+        guard isViewActive, let predictiveService else { return }
+        do {
+            activeAlerts = try await predictiveService.getActiveAlerts(printerId: printerId)
+        } catch {
+            logger.warning("Failed to load active alerts: \(error.localizedDescription)")
+        }
+        do {
+            let material = printer?.spoolInfo?.material
+            failurePrediction = try await predictiveService.predictJobFailure(
+                request: PredictionRequest(printerId: printerId, material: material, estimatedDurationSeconds: nil)
+            )
+        } catch {
+            logger.warning("Failed to load failure prediction: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Actions

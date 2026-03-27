@@ -160,7 +160,8 @@ enum DemoData {
                 "remainingWeightG": 750.0,
                 "spoolInUse": true
             },
-            "location": { "id": "\(workshopID.uuidString)", "name": "Workshop", "description": "Main workshop area" }
+            "location": { "id": "\(workshopID.uuidString)", "name": "Workshop", "description": "Main workshop area" },
+            "spaghettiDetectionEnabled": true
         }
         """),
         decodePrinter(from: """
@@ -217,7 +218,8 @@ enum DemoData {
                 "remainingWeightG": 620.0,
                 "spoolInUse": true
             },
-            "location": { "id": "\(officeID.uuidString)", "name": "Office", "description": "Office print station" }
+            "location": { "id": "\(officeID.uuidString)", "name": "Office", "description": "Office print station" },
+            "spaghettiDetectionEnabled": true
         }
         """),
         decodePrinter(from: """
