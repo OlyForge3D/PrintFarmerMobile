@@ -10,6 +10,7 @@ import Network
 @MainActor
 final class LocalNetworkAuthorization {
     private var browser: NWBrowser?
+    private var didResume = false
 
     /// Requests local network access by briefly browsing for a Bonjour service.
     ///
@@ -19,9 +20,8 @@ final class LocalNetworkAuthorization {
     /// after a timeout, which typically means the dialog was denied or
     /// dismissed.
     func requestAuthorization() async -> Bool {
-        await withCheckedContinuation { continuation in
-            var didResume = false
-
+        didResume = false
+        return await withCheckedContinuation { continuation in
             let parameters = NWParameters()
             parameters.includePeerToPeer = true
 
@@ -33,20 +33,22 @@ final class LocalNetworkAuthorization {
 
             browser.stateUpdateHandler = { [weak self] state in
                 DispatchQueue.main.async {
-                    guard !didResume else { return }
-                    switch state {
-                    case .ready:
-                        didResume = true
-                        self?.stopBrowser()
-                        continuation.resume(returning: true)
-                    case .failed, .waiting:
-                        didResume = true
-                        self?.stopBrowser()
-                        continuation.resume(returning: false)
-                    case .cancelled:
-                        break
-                    default:
-                        break
+                    MainActor.assumeIsolated {
+                        guard let self, !self.didResume else { return }
+                        switch state {
+                        case .ready:
+                            self.didResume = true
+                            self.stopBrowser()
+                            continuation.resume(returning: true)
+                        case .failed, .waiting:
+                            self.didResume = true
+                            self.stopBrowser()
+                            continuation.resume(returning: false)
+                        case .cancelled:
+                            break
+                        default:
+                            break
+                        }
                     }
                 }
             }
@@ -56,10 +58,12 @@ final class LocalNetworkAuthorization {
             // Timeout — if the dialog was already accepted in a previous launch
             // the callback fires almost immediately. Guard against hanging.
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-                guard !didResume else { return }
-                didResume = true
-                self?.stopBrowser()
-                continuation.resume(returning: true)
+                MainActor.assumeIsolated {
+                    guard let self, !self.didResume else { return }
+                    self.didResume = true
+                    self.stopBrowser()
+                    continuation.resume(returning: true)
+                }
             }
         }
     }
