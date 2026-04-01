@@ -58,26 +58,44 @@ final class NFCService: SpoolScannerProtocol, @unchecked Sendable {
 
     // MARK: - Spool Tag Writing (Dual-Record NDEF)
 
-    /// Writes a spool NFC tag with two NDEF records:
-    /// 1. URI record: `printfarmer://spool/{id}` for deep-link navigation
-    /// 2. Text record: OpenSpool JSON for universal reader compatibility
-    func writeSpoolTag(spool: SpoolmanSpool) async throws {
+    /// Writes a spool NFC tag using the specified format.
+    /// - `.openSpool`: dual-record — URI deep link + OpenSpool JSON text record
+    /// - `.openTag3D`: single `application/opentag3d` media-type record with binary payload
+    func writeSpoolTag(spool: SpoolmanSpool, filament: SpoolmanFilament? = nil, format: NFCTagFormat = .openSpool) async throws {
         guard isAvailable else {
             throw SpoolScanError.notSupported
         }
 
-        let urlString = "printfarmer://spool/\(spool.id)"
-        guard let uriPayload = NFCNDEFPayload.wellKnownTypeURIPayload(string: urlString) else {
-            throw SpoolScanError.invalidPayload("Could not create spool tag URL.")
-        }
+        let message: NFCNDEFMessage
+        switch format {
+        case .openSpool:
+            let urlString = "printfarmer://spool/\(spool.id)"
+            guard let uriPayload = NFCNDEFPayload.wellKnownTypeURIPayload(string: urlString) else {
+                throw SpoolScanError.invalidPayload("Could not create spool tag URL.")
+            }
 
-        guard let jsonData = NFCTagParser.createOpenSpoolPayload(from: spool),
-              let jsonString = String(data: jsonData, encoding: .utf8) else {
-            throw SpoolScanError.invalidPayload("Could not create spool tag payload.")
-        }
+            guard let jsonData = NFCTagParser.createOpenSpoolPayload(from: spool),
+                  let jsonString = String(data: jsonData, encoding: .utf8) else {
+                throw SpoolScanError.invalidPayload("Could not create spool tag payload.")
+            }
 
-        let textPayload = NFCNDEFPayload.wellKnownTypeTextPayload(string: jsonString, locale: .current)!
-        let message = NFCNDEFMessage(records: [uriPayload, textPayload])
+            let textPayload = NFCNDEFPayload.wellKnownTypeTextPayload(string: jsonString, locale: .current)!
+            message = NFCNDEFMessage(records: [uriPayload, textPayload])
+
+        case .openTag3D:
+            guard let binaryData = NFCTagParser.createOpenTag3DPayload(from: spool, filament: filament) else {
+                throw SpoolScanError.invalidPayload("Could not create OpenTag3D payload.")
+            }
+
+            let typeData = Data("application/opentag3d".utf8)
+            let mediaRecord = NFCNDEFPayload(
+                format: .media,
+                type: typeData,
+                identifier: Data(),
+                payload: binaryData
+            )
+            message = NFCNDEFMessage(records: [mediaRecord])
+        }
 
         let spoolName = spool.filamentName ?? spool.name
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -151,6 +169,12 @@ private final class NFCReadDelegate: NSObject, NFCNDEFReaderSessionDelegate, @un
                     if let spoolId = spoolData.spoolmanId {
                         return .spoolId(spoolId)
                     }
+                    return .newSpoolData(spoolData)
+                }
+            }
+
+            if typeString == "application/opentag3d" {
+                if let spoolData = NFCTagParser.parseOpenTag3D(record.payload) {
                     return .newSpoolData(spoolData)
                 }
             }

@@ -2,6 +2,26 @@
 
 ## Learnings
 
+### OpenTag3D NFC Format Support (2026-04-01)
+**Files Modified:**
+- `PrintFarmer/Utilities/NFCTagParser.swift` — Added `NFCTagFormat` enum (OpenSpool/OpenTag3D) and `createOpenTag3DPayload(from:)` stub
+- `PrintFarmer/Views/Settings/SettingsView.swift` — Added "NFC Tags" section with format picker, stored via `@AppStorage("nfcTagFormat")`
+- `PrintFarmer/ViewModels/SpoolInventoryViewModel.swift` — Reads `nfcTagFormat` from UserDefaults and passes to NFCService
+- `PrintFarmer/Services/NFCService.swift` — `writeSpoolTag` now accepts `format: NFCTagFormat` parameter; switches between OpenSpool dual-record and OpenTag3D single media-record
+
+**Design Decisions:**
+- `NFCTagFormat` enum lives in NFCTagParser.swift (shared utility, accessible to views + services — no new file needed)
+- `@AppStorage("nfcTagFormat")` for persistence — consistent with `hasSeenOnboarding` pattern
+- ViewModel reads UserDefaults directly (not @AppStorage) since it's @Observable, not a View
+- `writeSpoolTag` defaults to `.openSpool` so all existing callers are unaffected
+- OpenTag3D stub returns nil — Lambert will implement the binary encoder; call site is ready
+- Legacy `writeTag(spool:)` left unchanged — it's only used internally with single-record OpenSpool format
+- No new files created — all changes in existing files
+
+**Build Status:** ✅ Build succeeded on iPhone 17 Pro simulator (iOS 26.3.1)
+
+---
+
 ### Demo Mode UI — Phase 5 & 6 (2026-03-18)
 **Files Created:**
 - `PrintFarmer/Utilities/DemoMode.swift` — Singleton with UserDefaults-backed `isActive` bool

@@ -583,3 +583,28 @@ Backend renamed AutoDispatch routes from `/api/autoprint/*` to `/api/auto-dispat
 - When backend renames DTO fields, a convenience init with defaults on the Swift struct prevents touching every test call site while still matching the new JSON contract. The memberwise init still works for full-field constructions (API decoding), while the convenience init serves test/demo code.
 - `getAllStatus()` returning a wrapper type (`AutoDispatchGlobalStatus`) instead of a bare array is a common backend pattern for adding metadata (like `globalEnabled`). All consumers that iterated the array need to access `.printers` first.
 - The `autoprint` → `auto-dispatch` route rename didn't require CodingKeys this time because the JSON property names match Swift camelCase exactly — the previous CodingKeys were mapping `autoPrintEnabled` to `autoDispatchEnabled` which is now just `enabled`.
+
+---
+
+## 2026-03-09 — OpenTag3D Binary Encoder/Decoder
+
+**Status:** ✅ Completed
+
+### What Was Done
+- Replaced stub `createOpenTag3DPayload(from:)` in `NFCTagParser.swift` with full 102-byte binary encoder per opentag3d.info spec
+- Added `parseOpenTag3D(_ data:) -> ScannedSpoolData?` round-trip decoder
+- Wired `application/opentag3d` MIME type handling into `NFCService.parseMessage()` so scanned OpenTag3D tags are recognized
+- Updated error message in NFCService write path (no longer "not yet available")
+- Build verified: zero errors, zero new warnings
+
+### Files Changed
+1. `PrintFarmer/Utilities/NFCTagParser.swift` — Full OpenTag3D encoder + decoder + binary helpers
+2. `PrintFarmer/Services/NFCService.swift` — Added opentag3d parse branch + cleaned error message
+
+### Learnings
+- OpenTag3D uses a fixed 102-byte binary layout (NOT JSON) — all multi-byte integers are unsigned big-endian, all strings UTF-8 null-padded to fixed length
+- The memory map has a 15-byte reserved gap at 0x0C–0x1A and a 1-byte gap at 0x4F between Color 1 and Color 2; zero-initializing the buffer handles these cleanly
+- SpoolmanSpool lacks color name, diameter, and temperature fields — defaults used (1750µm diameter, 0 for unknown temps, material-based density lookup)
+- Material modifiers (CF, Silk, HF) derived by stripping base material name from filamentName — simple but effective for common naming patterns
+- Color hex parsing: `#RRGGBB` → RGBA with alpha=255; absent color defaults to mid-gray (128,128,128,255)
+- The `parseOpenTag3D` reads `record.payload` directly (binary), unlike OpenSpool/OpenPrintTag which call `parsePayloadData(record)` first (text extraction)

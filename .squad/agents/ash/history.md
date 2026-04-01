@@ -193,3 +193,30 @@ Two decisions enabled this work:
 5. **Type mismatches in assertions:** `PredictiveViewModel.riskPercentage` is `Int` not `Double`; updated all XCTAssertEqual calls to use integer literals.
 
 **Build verification:** All tests now compile successfully. Used `xcodebuild build-for-testing` to verify no remaining compilation errors.
+
+### OpenTag3D Binary Format Tests (2026-03-12)
+**Task:** Added 8 test cases for OpenTag3D binary NFC format to NFCTagParserTests.swift
+**Parallel work:** Lambert building `createOpenTag3DPayload` and `parseOpenTag3D` methods in NFCTagParser.swift
+
+**Key patterns:**
+- OpenTag3D is a binary memory-mapped format (NOT JSON like OpenSpool/OpenPrintTag)
+- All multi-byte integers are UInt16 big endian; strings are UTF-8 null-padded to fixed lengths
+- Temperature encoding: stored as °C ÷ 5 (byte 42 = 210°C)
+- Diameter stored in µm as UInt16 (1750 = 1.75mm)
+- RGBA color at offset 0x4B; nil colorHex defaults to gray (128, 128, 128, 255)
+- Minimum payload size: 0x66 (102) bytes
+- Tag version 1000 = v1.000; version >= 2000 rejected
+- spoolmanId is NOT stored in OpenTag3D format (returns nil on parse)
+- Tests verify binary layout at exact byte offsets — useful regression tests if format changes
+
+**Tests added:**
+1. `testCreateOpenTag3DPayload_basicSpool` — version, material, RGBA, weight at binary offsets
+2. `testCreateOpenTag3DPayload_colorParsing` — hex-to-RGBA conversion + nil default
+3. `testCreateOpenTag3DPayload_stringTruncation` — material/manufacturer truncation to field limits
+4. `testCreateOpenTag3DPayload_stringPadding` — null-padding verification at byte level
+5. `testParseOpenTag3D_validPayload` — manually built binary → all ScannedSpoolData fields
+6. `testParseOpenTag3D_tooShort` — short/empty data rejection
+7. `testParseOpenTag3D_wrongVersion` — version 2000 rejection
+8. `testCreateOpenTag3DPayload_roundTrip` — create→parse symmetry verification
+
+**File:** PrintFarmerTests/Utilities/NFCTagParserTests.swift (25 total test methods now)
