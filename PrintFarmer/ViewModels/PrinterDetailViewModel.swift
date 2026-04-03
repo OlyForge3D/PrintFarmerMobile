@@ -337,6 +337,9 @@ final class PrinterDetailViewModel {
 
         do {
             statusDetail = try await printerService.getStatus(id: printerId)
+            if let detail = statusDetail {
+                applyStatusDetail(detail)
+            }
         } catch {
             logger.warning("Failed to load printer status: \(error.localizedDescription)")
         }
@@ -369,6 +372,28 @@ final class PrinterDetailViewModel {
         }
 
         isLoading = false
+    }
+
+    /// Keep the UI-facing printer state aligned with the dedicated status endpoint.
+    /// This prevents detail/list mismatches when `/api/printers/{id}` and `/status` are briefly out of sync.
+    private func applyStatusDetail(_ detail: PrinterStatusDetail) {
+        guard var current = printer else { return }
+        current.isOnline = detail.isOnline
+        current.state = detail.state
+        current.progress = detail.progress
+        current.jobName = detail.jobName
+        current.thumbnailUrl = detail.thumbnailUrl
+        current.cameraStreamUrl = detail.cameraStreamUrl
+        current.cameraSnapshotUrl = detail.cameraSnapshotUrl
+        current.x = detail.x
+        current.y = detail.y
+        current.z = detail.z
+        current.hotendTemp = detail.hotendTemp
+        current.bedTemp = detail.bedTemp
+        current.hotendTarget = detail.hotendTarget
+        current.bedTarget = detail.bedTarget
+        current.spoolInfo = detail.spoolInfo
+        printer = current
     }
 
     func loadFailureDetection() async {
