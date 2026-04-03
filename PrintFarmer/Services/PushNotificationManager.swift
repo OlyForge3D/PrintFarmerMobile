@@ -66,16 +66,16 @@ final class PushNotificationManager: NSObject, @unchecked Sendable {
             let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
             if granted {
                 permissionStatus = .authorized
-                logger.info("Push notification permission granted")
-                UIApplication.shared.registerForRemoteNotifications()
+                registrationError = nil
+                logger.info("Notification permission granted")
             } else {
                 permissionStatus = .denied
-                logger.info("Push notification permission denied by user")
+                logger.info("Notification permission denied by user")
             }
         } catch {
             permissionStatus = .denied
             registrationError = error.localizedDescription
-            logger.error("Failed to request push permission: \(error.localizedDescription)")
+            logger.error("Failed to request notification permission: \(error.localizedDescription)")
         }
     }
 

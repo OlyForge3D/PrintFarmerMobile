@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NFCWriteView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openSpool
 
     let spool: SpoolmanSpool
     let onWrite: () async -> Bool
@@ -100,6 +101,12 @@ struct NFCWriteView: View {
                     .font(.subheadline)
                     .foregroundStyle(Color.pfTextSecondary)
                     .multilineTextAlignment(.center)
+
+                Text("Format: \(nfcTagFormat.rawValue)")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.pfBackgroundTertiary, in: Capsule())
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 24)
