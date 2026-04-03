@@ -2,6 +2,16 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.66] — 2026-04-03
+
+### Added
+- **OpenPrintTag write support** — New writable NFC format alongside OpenSpool and OpenTag3D. Writes JSON with `filament_type`, `color`, `manufacturer`, `net_weight`, and `spool_id` fields.
+- **NFC field preview** — Write NFC Tag view now shows all fields that will be written, with format-specific field names (OpenSpool JSON keys, OpenPrintTag JSON keys, or OpenTag3D binary fields).
+- **NFC format descriptions** — Settings picker now shows a dynamic description for each format explaining compatibility and encoding.
+
+### Changed
+- **Default NFC format** — New installs default to OpenPrintTag instead of OpenSpool.
+
 ## [v1.0-beta.65] — 2026-04-03
 
 ### Fixed
