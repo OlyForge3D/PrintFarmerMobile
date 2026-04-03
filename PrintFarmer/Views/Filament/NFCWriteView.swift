@@ -5,6 +5,7 @@ struct NFCWriteView: View {
     @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openPrintTag
 
     let spool: SpoolmanSpool
+    let filament: SpoolmanFilament?
     let onWrite: () async -> Bool
 
     @State private var writeState: WriteState = .ready
@@ -105,6 +106,9 @@ struct NFCWriteView: View {
                 fieldRow("color", spool.colorHex)
                 fieldRow("manufacturer", spool.vendor)
                 fieldRow("net_weight", spool.initialWeightG.map { "\(Int($0))" })
+                fieldRow("filament_diameter", filament?.diameter.map { "\($0)" })
+                fieldRow("print_temp", filament?.settingsExtruderTemp.map { "\($0)" })
+                fieldRow("bed_temp", filament?.settingsBedTemp.map { "\($0)" })
                 fieldRow("spool_id", "\(spool.id)")
             } else {
                 fieldRow("Material", spool.material)
@@ -130,7 +134,7 @@ struct NFCWriteView: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(Color.pfTextTertiary)
-                .frame(width: 100, alignment: .leading)
+                .frame(width: 130, alignment: .leading)
             Text(value ?? "—")
                 .font(.caption.monospaced())
                 .foregroundStyle(Color.pfTextSecondary)

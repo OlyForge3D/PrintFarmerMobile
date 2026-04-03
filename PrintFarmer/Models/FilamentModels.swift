@@ -4,6 +4,7 @@ import Foundation
 
 struct SpoolmanSpool: Codable, Identifiable, Sendable {
     let id: Int
+    let filamentId: Int?
     let name: String
     let material: String
     let colorHex: String?
@@ -35,6 +36,60 @@ struct SpoolmanSpool: Codable, Identifiable, Sendable {
     // Computed by backend
     let usedPercent: Double?
     let remainingPercent: Double?
+
+    init(
+        id: Int,
+        filamentId: Int? = nil,
+        name: String,
+        material: String,
+        colorHex: String?,
+        inUse: Bool?,
+        filamentName: String?,
+        vendor: String?,
+        registeredAt: String?,
+        firstUsedAt: String?,
+        lastUsedAt: String?,
+        remainingWeightG: Double?,
+        initialWeightG: Double?,
+        usedWeightG: Double?,
+        spoolWeightG: Double?,
+        remainingLengthMm: Double?,
+        usedLengthMm: Double?,
+        location: String?,
+        lotNumber: String?,
+        archived: Bool?,
+        price: Double?,
+        comment: String?,
+        hasNfcTag: Bool?,
+        usedPercent: Double?,
+        remainingPercent: Double?
+    ) {
+        self.id = id
+        self.filamentId = filamentId
+        self.name = name
+        self.material = material
+        self.colorHex = colorHex
+        self.inUse = inUse
+        self.filamentName = filamentName
+        self.vendor = vendor
+        self.registeredAt = registeredAt
+        self.firstUsedAt = firstUsedAt
+        self.lastUsedAt = lastUsedAt
+        self.remainingWeightG = remainingWeightG
+        self.initialWeightG = initialWeightG
+        self.usedWeightG = usedWeightG
+        self.spoolWeightG = spoolWeightG
+        self.remainingLengthMm = remainingLengthMm
+        self.usedLengthMm = usedLengthMm
+        self.location = location
+        self.lotNumber = lotNumber
+        self.archived = archived
+        self.price = price
+        self.comment = comment
+        self.hasNfcTag = hasNfcTag
+        self.usedPercent = usedPercent
+        self.remainingPercent = remainingPercent
+    }
 }
 
 // MARK: - Spoolman Filament (matches SpoolmanFilamentDto)

@@ -48,6 +48,16 @@ final class DemoSpoolService: SpoolServiceProtocol, @unchecked Sendable {
                              spoolWeight: 220, price: 22.99, settingsExtruderTemp: 240,
                              settingsBedTemp: 100, articleNumber: nil, comment: nil,
                              multiColorHexes: nil, externalId: nil),
+            SpoolmanFilament(id: 4, name: "NinjaFlex TPU", material: "TPU", colorHex: "#1A1A1A",
+                             vendor: "NinjaTek", density: 1.21, diameter: 1.75, weight: 750,
+                             spoolWeight: 150, price: 45.99, settingsExtruderTemp: 220,
+                             settingsBedTemp: 60, articleNumber: nil, comment: "Flexible, print slow",
+                             multiColorHexes: nil, externalId: nil),
+            SpoolmanFilament(id: 5, name: "PolyLite ASA", material: "ASA", colorHex: "#FF6600",
+                             vendor: "Polymaker", density: 1.07, diameter: 1.75, weight: 1000,
+                             spoolWeight: 190, price: 27.99, settingsExtruderTemp: 260,
+                             settingsBedTemp: 100, articleNumber: nil, comment: nil,
+                             multiColorHexes: nil, externalId: nil),
         ]
     }
 

@@ -88,7 +88,7 @@ final class NFCService: SpoolScannerProtocol, @unchecked Sendable {
                 throw SpoolScanError.invalidPayload("Could not create spool tag URL.")
             }
 
-            guard let jsonData = NFCTagParser.createOpenPrintTagPayload(from: spool),
+            guard let jsonData = NFCTagParser.createOpenPrintTagPayload(from: spool, filament: filament),
                   let jsonString = String(data: jsonData, encoding: .utf8) else {
                 throw SpoolScanError.invalidPayload("Could not create OpenPrintTag payload.")
             }

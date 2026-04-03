@@ -79,12 +79,15 @@ enum NFCTagParser {
     }
 
     /// Creates an OpenPrintTag JSON payload from a SpoolmanSpool.
-    static func createOpenPrintTagPayload(from spool: SpoolmanSpool) -> Data? {
+    static func createOpenPrintTagPayload(from spool: SpoolmanSpool, filament: SpoolmanFilament? = nil) -> Data? {
         var payload: [String: Any] = [:]
         payload["filament_type"] = spool.material
         if let hex = spool.colorHex { payload["color"] = hex }
         if let vendor = spool.vendor { payload["manufacturer"] = vendor }
         if let weight = spool.initialWeightG { payload["net_weight"] = weight }
+        if let diameter = filament?.diameter { payload["filament_diameter"] = diameter }
+        if let temp = filament?.settingsExtruderTemp, temp > 0 { payload["print_temp"] = temp }
+        if let temp = filament?.settingsBedTemp, temp > 0 { payload["bed_temp"] = temp }
         payload["spool_id"] = spool.id
 
         return try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])

@@ -2,6 +2,16 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.67] — 2026-04-03
+
+### Fixed
+- **NFC filament data now shows correct values** — Diameter, print temp, and bed temp in the Write NFC Tag preview were showing "—" or placeholder text. Filament lookup now uses the spool's filament ID (not material/vendor name matching), so the correct filament record is always found.
+- **NFC preview no longer blank on first open** — Spool and filament data are now bundled together atomically before the sheet is presented, eliminating a race condition that caused the three filament fields to show "—" on first open and only populate after closing and reopening.
+- **OpenPrintTag payload now includes filament data** — The actual NFC tag written in OpenPrintTag format now correctly encodes `filament_diameter`, `print_temp`, and `bed_temp` from Spoolman filament settings.
+
+### Changed
+- **NFC field label column widened** — Increased label width from 100 to 130 pt so `filament_diameter` no longer wraps.
+
 ## [v1.0-beta.66] — 2026-04-03
 
 ### Added

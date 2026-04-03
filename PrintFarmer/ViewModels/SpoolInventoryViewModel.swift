@@ -207,6 +207,12 @@ final class SpoolInventoryViewModel {
 
     // MARK: - NFC Tag Writing
 
+    /// Looks up filament data used by OpenPrintTag/OpenTag3D so UI previews can show real values.
+    func matchingFilamentForTagPreview(for spool: SpoolmanSpool) async -> SpoolmanFilament? {
+        let format = selectedTagFormat()
+        return await matchingFilament(for: spool, format: format)
+    }
+
     /// Writes a dual-record NFC tag for the given spool using NFCService.
     func writeNFCTag(for spool: SpoolmanSpool) async -> Bool {
         #if canImport(UIKit)
@@ -218,19 +224,10 @@ final class SpoolInventoryViewModel {
         isWritingNFC = true
         writeNFCError = nil
 
-        let formatRaw = UserDefaults.standard.string(forKey: "nfcTagFormat") ?? NFCTagFormat.openPrintTag.rawValue
-        let format = NFCTagFormat(rawValue: formatRaw) ?? .openSpool
+        let format = selectedTagFormat()
 
         do {
-            // Look up matching filament for OpenTag3D (provides temps, density, diameter)
-            var filament: SpoolmanFilament?
-            if format == .openTag3D, let spoolService {
-                let filaments = try await spoolService.listFilaments()
-                filament = filaments.first { fil in
-                    fil.material?.lowercased() == spool.material.lowercased()
-                    && fil.vendor?.lowercased() == spool.vendor?.lowercased()
-                }
-            }
+            let filament = await matchingFilament(for: spool, format: format)
 
             try await nfcService.writeSpoolTag(spool: spool, filament: filament, format: format)
             // Persist NFC tag association to backend
@@ -256,6 +253,30 @@ final class SpoolInventoryViewModel {
         writeNFCError = "NFC is not available on this platform."
         return false
         #endif
+    }
+
+    private func selectedTagFormat() -> NFCTagFormat {
+        let formatRaw = UserDefaults.standard.string(forKey: "nfcTagFormat") ?? NFCTagFormat.openPrintTag.rawValue
+        return NFCTagFormat(rawValue: formatRaw) ?? .openSpool
+    }
+
+    private func matchingFilament(for spool: SpoolmanSpool, format: NFCTagFormat) async -> SpoolmanFilament? {
+        guard (format == .openTag3D || format == .openPrintTag), let spoolService else {
+            return nil
+        }
+
+        guard let filamentId = spool.filamentId else {
+            logger.warning("Spool \(spool.id) (\(spool.name)) missing filamentId from backend — cannot lookup temps/diameter. Ensure SpoolmanSpoolDto includes filamentId field and is non-null when spool has a filament assigned.")
+            return nil
+        }
+
+        do {
+            let filaments = try await spoolService.listFilaments()
+            return filaments.first { $0.id == filamentId }
+        } catch {
+            logger.warning("Failed to load filaments for NFC payload: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// Updates local state after successful NFC write.
