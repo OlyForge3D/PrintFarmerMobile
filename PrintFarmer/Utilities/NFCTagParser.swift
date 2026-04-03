@@ -5,8 +5,20 @@ import Foundation
 /// The NDEF format used when writing spool data to NFC tags.
 enum NFCTagFormat: String, CaseIterable, Identifiable {
     case openSpool = "OpenSpool"
+    case openPrintTag = "OpenPrintTag"
     case openTag3D = "OpenTag3D"
     var id: String { rawValue }
+
+    var description: String {
+        switch self {
+        case .openSpool:
+            return "JSON format used by Bambu Lab and other OpenSpool-compatible printers."
+        case .openPrintTag:
+            return "JSON format with broader field names. Compatible with OpenPrintTag readers."
+        case .openTag3D:
+            return "Compact binary format per opentag3d.info spec. Fits more data on small tags (NTAG213)."
+        }
+    }
 }
 
 // MARK: - NFC Tag Parser
@@ -62,6 +74,18 @@ enum NFCTagParser {
         if let vendor = spool.vendor { payload["brand"] = vendor }
         if let weight = spool.initialWeightG { payload["weight_g"] = weight }
         payload["spoolman_id"] = spool.id
+
+        return try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+    }
+
+    /// Creates an OpenPrintTag JSON payload from a SpoolmanSpool.
+    static func createOpenPrintTagPayload(from spool: SpoolmanSpool) -> Data? {
+        var payload: [String: Any] = [:]
+        payload["filament_type"] = spool.material
+        if let hex = spool.colorHex { payload["color"] = hex }
+        if let vendor = spool.vendor { payload["manufacturer"] = vendor }
+        if let weight = spool.initialWeightG { payload["net_weight"] = weight }
+        payload["spool_id"] = spool.id
 
         return try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
     }

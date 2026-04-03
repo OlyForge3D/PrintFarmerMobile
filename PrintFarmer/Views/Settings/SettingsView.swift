@@ -6,7 +6,7 @@ import UserNotifications
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(ThemeManager.self) private var themeManager
-    @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openSpool
+    @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openPrintTag
     @State private var showLogoutConfirmation = false
     @State private var showChangeURL = false
     @State private var newServerURL = ""
@@ -54,10 +54,12 @@ struct SettingsView: View {
                             Text(format.rawValue).tag(format)
                         }
                     }
+
+                    Text(nfcTagFormat.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } header: {
                     Text("NFC Tags")
-                } footer: {
-                    Text("OpenSpool writes JSON. OpenTag3D writes binary data per the opentag3d.info spec.")
                 }
 
                 Section("Account") {

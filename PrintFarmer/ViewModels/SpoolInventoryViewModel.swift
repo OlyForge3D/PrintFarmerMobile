@@ -218,7 +218,7 @@ final class SpoolInventoryViewModel {
         isWritingNFC = true
         writeNFCError = nil
 
-        let formatRaw = UserDefaults.standard.string(forKey: "nfcTagFormat") ?? NFCTagFormat.openSpool.rawValue
+        let formatRaw = UserDefaults.standard.string(forKey: "nfcTagFormat") ?? NFCTagFormat.openPrintTag.rawValue
         let format = NFCTagFormat(rawValue: formatRaw) ?? .openSpool
 
         do {
