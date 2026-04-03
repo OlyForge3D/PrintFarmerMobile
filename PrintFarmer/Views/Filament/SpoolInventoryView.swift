@@ -1,11 +1,18 @@
 import SwiftUI
 
+// Bundles spool + filament so the sheet always receives both values atomically.
+private struct NFCWriteTarget: Identifiable {
+    let spool: SpoolmanSpool
+    let filament: SpoolmanFilament?
+    var id: Int { spool.id }
+}
+
 struct SpoolInventoryView: View {
     @Environment(ServiceContainer.self) private var services
     @Environment(AppRouter.self) private var router
     @State private var viewModel = SpoolInventoryViewModel()
     @State private var showAddSpool = false
-    @State private var nfcWriteSpool: SpoolmanSpool?
+    @State private var nfcWriteTarget: NFCWriteTarget?
     @State private var activeTasks: [Task<Void, Never>] = []
 
     var body: some View {
@@ -126,9 +133,9 @@ struct SpoolInventoryView: View {
                         }
                 }
             }
-            .sheet(item: $nfcWriteSpool) { spool in
-                NFCWriteView(spool: spool) {
-                    await viewModel.writeNFCTag(for: spool)
+            .sheet(item: $nfcWriteTarget) { target in
+                NFCWriteView(spool: target.spool, filament: target.filament) {
+                    await viewModel.writeNFCTag(for: target.spool)
                 }
             }
             .task {
@@ -287,7 +294,11 @@ struct SpoolInventoryView: View {
                         .contextMenu {
                             if spool.hasNfcTag != true {
                                 Button {
-                                    nfcWriteSpool = spool
+                                    let task = Task {
+                                        let filament = await viewModel.matchingFilamentForTagPreview(for: spool)
+                                        nfcWriteTarget = NFCWriteTarget(spool: spool, filament: filament)
+                                    }
+                                    activeTasks.append(task)
                                 } label: {
                                     Label("Write NFC Tag", systemImage: "wave.3.right")
                                 }
