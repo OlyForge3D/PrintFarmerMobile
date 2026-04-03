@@ -218,8 +218,21 @@ final class SpoolInventoryViewModel {
         isWritingNFC = true
         writeNFCError = nil
 
+        let formatRaw = UserDefaults.standard.string(forKey: "nfcTagFormat") ?? NFCTagFormat.openSpool.rawValue
+        let format = NFCTagFormat(rawValue: formatRaw) ?? .openSpool
+
         do {
-            try await nfcService.writeSpoolTag(spool: spool)
+            // Look up matching filament for OpenTag3D (provides temps, density, diameter)
+            var filament: SpoolmanFilament?
+            if format == .openTag3D, let spoolService {
+                let filaments = try await spoolService.listFilaments()
+                filament = filaments.first { fil in
+                    fil.material?.lowercased() == spool.material.lowercased()
+                    && fil.vendor?.lowercased() == spool.vendor?.lowercased()
+                }
+            }
+
+            try await nfcService.writeSpoolTag(spool: spool, filament: filament, format: format)
             // Persist NFC tag association to backend
             if let spoolService {
                 _ = try await spoolService.updateSpool(
