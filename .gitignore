@@ -36,3 +36,6 @@ secrets/
 .squad/sessions/
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
+# Beads: local working files
+.beads/backup/
+.beads/embeddeddolt/
