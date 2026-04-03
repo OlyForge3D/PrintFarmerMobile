@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NFCWriteView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openSpool
+    @AppStorage("nfcTagFormat") private var nfcTagFormat: NFCTagFormat = .openPrintTag
 
     let spool: SpoolmanSpool
     let onWrite: () async -> Bool
@@ -25,6 +25,10 @@ struct NFCWriteView: View {
                 Divider()
 
                 statusArea
+
+                if case .ready = writeState {
+                    fieldPreview
+                }
 
                 Spacer()
 
@@ -86,6 +90,53 @@ struct NFCWriteView: View {
         }
     }
 
+    // MARK: - Field Preview
+
+    private var fieldPreview: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if nfcTagFormat == .openSpool {
+                fieldRow("material", spool.material)
+                fieldRow("color_hex", spool.colorHex)
+                fieldRow("brand", spool.vendor)
+                fieldRow("weight_g", spool.initialWeightG.map { "\(Int($0))" })
+                fieldRow("spoolman_id", "\(spool.id)")
+            } else if nfcTagFormat == .openPrintTag {
+                fieldRow("filament_type", spool.material)
+                fieldRow("color", spool.colorHex)
+                fieldRow("manufacturer", spool.vendor)
+                fieldRow("net_weight", spool.initialWeightG.map { "\(Int($0))" })
+                fieldRow("spool_id", "\(spool.id)")
+            } else {
+                fieldRow("Material", spool.material)
+                fieldRow("Manufacturer", spool.vendor)
+                fieldRow("Color", spool.name)
+                fieldRow("Color RGBA", spool.colorHex)
+                fieldRow("Weight", spool.initialWeightG.map { "\(Int($0))g" })
+                fieldRow("Diameter", "1.75mm")
+                fieldRow("Lot Number", spool.lotNumber)
+                if spool.remainingWeightG != nil || spool.spoolWeightG != nil {
+                    fieldRow("Spool Weight", spool.spoolWeightG.map { "\(Int($0))g" })
+                    fieldRow("Remaining", spool.remainingWeightG.map { "\(Int($0))g" })
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.pfBackgroundSecondary, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func fieldRow(_ label: String, _ value: String?) -> some View {
+        HStack {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(Color.pfTextTertiary)
+                .frame(width: 100, alignment: .leading)
+            Text(value ?? "—")
+                .font(.caption.monospaced())
+                .foregroundStyle(Color.pfTextSecondary)
+        }
+    }
+
     // MARK: - Status Area
 
     @ViewBuilder
@@ -97,11 +148,6 @@ struct NFCWriteView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(Color.pfAccent)
 
-                Text("Ready to write spool data to an NFC tag")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.pfTextSecondary)
-                    .multilineTextAlignment(.center)
-
                 Text("Format: \(nfcTagFormat.rawValue)")
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 10)
@@ -109,7 +155,7 @@ struct NFCWriteView: View {
                     .background(Color.pfBackgroundTertiary, in: Capsule())
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 24)
+            .padding(.vertical, 12)
 
         case .writing:
             VStack(spacing: 16) {
