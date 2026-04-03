@@ -2,6 +2,11 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.68] — 2026-04-03
+
+### Fixed
+- **Printer status mismatch between list and detail** — The printer detail screen now applies data from `/api/printers/{id}/status` to the displayed printer state, preventing cases where a printer appears "Ready" in the list but "Offline" after opening details.
+
 ## [v1.0-beta.67] — 2026-04-03
 
 ### Fixed
