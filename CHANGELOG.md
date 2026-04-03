@@ -2,6 +2,14 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.65] — 2026-04-03
+
+### Fixed
+- **Notification entitlement error** — Removed `registerForRemoteNotifications()` call that caused "no valid aps-environment entitlement" error when enabling notifications. Local notifications via `UNUserNotificationCenter` require no entitlement.
+
+### Added
+- **NFC write format indicator** — The Write NFC Tag view now shows the selected tag format (OpenSpool or OpenTag3D) as a pill badge so users can confirm the format before writing.
+
 ## [v1.0-beta.64] — 2026-04-03
 
 ### Added
