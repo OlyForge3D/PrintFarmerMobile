@@ -2,6 +2,12 @@
 
 All notable changes to PrintFarmer iOS will be documented in this file.
 
+## [v1.0-beta.64] — 2026-04-03
+
+### Added
+- **OpenTag3D NFC tag format** — New binary NFC tag format (opentag3d.info/spec) as a user-selectable alternative to OpenSpool JSON. Core fields (version, material, manufacturer, color, diameter, density, temperatures, target weight) fit NTAG213. Extended fields (batch/serial number, empty spool weight, measured weight/length) written on NTAG215+ when data is available.
+- **NFC format picker** — Settings UI now includes an NFC Tags section with OpenSpool/OpenTag3D format picker, persisted via AppStorage.
+
 ## [v1.0-beta.12] — 2026-03-12
 
 ### Added
